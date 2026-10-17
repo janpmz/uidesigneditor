@@ -133,9 +133,11 @@ function endCanvasGesture(cancel=false){
 }
 function moveGestureItems(gesture,point,event){
   let dx=point.x-gesture.start.x,dy=point.y-gesture.start.y;
-  if(event?.shiftKey){if(Math.abs(dx)>Math.abs(dy))dy=0;else dx=0;}
+  if(event?.shiftKey&&gesture.type!=='rectangle-resize'){if(Math.abs(dx)>Math.abs(dy))dy=0;else dx=0;}
   gesture.items.forEach((entry,index)=>Object.assign(entry,gesture.starts[index]));
-  if(gesture.type==='resize')scaleItemFromCorner(gesture.items[0],gesture.starts[0],dx,dy,state.canvas);
+  if(gesture.type==='rectangle-resize')resizeRectangleFromHandle(gesture.items[0],gesture.starts[0],gesture.side,dx,dy);
+  else if(gesture.type==='arrow-end')moveArrowEnd(gesture.items[0],gesture.starts[0],gesture.end,{x:gesture.start.x+dx,y:gesture.start.y+dy});
+  else if(gesture.type==='resize')scaleItemFromCorner(gesture.items[0],gesture.starts[0],dx,dy,state.canvas);
   else moveWithin(gesture.items,dx,dy,state.canvas);
   gesture.changed=gesture.before!==JSON.stringify(state);
   for(const entry of gesture.items){const node=[...$('phone').querySelectorAll('.item')].find(node=>node.dataset.id===entry.id);if(node)styleItem(node,entry);}
@@ -158,9 +160,18 @@ stage.addEventListener('pointerdown',event=>{
   const point=phonePoint(event),hit=event.target.closest('.item,.selection-overlay'),id=hit?.dataset.id;
   const entry=state.items.find(item=>item.id===id),items=selectedItems().filter(item=>!isPagePicture(item));
   const common={pointer:event.pointerId,start:point,latest:point,selectionBefore:[...selected],regionBefore:regionSelection,before:JSON.stringify(state),changed:false,moved:false};
-  if(regionSelection&&pointInArea(point,regionSelection.box)){
+  const rectangleHandle=event.target.closest('[data-rectangle-resize]');
+  if(items.length===1&&isRectangleShape(items[0])&&rectangleHandle){
+    regionSelection=null;canvasGesture={...common,type:'rectangle-resize',side:rectangleHandle.dataset.rectangleResize,items,starts:items.map(copy)};
+  }else if(!event.shiftKey&&isRectangleShape(entry)){
+    regionSelection=null;const moving=selected.has(entry.id)?items:[entry];
+    selected=new Set(moving.map(item=>item.id));refreshSelection();
+    canvasGesture={...common,type:'move',items:moving,starts:moving.map(copy)};
+  }else if(regionSelection&&pointInArea(point,regionSelection.box)){
     const gesture=canvasGesture={...common,type:'pixels'};
     gesture.ready=makeRegionPlan(regionSelection).then(plan=>{gesture.plan=plan;if(canvasGesture===gesture)applyPixelGesture(gesture);}).catch(error=>{notify(error.message);if(canvasGesture===gesture)endCanvasGesture(true);});
+  }else if(!event.shiftKey&&items.length===1&&event.target.closest('[data-arrow-end]')){
+    regionSelection=null;canvasGesture={...common,type:'arrow-end',end:event.target.closest('[data-arrow-end]').dataset.arrowEnd,items,starts:items.map(copy)};
   }else if(!event.shiftKey&&items.length&&(pointInArea(point,boundsOf(items))||event.target.closest('.group-grip,.resize-handle'))){
     regionSelection=null;canvasGesture={...common,type:event.target.closest('.resize-handle')?'resize':'move',items,starts:items.map(copy)};
   }else{

@@ -5,6 +5,7 @@ const { join } = require('node:path');
 const vm = require('node:vm');
 
 const helpers = readFileSync(join(__dirname, 'pixel-tools.js'), 'utf8');
+const shapes = readFileSync(join(__dirname, 'annotation-shapes.js'), 'utf8');
 const fitContent = readFileSync(join(__dirname, 'fit-content.js'), 'utf8');
 const controller = readFileSync(join(__dirname, 'canvas-selection.js'), 'utf8');
 const imageEditor = readFileSync(join(__dirname, 'image-edit.js'), 'utf8');
@@ -82,7 +83,7 @@ function harness(picturePage = false) {
   sandbox.remember=before=>undo.push(before);
   sandbox.change=fn=>{undo.push(JSON.stringify(sandbox.state));fn();};
   sandbox.deleteSelected=()=>sandbox.change(()=>{sandbox.state.items.forEach(item=>{if(sandbox.selected.has(item.id))item.hidden=true;});sandbox.selected.clear();});
-  vm.runInContext(defaults + geometry + helpers + fitContent + controller, sandbox);
+  vm.runInContext(defaults + geometry + shapes + helpers + fitContent + controller, sandbox);
   const read=code=>JSON.parse(JSON.stringify(vm.runInContext(code,sandbox)));
   const event=(x,y,options={})=>({button:0,pointerId:1,clientX:x,clientY:y,target:{closest:()=>null},preventDefault(){this.prevented=true;},stopImmediatePropagation(){this.stopped=true;},...options});
   return {sandbox,start,undo,read,event,get,send:(type,event)=>stageListeners.get(type)(event),list:(type,event)=>layerListeners.get(type)(event),key:event=>documentListeners.get('keydown')(event)};
@@ -96,6 +97,65 @@ test('front and back move one item by one place in one Undo step and keep its se
     assert.deepEqual(h.read('state.items.find(entry=>entry.id==="b")'),before.items[2]);
     assert.deepEqual([...h.sandbox.selected],['b']);assert.equal(h.undo.length,1);
     h.sandbox.state=JSON.parse(h.undo.pop());assert.deepEqual(h.read('state'),before);
+  }
+});
+test('dragging an arrow end uses one Undo step and keeps the other end fixed',async()=>{
+  const h=harness(),entry={id:'arrow',kind:'shape',shape:'arrow',x:100,y:200,w:180,h:40,color:'#ef4444',strokeWidth:4};
+  h.sandbox.state.items.push(entry);h.sandbox.selected.add(entry.id);
+  const before=structuredClone(h.sandbox.state),handle={dataset:{arrowEnd:'end'}},overlay={dataset:{id:entry.id}};
+  const target={closest:selector=>selector==='[data-arrow-end]'?handle:selector==='.item,.selection-overlay'?overlay:null};
+  h.send('pointerdown',h.event(268,220,{target}));
+  assert.equal(h.read('canvasGesture.type'),'arrow-end');
+  h.send('pointermove',h.event(50,100));h.send('pointermove',h.event(20,80));
+  await h.send('pointerup',h.event(20,80));
+  const points=h.read('arrowPoints(state.items.find(item=>item.id==="arrow"))'),after=h.sandbox.state.items.at(-1);
+  assert.deepEqual({x:after.x+points.start.x,y:after.y+points.start.y},{x:112,y:220});
+  assert.deepEqual({x:after.x+points.end.x,y:after.y+points.end.y},{x:20,y:80});
+  assert.equal(h.undo.length,1);assert.deepEqual(JSON.parse(h.undo[0]),before);
+});
+test('rectangles, filled boxes, buttons and text boxes move on the first drag on either kind of page',async()=>{
+  for(const picture of [false,true])for(const look of [{kind:'shape',shape:'rectangle',background:'transparent'},{kind:'shape',background:'transparent'},{kind:'shape',background:'#242424'},{kind:'button',background:'#c8b6ff'},{kind:'textbox',background:'#161616'}]){
+    const h=harness(picture),entry={id:'rectangle',...look,x:100,y:200,w:180,h:100,borderWidth:3,borderColor:'#ef4444'};
+    h.sandbox.state.items.push(entry);
+    const before=structuredClone(h.sandbox.state),target={closest:selector=>selector==='.item,.selection-overlay'?{dataset:{id:entry.id}}:null};
+    h.send('pointerdown',h.event(150,240,{target}));
+    assert.equal(h.read('canvasGesture.type'),'move');assert.deepEqual([...h.sandbox.selected],[entry.id]);
+    h.send('pointermove',h.event(200,260));h.send('pointermove',h.event(230,290));await h.send('pointerup',h.event(230,290));
+    assert.deepEqual([entry.x,entry.y,entry.w,entry.h],[180,250,180,100]);
+    assert.deepEqual(h.read('state.items.slice(0,-1)'),before.items.slice(0,-1));
+    assert.equal(h.undo.length,1);assert.deepEqual(JSON.parse(h.undo[0]),before);
+  }
+});
+test('clicking a rectangle selects it without adding an Undo step, and Shift-click still removes it',async()=>{
+  const h=harness(),entry={id:'rectangle',kind:'shape',shape:'rectangle',x:100,y:200,w:180,h:100};h.sandbox.state.items.push(entry);
+  const target={closest:selector=>selector==='.item,.selection-overlay'?{dataset:{id:entry.id}}:null};
+  h.send('pointerdown',h.event(150,240,{target}));await h.send('pointerup',h.event(150,240));
+  assert.deepEqual([...h.sandbox.selected],[entry.id]);assert.equal(h.undo.length,0);
+  h.send('pointerdown',h.event(150,240,{target,shiftKey:true}));await h.send('pointerup',h.event(150,240,{shiftKey:true}));
+  assert.deepEqual([...h.sandbox.selected],[]);assert.equal(h.undo.length,0);
+});
+test('a rectangle can be picked up while another item covers the same area',async()=>{
+  const h=harness(),entry={id:'rectangle',kind:'shape',shape:'rectangle',x:100,y:110,w:80,h:20};h.sandbox.state.items.push(entry);h.sandbox.selected.add('a');
+  const target={closest:selector=>selector==='.item,.selection-overlay'?{dataset:{id:entry.id}}:null};
+  h.send('pointerdown',h.event(140,120,{target}));h.send('pointermove',h.event(160,140));await h.send('pointerup',h.event(160,140));
+  assert.deepEqual([...h.sandbox.selected],[entry.id]);assert.deepEqual([entry.x,entry.y],[120,130]);
+  assert.deepEqual([h.sandbox.state.items[1].x,h.sandbox.state.items[1].y],[100,100]);
+});
+test('every box, button and text box grip resizes freely, keeps the contents at the same size and supports Undo and Escape',async()=>{
+  for(const kind of ['shape','button','textbox'])for(const side of ['nw','n','ne','e','se','s','sw','w']){
+    const h=harness(),entry={id:'rectangle',kind,x:100,y:200,w:180,h:100,borderWidth:3,radius:12,fontSize:18,iconSize:22,text:'Keep this text',contentScale:1};
+    h.sandbox.state.items.push(entry);h.sandbox.selected.add(entry.id);
+    const before=structuredClone(h.sandbox.state),handle={dataset:{rectangleResize:side}},overlay={dataset:{id:entry.id}};
+    const target={closest:selector=>selector==='[data-rectangle-resize]'?handle:selector==='.item,.selection-overlay'?overlay:null};
+    h.send('pointerdown',h.event(100,200,{target}));assert.equal(h.read('canvasGesture.type'),'rectangle-resize');
+    h.send('pointermove',h.event(120,230));h.send('pointermove',h.event(140,250));await h.send('pointerup',h.event(140,250));
+    assert.equal(entry.borderWidth,3);assert.equal(h.undo.length,1);assert.deepEqual(JSON.parse(h.undo[0]),before);
+    assert.deepEqual([entry.radius,entry.fontSize,entry.iconSize,entry.text,entry.contentScale],[12,18,22,'Keep this text',1]);
+    if(['e','w'].includes(side))assert.equal(entry.h,100);
+    if(['n','s'].includes(side))assert.equal(entry.w,180);
+    const saved=structuredClone(h.sandbox.state);
+    h.send('pointerdown',h.event(140,250,{target}));h.send('pointermove',h.event(180,280));h.key(h.event(0,0,{key:'Escape'}));
+    assert.deepEqual(h.read('state'),saved);assert.equal(h.undo.length,1);
   }
 });
 test('each selected item moves one place and keeps the order within its group',()=>{
@@ -328,7 +388,7 @@ test('No item leaves HTML items, the screenshot itself, and an area selection al
 test('new page tools stay in all saved standalone editors', () => {
   for(const entry of readdirSync(join(__dirname,'../drafts'),{withFileTypes:true}).filter(entry=>entry.isDirectory())){
     const html=readFileSync(join(__dirname,'../drafts',entry.name,'index.html'),'utf8');
-    assert.equal(html.split('// BEGIN CANVAS EDITOR\n')[1].split('// END CANVAS EDITOR')[0].trimEnd(),(helpers+'\n'+fitContent+'\n'+controller+'\n'+imageEditor).trimEnd());
+    assert.equal(html.split('// BEGIN CANVAS EDITOR\n')[1].split('// END CANVAS EDITOR')[0].trimEnd(),(shapes+'\n'+helpers+'\n'+fitContent+'\n'+controller+'\n'+imageEditor).trimEnd());
     assert.equal(html.split('id="canvas-edit-menu"').length-1,1);
     assert.match(html, /id="canvas-menu-no-item" role="menuitem" hidden>No item<\/button>/);
     assert.equal(html.split('id="image-edit-bar"').length-1,1);

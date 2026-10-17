@@ -18,6 +18,7 @@ function drawCanvasView(){
   const mount=$('phone-mount');
   Object.assign(mount.style,{left:canvasView.x+'px',top:canvasView.y+'px',width:state.canvas.width*scale+'px',height:state.canvas.height*scale+'px'});
   $('phone').style.transform=`scale(${scale})`;
+  if(typeof sizeRectangleHandles==='function')sizeRectangleHandles();
   stage.style.backgroundPosition=canvasView.x+'px '+canvasView.y+'px';
   stage.style.backgroundSize=(24*scale)+'px '+(24*scale)+'px';
 }

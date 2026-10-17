@@ -27,6 +27,14 @@ visible while you edit. New text, shapes, and icons appear in the middle of your
 view. Drop pictures or saved HTML items where you want them, even outside the page.
 Saved drafts and HTML copies keep those items. Screenshots keep the page size.
 
+Use **Rectangle** in Add for a red border with no fill, so the screen stays visible
+inside the box. Click and drag inside a rectangle to move it in one step. Pull any
+side or corner to change its width or height. Boxes, buttons, Box / div, and text
+boxes work the same way. Text, icons, borders, and corners keep their size as you
+resize the box. Change the border color or width in Edit. Use **Arrow** for a red
+arrow, then drag either dot to set its length and direction. Edit also has color
+and line width controls.
+
 Right-click an item on the canvas or in **Items** to choose **Bring to front 1 step**
 or **Bring to back 1 step**. Both actions also appear under **Arrange** in the right
 sidebar. Each click moves the selected items by one place. A group keeps its order,

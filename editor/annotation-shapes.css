@@ -1,0 +1,15 @@
+.item .arrow-content{display:block;width:100%;height:100%;pointer-events:none}
+.annotation-arrow{display:block;width:100%;height:100%;overflow:visible}
+.arrow-handle{position:absolute;width:12px;height:12px;border:2px solid var(--accent);border-radius:50%;background:#fff;transform:translate(-50%,-50%);pointer-events:auto;cursor:crosshair}
+.phone.editing .item.rectangle-shape{cursor:move}
+.rectangle-edge,.rectangle-handle{position:absolute;pointer-events:auto}
+.rectangle-edge{z-index:1}
+.rectangle-handle{z-index:2;width:var(--rectangle-grip);height:var(--rectangle-grip);border:1px solid #17131d;background:#d0baff;transform:translate(-50%,-50%)}
+.rectangle-handle::before{content:'';position:absolute;width:var(--rectangle-hit);height:var(--rectangle-hit);left:50%;top:50%;transform:translate(-50%,-50%)}
+.edge-n,.edge-s{left:0;width:100%;height:var(--rectangle-hit);transform:translateY(-50%);cursor:ns-resize}
+.edge-e,.edge-w{top:0;height:100%;width:var(--rectangle-hit);transform:translateX(-50%);cursor:ew-resize}
+.edge-n{top:0}.edge-s{top:100%}.edge-e{left:100%}.edge-w{left:0}
+.handle-nw,.handle-n,.handle-ne{top:0}.handle-sw,.handle-s,.handle-se{top:100%}
+.handle-nw,.handle-w,.handle-sw{left:0}.handle-ne,.handle-e,.handle-se{left:100%}
+.handle-n,.handle-s{left:50%;cursor:ns-resize}.handle-e,.handle-w{top:50%;cursor:ew-resize}
+.handle-nw,.handle-se{cursor:nwse-resize}.handle-ne,.handle-sw{cursor:nesw-resize}

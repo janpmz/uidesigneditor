@@ -2,11 +2,11 @@ import { readFile, writeFile, readdir } from 'node:fs/promises';
 
 const root = new URL('../', import.meta.url);
 const code = await readFile(new URL('editor/image-drop.js', root), 'utf8');
-const selection = (await Promise.all(['pixel-tools.js', 'fit-content.js', 'canvas-selection.js', 'image-edit.js'].map(name => readFile(new URL(`editor/${name}`, root), 'utf8')))).join('\n');
+const selection = (await Promise.all(['annotation-shapes.js', 'pixel-tools.js', 'fit-content.js', 'canvas-selection.js', 'image-edit.js'].map(name => readFile(new URL(`editor/${name}`, root), 'utf8')))).join('\n');
 const dialog = await readFile(new URL('editor/image-drop-dialog.html', root), 'utf8');
 const menu = await readFile(new URL('editor/canvas-edit-menu.html', root), 'utf8');
 const imageEditBar = await readFile(new URL('editor/image-edit-bar.html', root), 'utf8');
-const styles = (await Promise.all(['image-drop.css', 'canvas-view.css', 'sidebar-tabs.css'].map(name => readFile(new URL(`editor/${name}`, root), 'utf8')))).join('\n');
+const styles = (await Promise.all(['image-drop.css', 'canvas-view.css', 'sidebar-tabs.css', 'annotation-shapes.css'].map(name => readFile(new URL(`editor/${name}`, root), 'utf8')))).join('\n');
 const view = await readFile(new URL('editor/canvas-view.js', root), 'utf8');
 const viewTools = (await readFile(new URL('editor/canvas-view-tools.html', root), 'utf8')).trimEnd();
 const reader = await readFile(new URL('editor/vendor/heic-to-1.6.6.js', root), 'utf8');
@@ -22,6 +22,17 @@ for (const entry of await readdir(new URL('drafts/', root), { withFileTypes: tru
   const path = new URL(`drafts/${draft}/index.html`, root);
   let html = await readFile(path, 'utf8');
   if (!html.includes('// BEGIN PICTURE DROP\n')) continue;
+  if (!html.includes('id="add-rectangle"')) html = html.replace(/(<button id="add-box">[^<]*<\/button>)/, '$1\n          <button id="add-rectangle">Rectangle</button><button id="add-arrow">Arrow</button>');
+  html = html.replace("['fontSize','iconSize','radius','borderWidth','iconOffsetX']", "['fontSize','iconSize','radius','borderWidth','iconOffsetX','strokeWidth']");
+  if (!html.includes('styleArrowShape(el,item);')) html = html.replace("  if(item.kind==='reading'){el.style.fontFamily=", "  styleArrowShape(el,item);\n  if(item.kind==='reading'){el.style.fontFamily=");
+  if (!html.includes('renderArrowShape(content,item);')) html = html.replace("if(item.kind==='image'){renderPicture(content,item);}", "if(isArrowShape(item)){renderArrowShape(content,item);} else if(item.kind==='image'){renderPicture(content,item);}");
+  if (!html.includes('renderArrowHandles(overlay,items[0]);')) html = html.replace("    const handle=document.createElement('span');handle.className='resize-handle';", "    if(isArrowShape(items[0]))renderArrowHandles(overlay,items[0]);\n    else {\n    const handle=document.createElement('span');handle.className='resize-handle';").replace("overlay.append(handle);\n  } else {", "overlay.append(handle);\n    }\n  } else {");
+  if (!html.includes('else if(isRectangleShape(items[0]))')) html = html.replace('if(isArrowShape(items[0]))renderArrowHandles(overlay,items[0]);', 'if(isArrowShape(items[0]))renderArrowHandles(overlay,items[0]);\n    else if(isRectangleShape(items[0]))renderRectangleHandles(overlay,items[0]);');
+  html = html.replace('renderRectangleHandles(overlay);','renderRectangleHandles(overlay,items[0]);');
+  html = html.replace("});if(compactViewport.matches&&$('editor-tools').open)openToolPanel('edit');}", '});finishAddingCanvasItem();}');
+  if (!html.includes("el.classList.toggle('rectangle-shape'")) html = html.replace('styleArrowShape(el,item);', "styleArrowShape(el,item);el.classList.toggle('rectangle-shape',isRectangleShape(item));");
+  if (!html.includes('renderArrowInspector(pane,item);')) html = html.replace("    const look=section('Shape');", "    if(isArrowShape(item))renderArrowInspector(pane,item);else {\n    const look=section('Shape');").replace("look.append(lookFields);pane.append(look);", "look.append(lookFields);pane.append(look);\n    }");
+  if (!html.includes("if(key==='strokeWidth')")) html = html.replace("if(['radius','borderWidth'].includes(key))value=Math.max(0,value);", "if(key==='strokeWidth')value=Math.max(.5,value);if(['radius','borderWidth'].includes(key))value=Math.max(0,value);");
   const viewStart = html.indexOf('// BEGIN CANVAS VIEW\n');
   if (viewStart < 0) html = html.replace('// BEGIN CANVAS EDITOR\n', view.trimEnd() + '\n// BEGIN CANVAS EDITOR\n');
   else {
