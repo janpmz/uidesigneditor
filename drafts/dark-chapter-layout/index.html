@@ -735,10 +735,12 @@ async function handlePictureDrop(event){
   const files=[...(event.dataTransfer?.files||[])];if(!files.length)return;
   event.preventDefault();
   if(!editing){notify('Go back to editing to add pictures.');return;}
+  if(typeof imageEditSession!=='undefined'&&imageEditSession){notify('Choose Done or Cancel before opening a file.');return;}
   if(pictureDropBusy){notify('Still opening pictures. Please wait.');return;}
   pictureDropBusy=true;
   try{
     await picturesReady;
+    if(typeof projectsReady!=='undefined')await projectsReady;
     const targetState=state;
     const stageRect=$('stage').getBoundingClientRect();
     const onStage=Number.isFinite(event.clientX)&&Number.isFinite(event.clientY)&&event.clientX>=stageRect.left&&event.clientX<=stageRect.right&&event.clientY>=stageRect.top&&event.clientY<=stageRect.bottom;
@@ -747,7 +749,8 @@ async function handlePictureDrop(event){
     if(files.some(editorPageFile)){
       if(files.length!==1)throw new Error('Drop one HTML page at a time.');
       const page=await readEditorPage(files[0]);if(state!==targetState)throw new Error('The page changed. Drop the file again.');
-      change(()=>{if(typeof clearCanvasRegion==='function')clearCanvasRegion();if(action==='new'){state=page;selected.clear();resetCanvasView();}else addEditorPage(page,dropPoint);});
+      if(action==='new'&&typeof createProject==='function')createProject(page,files[0].name);
+      else change(()=>{if(typeof clearCanvasRegion==='function')clearCanvasRegion();if(action==='new'){state=page;selected.clear();resetCanvasView();}else addEditorPage(page,dropPoint);});
       if($('editor-tools')?.open)$('editor-tools').close();$('stage').focus({preventScroll:true});notify(action==='new'?'Page opened':'Page items added');return;
     }
     const pictures=[],errors=[];
@@ -758,15 +761,18 @@ async function handlePictureDrop(event){
     if(!pictures.length){notify(errors[0]);return;}
     if(state!==targetState){notify('The draft changed. Please drop the pictures again.');return;}
     const plan=pictureDropPlan(pictures,action,state.canvas,dropPoint);
-    change(()=>{
-      if(typeof clearCanvasRegion==='function')clearCanvasRegion();
-      if(plan.replace){state.canvas=plan.canvas;state.items=[];resetCanvasView();}
-      const entries=pictures.map((picture,index)=>{
-        const box=plan.boxes[index];
-        return item('item-'+crypto.randomUUID(),picture.name,'image',box.x,box.y,box.w,box.h,{src:picture.src,...(plan.replace?{imageBase:true}:{})});
-      });
-      state.items.push(...entries);selected=new Set(plan.replace?[]:entries.map(entry=>entry.id));
+    const entries=pictures.map((picture,index)=>{
+      const box=plan.boxes[index];
+      return item('item-'+crypto.randomUUID(),picture.name,'image',box.x,box.y,box.w,box.h,{src:picture.src,...(plan.replace?{imageBase:true}:{})});
     });
+    if(action==='new'&&typeof createProject==='function')createProject({version:1,canvas:plan.canvas,items:entries},pictures[0].name);
+    else {
+      change(()=>{
+        if(typeof clearCanvasRegion==='function')clearCanvasRegion();
+        if(plan.replace){state.canvas=plan.canvas;state.items=[];resetCanvasView();}
+        state.items.push(...entries);selected=new Set(plan.replace?[]:entries.map(entry=>entry.id));
+      });
+    }
     if($('editor-tools')?.open)$('editor-tools').close();
     $('stage').focus({preventScroll:true});
     notify((plan.replace?'Picture page opened':pictures.length===1?'Picture added':pictures.length+' pictures added')+(errors.length?'. Could not open '+errors.length+(errors.length===1?' file.':' files.'):''));
