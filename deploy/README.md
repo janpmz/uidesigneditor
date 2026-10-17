@@ -12,9 +12,9 @@ Run on the VPS from this project folder:
 ./redeploy.sh
 ```
 
-The script builds the public files, runs the checks, then copies `dist/` to
-`/srv/uidesigneditor/`. It replaces files there to match the build. Caddy serves
-that folder.
+The script pulls the latest code, builds the public files, runs the checks, then
+copies `dist/` to `/srv/uidesigneditor/`. It stops if the pull fails or needs a
+merge. It replaces files there to match the build. Caddy serves that folder.
 
 ## Add the site to Caddy
 

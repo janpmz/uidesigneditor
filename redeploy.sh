@@ -3,6 +3,8 @@ set -euo pipefail
 
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
 
+git pull --ff-only
+
 npm run build
 npm test
 
