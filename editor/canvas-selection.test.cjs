@@ -57,11 +57,12 @@ test('a simple gradient continues through the filled area', () => {
 });
 
 function harness(picturePage = false) {
-  const stageListeners = new Map(), documentListeners = new Map(), undo = [];
+  const stageListeners = new Map(), layerListeners = new Map(), documentListeners = new Map(), undo = [];
   const node = () => ({hidden:true,style:{},dataset:{},className:'',offsetWidth:140,offsetHeight:150,setAttribute(){},append(){},remove(){},focus(){},contains(){return false;},querySelectorAll(){return [];}});
   const nodes = new Map();
   const get = id => {if(!nodes.has(id))nodes.set(id,node());return nodes.get(id);};
   const stage = get('stage');let captured = null;
+  get('layers').addEventListener=(type,fn)=>layerListeners.set(type,fn);
   stage.addEventListener=(type,fn)=>stageListeners.set(type,fn);
   stage.setPointerCapture=id=>{captured=id;};stage.hasPointerCapture=id=>captured===id;stage.releasePointerCapture=()=>{captured=null;};
   const start = {version:1,canvas:{width:800,height:500,background:'#000000',picturePage},items:picturePage?[{id:'base',name:'Base',kind:'image',src:'data:image/png;base64,AAAA',x:0,y:0,w:800,h:500,imageBase:true}]:[{id:'background',kind:'shape',x:0,y:0,w:800,h:500},{id:'a',kind:'label',x:100,y:100,w:100,h:40},{id:'b',kind:'label',x:100,y:170,w:100,h:40}]};
@@ -84,8 +85,85 @@ function harness(picturePage = false) {
   vm.runInContext(defaults + geometry + helpers + fitContent + controller, sandbox);
   const read=code=>JSON.parse(JSON.stringify(vm.runInContext(code,sandbox)));
   const event=(x,y,options={})=>({button:0,pointerId:1,clientX:x,clientY:y,target:{closest:()=>null},preventDefault(){this.prevented=true;},stopImmediatePropagation(){this.stopped=true;},...options});
-  return {sandbox,start,undo,read,event,get,send:(type,event)=>stageListeners.get(type)(event),key:event=>documentListeners.get('keydown')(event)};
+  return {sandbox,start,undo,read,event,get,send:(type,event)=>stageListeners.get(type)(event),list:(type,event)=>layerListeners.get(type)(event),key:event=>documentListeners.get('keydown')(event)};
 }
+test('front and back move one item by one place in one Undo step and keep its settings',()=>{
+  for(const [position,expected] of [['front',['background','a','c','b','d']],['back',['background','b','a','c','d']]]){
+    const h=harness();h.sandbox.state.items.push({id:'c',kind:'shape'},{id:'d',kind:'shape'});
+    const before=structuredClone(h.sandbox.state);h.sandbox.selected.add('b');
+    h.get('canvas-menu-bring-'+position).onclick();
+    assert.deepEqual(h.read('state.items.map(entry=>entry.id)'),expected);
+    assert.deepEqual(h.read('state.items.find(entry=>entry.id==="b")'),before.items[2]);
+    assert.deepEqual([...h.sandbox.selected],['b']);assert.equal(h.undo.length,1);
+    h.sandbox.state=JSON.parse(h.undo.pop());assert.deepEqual(h.read('state'),before);
+  }
+});
+test('each selected item moves one place and keeps the order within its group',()=>{
+  for(const [position,expected] of [['front',['background','b','a','d','c']],['back',['a','background','c','b','d']]]){
+    const h=harness();h.sandbox.state.items.push({id:'c',kind:'shape',x:20,y:20,w:30,h:30},{id:'d',kind:'shape'});
+    h.sandbox.selected=new Set(['c','a']);h.get('canvas-menu-bring-'+position).onclick();
+    assert.deepEqual(h.read('state.items.map(entry=>entry.id)'),expected);
+    assert.deepEqual([...h.sandbox.selected],['c','a']);assert.equal(h.undo.length,1);
+  }
+});
+test('the Items list right-click selects its row and offers the same front and back actions',()=>{
+  const h=harness();h.sandbox.selected.add('b');
+  const target={closest:selector=>selector==='.layer'?{dataset:{id:'a'}}:null};
+  const event=h.event(100,150,{target});h.list('contextmenu',event);
+  assert.equal(event.prevented,true);assert.equal(h.get('canvas-edit-menu').hidden,false);
+  assert.deepEqual([...h.sandbox.selected],['a']);
+  assert.equal(h.get('canvas-menu-bring-front').disabled,false);
+  assert.equal(h.get('canvas-menu-bring-back').disabled,false);
+  h.get('canvas-menu-bring-front').onclick();
+  assert.deepEqual(h.read('state.items.map(entry=>entry.id)'),['background','b','a']);
+  assert.equal(h.get('canvas-edit-menu').hidden,true);assert.equal(h.undo.length,1);
+});
+test('right-clicking a selected item keeps the group on the page and in the Items list',()=>{
+  for(const list of [false,true]){
+    const h=harness();h.sandbox.selected=new Set(['a','b']);
+    const target={closest:selector=>selector===(list?'.layer':'.item,.selection-overlay')?{dataset:{id:'a'}}:null};
+    (list?h.list:h.send)('contextmenu',h.event(100,100,{target}));
+    assert.deepEqual([...h.sandbox.selected],['a','b']);
+    assert.equal(h.get('canvas-menu-bring-front').disabled,true);
+    h.get('canvas-menu-bring-back').onclick();
+    assert.deepEqual(h.read('state.items.map(entry=>entry.id)'),['a','b','background']);
+  }
+});
+test('the right sidebar actions change the order and disable a move with no change',()=>{
+  const h=harness();h.sandbox.selected.add('a');const buttons=[];
+  h.sandbox.actions={append:button=>buttons.push(button)};
+  vm.runInContext('renderOrderActions(actions)',h.sandbox);
+  assert.deepEqual(buttons.map(button=>[button.textContent,button.disabled]),[['Bring to front 1 step',false],['Bring to back 1 step',false]]);
+  buttons[0].onclick();assert.deepEqual(h.read('state.items.map(entry=>entry.id)'),['background','b','a']);
+  buttons.length=0;vm.runInContext('renderOrderActions(actions)',h.sandbox);
+  assert.equal(buttons[0].disabled,true);buttons[0].onclick();assert.equal(h.undo.length,1);
+});
+test('bring to back keeps picture pieces above the page picture',()=>{
+  const h=harness(true);h.sandbox.state.items.push(
+    {id:'a',kind:'image',pictureFragment:true,x:20,y:20,w:30,h:30},
+    {id:'b',kind:'image',pictureFragment:true,x:20,y:20,w:30,h:30}
+  );
+  h.sandbox.selected.add('b');h.get('canvas-menu-bring-back').onclick();
+  assert.deepEqual(h.read('state.items.map(entry=>entry.id)'),['base','b','a']);
+  assert.equal(h.undo.length,1);
+});
+test('empty selections, hidden items, picture areas and page pictures make no order change',()=>{
+  const empty=harness();empty.get('canvas-menu-bring-front').onclick();assert.equal(empty.undo.length,0);
+  const hidden=harness();hidden.sandbox.state.items[1].hidden=true;hidden.sandbox.selected.add('a');
+  hidden.get('canvas-menu-bring-front').onclick();assert.equal(hidden.undo.length,0);
+  const base=harness(true);base.sandbox.selected.add('base');base.get('canvas-menu-bring-front').onclick();assert.equal(base.undo.length,0);
+  const area=harness(true);vm.runInContext('regionSelection=rememberRegion({x:10,y:10,w:50,h:50})',area.sandbox);
+  area.get('canvas-menu-bring-back').onclick();assert.equal(area.undo.length,0);
+});
+test('a right-click inside a picture area keeps the area selected and disables order changes',()=>{
+  const h=harness(true);vm.runInContext('regionSelection=rememberRegion({x:10,y:10,w:50,h:50})',h.sandbox);
+  const target={closest:selector=>selector==='.item,.selection-overlay'?{dataset:{id:'base'}}:null};
+  h.send('contextmenu',h.event(30,30,{target}));
+  assert.deepEqual(h.read('regionSelection.box'),{x:10,y:10,w:50,h:50});
+  assert.equal(h.sandbox.selected.size,0);assert.equal(h.get('canvas-edit-menu').hidden,false);
+  assert.equal(h.get('canvas-menu-bring-front').disabled,true);
+  assert.equal(h.get('canvas-menu-bring-back').disabled,true);
+});
 test('press and drag draws a box right away without changing the picture or undo history', async () => {
   const h=harness(true);h.send('pointerdown',h.event(80,80));
   assert.equal(h.read('Boolean(canvasGesture.box)'),true);
@@ -255,6 +333,10 @@ test('new page tools stay in all saved standalone editors', () => {
     assert.match(html, /id="canvas-menu-no-item" role="menuitem" hidden>No item<\/button>/);
     assert.equal(html.split('id="image-edit-bar"').length-1,1);
     assert.match(html,/renderImageEditAction\(heading,item\);/);
+    assert.match(html,/renderOrderActions\(buttons\);/);
+    assert.match(html,/renderOrderActions\(actions\);/);
+    assert.match(html,/row.dataset.id=item.id;/);
+    assert.doesNotMatch(html,/\['Forward',|\['Backward',|function reorder\(/);
     assert.match(html,/function save\(\) \{ if\(imageEditSession\)/);
   }
 });

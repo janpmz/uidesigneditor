@@ -1,0 +1,9 @@
+.sidebar-tabs{gap:4px;padding:12px 10px 0;background:#171719;border-bottom:1px solid #45404d;isolation:isolate}
+.sidebar-tabs button{position:relative;flex:1;min-height:38px;margin-bottom:-1px;padding:9px 8px;border:1px solid transparent;border-bottom-color:#45404d;border-radius:8px 8px 0 0;background:transparent;color:#9996a3;font-size:12px;font-weight:500;white-space:nowrap}
+.sidebar-tabs button:hover{background:#25232b;color:#eeeef0}
+.sidebar-tabs [aria-selected=true]{border-color:#45404d;border-bottom-color:var(--panel);background:var(--panel);color:#e4d9ff;font-weight:600}
+.sidebar-tabs [aria-selected=true]::before{content:'';position:absolute;left:10px;right:10px;top:0;height:2px;border-radius:0 0 2px 2px;background:var(--accent)}
+.sidebar-tabs button:focus-visible{z-index:1;outline:2px solid var(--accent);outline-offset:-4px}
+.sidebar-tabs [aria-selected=true]:hover{background:var(--panel)}
+.action-grid button{min-width:0}
+.action-grid .order-action{grid-column:1/-1}

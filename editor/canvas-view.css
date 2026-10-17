@@ -3,6 +3,8 @@
 .phone.editing{overflow:visible}
 .stage.pan-ready,.stage.pan-ready *{cursor:grab!important}
 .stage.panning,.stage.panning *{cursor:grabbing!important}
+.canvas-size-tools{display:flex;flex:none;max-width:100%}
+.canvas-size-tools select{width:190px;max-width:100%;padding:4px 7px;font-size:11px}
 .canvas-view-tools{display:flex;align-items:center;gap:4px;flex:none}
 .canvas-view-tools button{padding:3px 7px;min-width:26px;font-size:14px}
 .canvas-view-tools select{min-width:85px;max-width:100px;padding:4px 7px;font-size:11px}

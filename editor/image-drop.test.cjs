@@ -179,7 +179,7 @@ for (const page of readdirSync(join(__dirname, '../drafts'), { withFileTypes: tr
     assert.equal(html.split('id="picture-drop-choice"').length - 1, 1);
     assert.ok(html.includes('aria-label="Add to page?"'));
     assert.ok(html.includes('aria-label="Open as new page?"'));
-    assert.ok(html.includes('renderPageSizePicker(preset);canvas.append(preset);'));
+    assert.ok(html.includes("renderPageSizePicker($('page-size'));"));
     assert.equal(html.includes('preset.onchange=()=>{const [w,h]=preset.value.split'),false);
     new vm.Script(html.match(/<script>\s*([\s\S]*?)<\/script>/)[1]);
   });

@@ -1,4 +1,4 @@
-# UI Design Editor
+# uidesigneditor.com
 
 A visual editor for moving, resizing, copying, and removing items in a screen draft.
 
@@ -26,6 +26,11 @@ Move, resize, paste, and add items anywhere around the page. The page edge stays
 visible while you edit. New text, shapes, and icons appear in the middle of your
 view. Drop pictures or saved HTML items where you want them, even outside the page.
 Saved drafts and HTML copies keep those items. Screenshots keep the page size.
+
+Right-click an item on the canvas or in **Items** to choose **Bring to front 1 step**
+or **Bring to back 1 step**. Both actions also appear under **Arrange** in the right
+sidebar. Each click moves the selected items by one place. A group keeps its order,
+and Undo restores the prior order.
 
 Scroll to pan, or hold Space and drag. A middle-button drag also pans. Hold
 Cmd/Ctrl while scrolling to zoom at the pointer, or pinch with two fingers.

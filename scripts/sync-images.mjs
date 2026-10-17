@@ -6,7 +6,7 @@ const selection = (await Promise.all(['pixel-tools.js', 'fit-content.js', 'canva
 const dialog = await readFile(new URL('editor/image-drop-dialog.html', root), 'utf8');
 const menu = await readFile(new URL('editor/canvas-edit-menu.html', root), 'utf8');
 const imageEditBar = await readFile(new URL('editor/image-edit-bar.html', root), 'utf8');
-const styles = (await Promise.all(['image-drop.css', 'canvas-view.css'].map(name => readFile(new URL(`editor/${name}`, root), 'utf8')))).join('\n');
+const styles = (await Promise.all(['image-drop.css', 'canvas-view.css', 'sidebar-tabs.css'].map(name => readFile(new URL(`editor/${name}`, root), 'utf8')))).join('\n');
 const view = await readFile(new URL('editor/canvas-view.js', root), 'utf8');
 const viewTools = (await readFile(new URL('editor/canvas-view-tools.html', root), 'utf8')).trimEnd();
 const reader = await readFile(new URL('editor/vendor/heic-to-1.6.6.js', root), 'utf8');
@@ -50,6 +50,11 @@ for (const entry of await readdir(new URL('drafts/', root), { withFileTypes: tru
   if (!html.includes('if(imageEditSession){')) html = html.replace('function save() {', "function save() { if(imageEditSession){$('undo').disabled=!history.length;$('redo').disabled=!future.length;return;}");
   if (!html.includes('renderImageEditStatus();')) html = html.replace('function renderInspector() {', 'function renderInspector() {\n  renderImageEditStatus();');
   if (!html.includes('renderImageEditAction(heading,item);')) html = html.replace("heading.append(field('Name','name',item.name,'text',true));", "heading.append(field('Name','name',item.name,'text',true));renderImageEditAction(heading,item);");
+  if (!html.includes('row.dataset.id=item.id;')) html = html.replace("const row=document.createElement('div');row.className='layer'", "const row=document.createElement('div');row.dataset.id=item.id;row.className='layer'");
+  if (!html.includes('renderOrderActions(buttons);')) html = html.replace("buttons.className='action-grid';[[", "buttons.className='action-grid';renderOrderActions(buttons);[[");
+  html = html.replace("['Forward',()=>reorder(1)],['Backward',()=>reorder(-1)],", '');
+  html = html.replace(/^function reorder\(direction\)\{[^\n]*\}\n/m, '');
+  if (!html.includes('renderOrderActions(actions);')) html = html.replace("actions.className='action-grid';actions.style.marginTop='12px';", "actions.className='action-grid';actions.style.marginTop='12px';renderOrderActions(actions);");
   html = html.replace("note.textContent='Changes save in this browser.", "note.textContent=imageEditSession?'Choose Done to save the image and return to the page. Cancel discards these edits.':'Changes save in this browser.");
   const start = html.indexOf('<!-- BEGIN HEIC READER -->');
   if (start < 0) html = html.replace('</head>', support + '\n</head>');

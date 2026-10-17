@@ -73,7 +73,10 @@ function setPageSize(layout,value){
 function renderPageSizePicker(preset){
   const choices=pageSizeChoices(state);
   if(choices.page)state.canvas.picturePageSize=choices.page;
-  for(const choice of choices.options){const option=document.createElement('option');option.value=choice.value;option.textContent=choice.text;preset.append(option);}
+  if(preset.options.length!==choices.options.length||choices.options.some((choice,index)=>preset.options[index].value!==choice.value||preset.options[index].textContent!==choice.text)){
+    preset.replaceChildren();
+    for(const choice of choices.options){const option=document.createElement('option');option.value=choice.value;option.textContent=choice.text;preset.append(option);}
+  }
   preset.value=choices.value;
   preset.onchange=()=>change(()=>{if(typeof clearCanvasRegion==='function')clearCanvasRegion();setPageSize(state,preset.value);});
 }
