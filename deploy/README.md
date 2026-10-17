@@ -6,27 +6,15 @@ Node is used only to prepare the files and run checks.
 
 ## Prepare the files
 
-Run from this project folder:
+Run on the VPS from this project folder:
 
 ```sh
-npm run build
-npm test
+./redeploy.sh
 ```
 
-The build writes only public files to `dist/`. It includes the editor, About,
-the Library sample, pictures, search files and gzip copies. It leaves out Git files,
-tests, notes, source scripts and this setup folder. Caddy can serve the gzip
-copies without compressing each request again.
-
-To publish from a checkout on the VPS:
-
-```sh
-sudo install -d -m 755 /srv/uidesigneditor
-sudo rsync -a --delete --chmod=D755,F644 dist/ /srv/uidesigneditor/
-```
-
-The last command replaces files only inside `/srv/uidesigneditor/` with the
-contents of `dist/`. Point Caddy at that folder, not the project checkout.
+The script builds the public files, runs the checks, then copies `dist/` to
+`/srv/uidesigneditor/`. It replaces files there to match the build. Caddy serves
+that folder.
 
 ## Add the site to Caddy
 
