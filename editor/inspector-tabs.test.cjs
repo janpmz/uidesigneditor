@@ -68,7 +68,7 @@ test('the root editor uses the same draft key as the previous player address', (
 });
 
 test('the root is the working editor and each sidebar contains only the requested Info text', () => {
-  const info = ['100% local editor', 'All files stay in your browser', 'No signup', 'Free to use', 'Open source'];
+  const info = ['100% local editor', 'All files stay in your browser', 'No signup', 'Free to use', 'Open source on GitHub'];
   for (const file of ['index.html', ...['dark-player-layout', 'dark-library-layout', 'dark-chapter-layout', 'dark-add-layout'].map(name => `drafts/${name}/index.html`)]) {
     const html = readFileSync(join(root, file), 'utf8');
     new vm.Script(html.match(/<script>\s*([\s\S]*?)<\/script>/)[1]);

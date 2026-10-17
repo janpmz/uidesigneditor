@@ -9,7 +9,7 @@ export const pages = [
 const escape = value => value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 const header = `<a class="skip-link" href="#main">Skip to content</a>
 <header class="site-header"><a class="brand" href="/"><img src="/assets/icon.svg" alt="" width="25" height="25">uidesigneditor.com</a><nav class="site-nav" aria-label="Main"><a href="/guide/">About</a><a class="nav-editor" href="/">Open editor</a></nav></header>`;
-const footer = `<footer class="site-footer"><span>UI Design Editor · Your drafts stay on your device.</span><nav aria-label="More"><a href="/guide/#save">Saving &amp; privacy</a><a href="/llms.txt">LLMs.txt</a><a href="/sitemap.xml">Sitemap</a></nav></footer>`;
+const footer = `<footer class="site-footer"><span>UI Design Editor · Your drafts stay on your device.</span><nav aria-label="More"><a href="https://github.com/janpmz/uidesigneditor" target="_blank" rel="noopener noreferrer">GitHub</a><a href="/guide/#save">Saving &amp; privacy</a><a href="/llms.txt">LLMs.txt</a><a href="/sitemap.xml">Sitemap</a></nav></footer>`;
 function structuredData(page) {
   return {
     '@context': 'https://schema.org',
