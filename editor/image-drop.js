@@ -24,9 +24,59 @@ function pictureDropPlan(pictures,action,canvas,point){
     const box={x:round((width-picture.width)*factor/2),y:round(y*factor),w:Math.max(.1,round(picture.width*factor)),h:Math.max(.1,round(picture.height*factor))};
     y+=picture.height;return box;
   });
-  return {canvas:{...canvas,width:Math.ceil(width*factor),height:Math.ceil(height*factor),picturePage:true},replace:true,boxes};
+  const pageSize={width:Math.ceil(width*factor),height:Math.ceil(height*factor)};
+  return {canvas:{...canvas,...pageSize,picturePage:true,picturePageSize:pageSize},replace:true,boxes};
 }
 // END PICTURE HELPERS
+
+// BEGIN PAGE SIZE HELPERS
+function validPicturePageSize(size){return size&&['width','height'].every(key=>Number.isInteger(size[key])&&size[key]>0&&size[key]<=16000)&&size.width*size.height<=24000000;}
+function storedPictureSize(src){
+  if(!safePictureSource(src))return null;
+  try{
+    const bytes=Uint8Array.from(atob(src.slice(src.indexOf(',')+1).slice(0,32)),char=>char.charCodeAt(0));
+    if(bytes.length!==24||![137,80,78,71,13,10,26,10].every((value,index)=>bytes[index]===value)||String.fromCharCode(...bytes.slice(12,16))!=='IHDR')return null;
+    const header=new DataView(bytes.buffer),size={width:header.getUint32(16),height:header.getUint32(20)};
+    return validPicturePageSize(size)?size:null;
+  }catch{return null;}
+}
+function picturePageSizeFor(layout){
+  if(validPicturePageSize(layout.canvas.picturePageSize))return {...layout.canvas.picturePageSize};
+  if(layout.canvas.picturePage)return {width:layout.canvas.width,height:layout.canvas.height};
+  const bases=layout.items.filter(entry=>entry.imageBase&&!entry.pictureFragment);
+  const sizes=bases.map(entry=>storedPictureSize(entry.src));
+  if(!sizes.length||sizes.some(size=>!size))return null;
+  const page=pictureDropPlan(sizes,'new',layout.canvas,{x:0,y:0}).canvas;
+  return {width:page.width,height:page.height};
+}
+function pageSizeChoices(layout){
+  const page=picturePageSizeFor(layout),options=[
+    {value:'393,852',text:'iPhone 16 · 393 × 852'},
+    {value:'402,874',text:'iPhone 17 Pro · 402 × 874'},
+    {value:'440,956',text:'Large phone · 440 × 956'},
+  ];
+  if(page)options.unshift({value:'page',text:'Page · '+page.width+' × '+page.height});
+  const value=layout.canvas.picturePage?'page':layout.canvas.width+','+layout.canvas.height;
+  if(!options.some(option=>option.value===value))options.push({value,text:layout.canvas.width+' × '+layout.canvas.height});
+  return {page,options,value};
+}
+function setPageSize(layout,value){
+  const page=picturePageSizeFor(layout),size=value==='page'?page:(()=>{const [width,height]=value.split(',').map(Number);return {width,height};})();
+  if(!size||!['width','height'].every(key=>Number.isInteger(size[key])&&size[key]>0&&size[key]<=16000))return;
+  if(page)layout.canvas.picturePageSize=page;
+  const sx=size.width/layout.canvas.width,sy=size.height/layout.canvas.height;
+  layout.items.forEach(entry=>{entry.x=round(entry.x*sx);entry.y=round(entry.y*sy);entry.w=round(entry.w*sx);entry.h=round(entry.h*sy);});
+  layout.canvas.width=size.width;layout.canvas.height=size.height;
+  if(value==='page')layout.canvas.picturePage=true;else delete layout.canvas.picturePage;
+}
+// END PAGE SIZE HELPERS
+function renderPageSizePicker(preset){
+  const choices=pageSizeChoices(state);
+  if(choices.page)state.canvas.picturePageSize=choices.page;
+  for(const choice of choices.options){const option=document.createElement('option');option.value=choice.value;option.textContent=choice.text;preset.append(option);}
+  preset.value=choices.value;
+  preset.onchange=()=>change(()=>{if(typeof clearCanvasRegion==='function')clearCanvasRegion();setPageSize(state,preset.value);});
+}
 
 const pictureChoice=$('picture-drop-choice');
 function choosePictureDrop(files){
@@ -46,13 +96,17 @@ function cleanPictureExport(doc){
   doc.querySelector('#picture-drop-choice')?.removeAttribute('open');
   const files=doc.querySelector('#picture-choice-files');if(files)files.textContent='';
   const menu=doc.querySelector('#canvas-edit-menu');if(menu)menu.hidden=true;
+  const bar=doc.querySelector('#image-edit-bar');if(bar)bar.hidden=true;
   doc.querySelectorAll('.pixel-selection,.marquee').forEach(node=>node.remove());
 }
 
+function validEditorPage(page){
+  return Boolean(page?.version===1&&page.canvas&&['width','height'].every(key=>Number.isFinite(page.canvas[key])&&page.canvas[key]>0&&page.canvas[key]<=16000)&&Array.isArray(page.items)&&page.items.every(entry=>entry&&['x','y','w','h'].every(key=>Number.isFinite(entry[key]))&&entry.w>0&&entry.h>0&&['label','icon','shape','reading','tab','button','textbox','image'].includes(entry.kind)&&(entry.kind!=='image'||safePictureSource(entry.src))));
+}
 async function readEditorPage(file){
   const doc=new DOMParser().parseFromString(await file.text(),'text/html');
   let page;try{page=JSON.parse(doc.getElementById('initial-layout')?.textContent||'null');}catch{}
-  if(page?.version!==1||!page.canvas||!['width','height'].every(key=>Number.isFinite(page.canvas[key])&&page.canvas[key]>0&&page.canvas[key]<=16000)||!Array.isArray(page.items)||!page.items.every(entry=>entry&&['x','y','w','h'].every(key=>Number.isFinite(entry[key]))&&entry.w>0&&entry.h>0&&['label','icon','shape','reading','tab','button','textbox','image'].includes(entry.kind)&&(entry.kind!=='image'||safePictureSource(entry.src))))throw new Error('Use an HTML file saved by this editor.');
+  if(!validEditorPage(page))throw new Error('Use an HTML file saved by this editor.');
   return copy(page);
 }
 function addEditorPage(page,point){
@@ -162,7 +216,7 @@ document.addEventListener('drop',handlePictureDrop);
 
 // Keep large pictures when the draft exceeds the browser's small text store.
 let pictureDB=null,pictureStoreReady=false,pictureSaved='',pictureSaveWarning=false,pictureLocalSaved=true;
-function warnPictureSave(){if(!pictureSaveWarning){pictureSaveWarning=true;notify('Could not save this draft here. Use Save HTML to keep it.');}}
+function warnPictureSave(){if(!pictureSaveWarning){pictureSaveWarning=true;notify('Could not save this draft here. Use Copy HTML to keep a copy.');}}
 function savePictureDraft(localSaved){
   pictureLocalSaved=localSaved;if(!pictureStoreReady)return;
   if(!pictureDB){if(!localSaved)warnPictureSave();return;}

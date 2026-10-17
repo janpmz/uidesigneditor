@@ -18,13 +18,15 @@ If another project uses port 3000, stop its server first.
 The player opens by default. Use the links above each canvas to switch drafts.
 A narrow window shows the canvas with Edit, Items, Add, and Copy HTML beside it.
 
-Drafts save in your browser. Copy layout exports the item data. Copy HTML and
-Save HTML keep the whole editor with the current draft. Screenshot saves the canvas as an image.
+Drafts save in your browser. Copy layout exports the item data. Copy HTML
+copies the whole editor with the current draft. Screenshot saves the canvas as an image.
 
-Drop pictures anywhere in the editor, then choose **Add to page?** or
+Paste or drop pictures in the editor, then choose **Add to page?** or
 **Open as new page?**. Add keeps the current design and fits the pictures inside
 it. New page opens the picture at its own size; undo brings back the prior page.
 When you drop several pictures as a new page, they appear one below another.
+The size list keeps **Page** with the picture's size, so you can choose a phone
+size and switch back. Saved drafts and HTML copies keep that choice too.
 Cancel or Escape leaves the page as it was. PNG, JPG, WebP, GIF, AVIF, BMP, HEIC,
 and HEIF work. A drop with several pictures adds them in one undo step. Pictures stay
 in saved drafts and HTML copies. HEIC files open in the browser, with no upload
@@ -35,11 +37,25 @@ a new item. Cut, copy and paste work with Cmd/Ctrl+X, C and V, or a right-click.
 Moving or cutting fills the old spot from the colors around it. Solid colors
 and simple gradients work best; the fill cannot rebuild details in a photo.
 You can move or resize the new item, and undo restores the whole picture.
+Right-click a piece and choose **No item** to merge it into the background at
+its current spot and size. Undo brings back the separate item.
 
-On an HTML page, draw a box around items, then drag inside it to move them.
+An image added to an existing page stays one item. Select it and choose **Edit
+image** in its settings or right-click menu. It opens on its own, with the same
+tools as a picture page. Choose **Done** to save it back in place, or **Cancel**
+to leave it as it was. Undo on the page brings back the image before your edits.
+Saved drafts and HTML copies keep the parts so you can edit them again.
+
+On an HTML page, draw a box to select each item it touches, even at an edge or
+corner. Drag inside the box to move the selected items.
 The items keep their text and settings. Cut and paste work the same way.
 You can drop an HTML file saved by this editor and choose to add its items or
 open it as a new page.
+
+Right-click text, an icon, or a button and choose **Fit box to content** to cut
+empty space from its box. The text and icons keep their size and place. Wrapped
+text keeps its line breaks, and buttons keep their padding and border. Pictures
+and plain shapes keep their boxes. A fit uses one Undo step, even for several items.
 
 The draft addresses and saved draft names match the original project, so saved
 changes remain available when you use the same browser at localhost:3000.

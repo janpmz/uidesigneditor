@@ -13,6 +13,13 @@
 .phone.editing .item.page-image:hover,.phone.editing .item.page-image.selected{outline:none}
 .pixel-selection{position:absolute;z-index:9998;outline:1px solid #d0baff;outline-offset:0;pointer-events:none}
 .canvas-edit-menu{position:fixed;z-index:20001;min-width:140px;padding:5px;border:1px solid #49424f;border-radius:9px;background:#252529;box-shadow:0 8px 30px #0007}
-.canvas-edit-menu[hidden]{display:none}
+.canvas-edit-menu[hidden],.canvas-edit-menu button[hidden]{display:none}
 .canvas-edit-menu button{display:block;width:100%;border:0;background:transparent;text-align:left}
 .canvas-edit-menu button:hover{background:#3b3151}
+.image-edit-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;background:#292331;border-bottom:1px solid #5c4e78;flex:none}
+.image-edit-bar[hidden]{display:none}
+.image-edit-title{flex:1;min-width:0}
+.image-edit-title strong{display:block;font-size:13px}
+.image-edit-name{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:#b9afc5;margin-top:3px}
+.image-edit-action{display:block;width:100%;margin-top:12px}
+@media(max-width:900px){.image-edit-bar{padding-right:100px}}

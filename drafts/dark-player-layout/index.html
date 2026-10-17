@@ -25,6 +25,18 @@
 @media(max-width:900px){body{overflow:hidden}.workspace{position:fixed;left:var(--preview-left,0px);top:var(--preview-top,0px);width:var(--preview-width,100%);height:var(--preview-height,100dvh);display:block}.canvas-area{height:100%;min-height:0}.canvas-foot{display:none}.stage{padding:12px;margin-right:88px}.phone{box-shadow:none}.quick-tools{display:flex;flex-direction:column;gap:6px;width:68px;position:fixed;right:calc(100vw - var(--preview-left,0px) - var(--preview-width,100vw) + 12px);top:calc(var(--preview-top,0px) + max(12px,env(safe-area-inset-top)));z-index:10001}.quick-tools button{min-height:36px;padding:7px 4px;font-size:11px;border-radius:10px;background:#252529ed;box-shadow:0 2px 14px #0005}body>.topbar,.workspace>.sidebar,.canvas-area>.canvas-bar{display:none}}
 .item-menu{position:fixed;z-index:20000;min-width:140px;padding:5px;border:1px solid #49424f;border-radius:9px;background:#252529;box-shadow:0 8px 30px #0007}.item-menu[hidden]{display:none}.item-menu button{width:100%;text-align:left;border:0;background:transparent}.item-menu button:hover,.item-menu button:focus-visible{background:#3b3151}
 .item.kind-image{overflow:hidden;line-height:0}.item.kind-image img{display:block;width:100%;height:100%;pointer-events:none;user-select:none}.picture-drop{outline:2px solid #c8b6ff;outline-offset:-4px}
+
+.sidebar-tabs{display:flex;gap:6px;flex:none;padding:12px;border-bottom:1px solid var(--line)}
+.sidebar-tabs button{flex:1;min-height:36px;padding:7px 5px;font-size:11px;white-space:nowrap}
+.sidebar-tabs [aria-selected=true]{background:#3b3151;border-color:#746194;color:#e4d9ff}
+.sidebar-tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sidebar-panel{flex:1;min-height:0;overflow:auto}
+.sidebar-panel[hidden]{display:none!important}
+.sidebar-items{display:flex;flex-direction:column;overflow:hidden}
+.sidebar-items .layer-list{min-height:0}
+.sidebar-panel>.add-catalog{padding:12px}
+.sidebar-panel>.add-catalog h2{display:none}
+.compact-tools .sidebar-items{height:100%}
 </style>
 
 <!-- Screenshot library: html2canvas 1.4.1
@@ -89,9 +101,16 @@ OTHER DEALINGS IN THE SOFTWARE.
 .phone.editing .item.page-image:hover,.phone.editing .item.page-image.selected{outline:none}
 .pixel-selection{position:absolute;z-index:9998;outline:1px solid #d0baff;outline-offset:0;pointer-events:none}
 .canvas-edit-menu{position:fixed;z-index:20001;min-width:140px;padding:5px;border:1px solid #49424f;border-radius:9px;background:#252529;box-shadow:0 8px 30px #0007}
-.canvas-edit-menu[hidden]{display:none}
+.canvas-edit-menu[hidden],.canvas-edit-menu button[hidden]{display:none}
 .canvas-edit-menu button{display:block;width:100%;border:0;background:transparent;text-align:left}
 .canvas-edit-menu button:hover{background:#3b3151}
+.image-edit-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;background:#292331;border-bottom:1px solid #5c4e78;flex:none}
+.image-edit-bar[hidden]{display:none}
+.image-edit-title{flex:1;min-width:0}
+.image-edit-title strong{display:block;font-size:13px}
+.image-edit-name{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:#b9afc5;margin-top:3px}
+.image-edit-action{display:block;width:100%;margin-top:12px}
+@media(max-width:900px){.image-edit-bar{padding-right:100px}}
 
 </style>
 <script data-vendor="heic-to" data-version="1.6.6">
@@ -421,18 +440,17 @@ Library.
   <div class="brand"><h1>Player layout</h1><span class="muted small">Draw a box to select items.</span></div>
   <div class="top-actions">
     <button id="undo" title="Undo · ⌘Z">Undo</button><button id="redo" title="Redo · ⌘⇧Z">Redo</button>
-    <a class="draft-link" href="../dark-chapter-layout/">Chapters draft</a><a class="draft-link" href="../dark-library-layout/">Library draft</a><span class="divider"></span><button id="reset">Reset</button>
-    <span class="divider"></span><div class="export-actions"><button id="screenshot" title="Save a PNG of the design">Screenshot</button><button id="download">Save HTML</button><button data-copy-html>Copy HTML</button><button id="copy" class="primary">Copy layout</button></div>
+    <a class="draft-link" href="../dark-chapter-layout/">Chapters draft</a><a class="draft-link" href="../dark-library-layout/">Library draft</a>
+    <span class="divider"></span><div class="export-actions"><button id="screenshot" title="Save a PNG of the design">Screenshot</button><button data-copy-html>Copy HTML</button><button id="copy" class="primary">Copy layout</button></div>
   </div>
 </header>
 <main class="workspace">
-  <template id="home-layers"></template>
   <aside class="sidebar layers-pane" id="editor-layers">
-    <div class="pane-head"><h2>Items</h2><span class="badge" id="item-count"></span></div>
-    <div class="layer-list" id="layers"></div>
-    <div class="add-tools">
-      <div class="clipboard-tools"><button id="copy-items" title="Copy selected items · ⌘C / Ctrl+C">Copy items</button><button id="paste-items" title="Paste items · ⌘V / Ctrl+V">Paste items</button></div>
-      <p class="note">Select items, then ⌘C / ⌘V to copy and paste. Ctrl works too.</p>
+    <div class="sidebar-tabs" role="tablist" aria-label="Canvas tools">
+      <button id="sidebar-tab-add" role="tab" aria-controls="sidebar-add" aria-selected="true" data-sidebar-tab="add">Add to canvas</button>
+      <button id="sidebar-tab-items" role="tab" aria-controls="editor-items" aria-selected="false" tabindex="-1" data-sidebar-tab="items">Items</button>
+    </div>
+    <div class="sidebar-panel" id="sidebar-add" role="tabpanel" aria-labelledby="sidebar-tab-add">
       <template id="home-add"></template>
       <div class="add-catalog" id="editor-add">
         <h2>Add to canvas</h2>
@@ -443,8 +461,24 @@ Library.
         </div>
       </div>
     </div>
+    <template id="home-items"></template>
+    <div class="sidebar-panel sidebar-items" id="editor-items" role="tabpanel" aria-labelledby="sidebar-tab-items" hidden>
+      <div class="pane-head"><h2>Items</h2><span class="badge" id="item-count"></span></div>
+      <div class="layer-list" id="layers"></div>
+      <div class="add-tools">
+        <div class="clipboard-tools"><button id="copy-items" title="Copy selected items · ⌘C / Ctrl+C">Copy items</button><button id="paste-items" title="Paste items · ⌘V / Ctrl+V">Paste items</button></div>
+        <p class="note">Select items, then ⌘C / ⌘V to copy and paste. Ctrl works too.</p>
+      </div>
+    </div>
   </aside>
   <section class="canvas-area" aria-label="Player layout canvas">
+    <!-- BEGIN IMAGE EDIT BAR -->
+<div id="image-edit-bar" class="image-edit-bar" role="region" aria-label="Edit image" hidden>
+  <div class="image-edit-title"><strong>Edit image</strong><span id="image-edit-name" class="image-edit-name"></span></div>
+  <button id="image-edit-cancel">Cancel</button>
+  <button id="image-edit-done" class="primary">Done</button>
+</div>
+<!-- END IMAGE EDIT BAR -->
     <template id="home-canvas-bar"></template>
     <div class="canvas-bar" id="editor-canvas-bar"><span id="canvas-size" class="mono"></span><label><input id="snap" type="checkbox"> Snap to 4 px</label><select id="zoom" aria-label="Canvas zoom"><option value="fit">Fit</option><option value=".5">50%</option><option value=".75">75%</option><option value="1">100%</option><option value="1.25">125%</option></select></div>
     <div class="stage" id="stage" tabindex="0"><div class="phone-mount" id="phone-mount"><div class="phone editing" id="phone" aria-label="Dark player preview"></div></div></div>
@@ -495,9 +529,12 @@ Library.
   <div class="picture-choice-actions"><button id="picture-choice-cancel">Cancel</button></div>
 </dialog>
 <div id="canvas-edit-menu" class="canvas-edit-menu" role="menu" aria-label="Selection actions" hidden>
+  <button id="canvas-menu-edit-image" role="menuitem" hidden>Edit image</button>
   <button id="canvas-menu-cut" role="menuitem">Cut</button>
   <button id="canvas-menu-copy" role="menuitem">Copy</button>
   <button id="canvas-menu-paste" role="menuitem">Paste</button>
+  <button id="canvas-menu-fit-content" role="menuitem">Fit box to content</button>
+  <button id="canvas-menu-no-item" role="menuitem" hidden>No item</button>
 </div>
 <!-- END PICTURE CHOICE -->
 <script type="application/json" id="initial-layout">null</script>
@@ -514,6 +551,25 @@ const PASSAGES = {
   Overflow:'After many months studying neurons and circuits in image and language models, I’ve come to believe a network’s own mechanisms are its legible building blocks, and that the outlook for mechanistic interpretability may be far better than I’d feared. The canonical evidence of polysemanticity and superposition that convinced much of the field, including me, that networks pack concepts arbitrarily was misread. What looked like arbitrary packing was mostly a motif I’ll call recursive generalization, which is much less concerning. This means we can study networks directly, instead of first untangling them. Neural networks are already clean.'
 };
 const $ = id => document.getElementById(id);
+
+function showSidebarPanel(name,focus=false){
+  for(const button of document.querySelectorAll('[data-sidebar-tab]')){
+    const active=button.dataset.sidebarTab===name;
+    button.setAttribute('aria-selected',String(active));button.tabIndex=active?0:-1;
+    $(button.getAttribute('aria-controls')).hidden=!active;
+    if(active&&focus)button.focus();
+  }
+}
+for(const button of document.querySelectorAll('[data-sidebar-tab]')){
+  button.onclick=()=>showSidebarPanel(button.dataset.sidebarTab);
+  button.onkeydown=event=>{
+    const names=['add','items'],index=names.indexOf(button.dataset.sidebarTab);
+    const next={ArrowRight:(index+1)%names.length,ArrowLeft:(index+names.length-1)%names.length,Home:0,End:names.length-1}[event.key];
+    if(next!==undefined){event.preventDefault();event.stopPropagation();showSidebarPanel(names[next],true);}
+  };
+}
+showSidebarPanel('add');
+
 const copy = value => JSON.parse(JSON.stringify(value));
 const round = value => Math.round(value * 10) / 10;
 const clamp = (value,min,max) => Math.max(min,Math.min(max,value));
@@ -534,8 +590,8 @@ function original() {
     item('chapter-back','Chapters back chevron','icon',24,106,18,32,{icon:'chevron-back',iconSize:18}),
     item('position','Chapter and page link','label',44,114,280,16,{text:'Chapter 1, Page 5',fontSize:12,align:'left',lineHeight:1.3333}),
     item('reading','Reading text','reading',28,146,337,534,{text:PASSAGES.Short,fontSize:30,lineHeight:1.35,color:'#f5f5f5',align:'left',wrap:true,highlightWord:'',highlightColor:'#ead681'}),
-    item('explain','Explain','button',74.5,H-145,106,44,{text:'Explain',icon:'mic-outline',iconSize:20,fontSize:15,fontWeight:600,color:'#a78bfa'}),
-    item('ask','Ask','button',212.5,H-145,106,44,{text:'Ask',icon:'mic-outline',iconSize:20,fontSize:15,fontWeight:600,color:'#a78bfa'}),
+    item('explain','Explain','button',74.5,H-145,106,44,{text:'Explain',icon:'mic-outline',iconSize:20,fontSize:15,fontWeight:600,color:'#dbc4ff'}),
+    item('ask','Ask','button',212.5,H-145,106,44,{text:'Ask',icon:'mic-outline',iconSize:20,fontSize:15,fontWeight:600,color:'#dbc4ff'}),
     item('nav-bg','Tab bar background','shape',21,H-82,351,60,{background:'#161616',borderWidth:1,borderColor:'#2a2a2a',radius:31}),
     item('nav-active','Selected Player background','shape',108,H-79,95,54,{background:'#333333',radius:29}),
     item('library','Library tab','tab',39,H-73,65,48,{icon:'library-outline',iconSize:25,text:'Library',fontSize:10}),
@@ -548,8 +604,9 @@ const STORAGE='dark-player-layout-v2:'+location.pathname;
 const compactViewport=window.matchMedia('(max-width:900px)');
 let state=original(),selected=new Set(),editing=true,scale=1,drag=null,history=[],future=[],toastTimer,fieldEdit=null;
 try { const saved=JSON.parse(localStorage.getItem(STORAGE)||'null'); const embedded=JSON.parse($('initial-layout').textContent); if(saved?.version===1)state=saved;else if(embedded?.version===1)state=embedded; } catch {}
+for(const entry of state.items){if(['explain','ask'].includes(entry.id)&&entry.color==='#a78bfa')entry.color='#dbc4ff';}
 function remember(before=JSON.stringify(state)) { history.push(before); if(history.length>80)history.shift(); future=[]; }
-function save() { let stored=true;try{localStorage.setItem(STORAGE,JSON.stringify(state));}catch{stored=false;}savePictureDraft(stored); $('undo').disabled=!history.length; $('redo').disabled=!future.length; }
+function save() { if(imageEditSession){$('undo').disabled=!history.length;$('redo').disabled=!future.length;return;} let stored=true;try{localStorage.setItem(STORAGE,JSON.stringify(state));}catch{stored=false;}savePictureDraft(stored); $('undo').disabled=!history.length; $('redo').disabled=!future.length; }
 function notify(text) { $('toast').textContent=text;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),2100); }
 function change(fn,full=true) { remember();fn();save();if(full)render();else{renderPhone();renderLayers();} }
 // Selection geometry is kept apart from pointer events so each drag uses the same rules.
@@ -660,10 +717,10 @@ function field(label,key,value,type='number',full=false) {
 }
 function section(title){const el=document.createElement('section');el.className='section';const h=document.createElement('h2');h.textContent=title;el.append(h);return el;}
 function renderInspector() {
+  renderImageEditStatus();
   const pane=$('inspector');pane.replaceChildren();const item=current(),items=selectedItems();
   const canvas=section(state.canvas.picturePage?'Page':'Phone');const preset=document.createElement('select');preset.setAttribute('aria-label',state.canvas.picturePage?'Page size':'Phone size');preset.style.width='100%';
-  [['393,852','iPhone 16 · 393 × 852'],['402,874','iPhone 17 Pro · 402 × 874'],['440,956','Large phone · 440 × 956']].forEach(([value,text])=>{const option=document.createElement('option');option.value=value;option.textContent=text;preset.append(option);});const pageSize=state.canvas.width+','+state.canvas.height;if(![...preset.options].some(option=>option.value===pageSize)){const option=document.createElement('option');option.value=pageSize;option.textContent=state.canvas.width+' × '+state.canvas.height;preset.append(option);}preset.value=pageSize;
-  preset.onchange=()=>{const [w,h]=preset.value.split(',').map(Number);change(()=>{const sx=w/state.canvas.width,sy=h/state.canvas.height;state.items.forEach(item=>{item.x=round(item.x*sx);item.y=round(item.y*sy);item.w=round(item.w*sx);item.h=round(item.h*sy);});state.canvas.width=w;state.canvas.height=h;delete state.canvas.picturePage;});};canvas.append(preset);
+  renderPageSizePicker(preset);canvas.append(preset);
   const canvasColor=field('Background','canvasBackground',state.canvas.background,'color');canvasColor.style.marginTop='10px';canvas.append(canvasColor);pane.append(canvas);
   if(items.length>1){
     const group=section(items.length+' items selected'),bounds=boundsOf(items),fields=document.createElement('div');fields.className='fields';
@@ -672,9 +729,9 @@ function renderInspector() {
     const actions=document.createElement('div');actions.className='action-grid';actions.style.marginTop='12px';
     [['Duplicate selected',duplicate],['Delete selected',deleteSelected]].forEach(([name,fn])=>{const button=document.createElement('button');button.textContent=name;button.onclick=fn;if(name==='Delete selected')button.className='danger';actions.append(button);});group.append(actions);pane.append(group);
   }
-  else if(!item){const empty=document.createElement('div');empty.className='empty-state';empty.textContent=regionSelection?'Drag inside the selection to move it. Cut, copy and paste work with the usual keys or a right-click.':'Draw a box around items, then drag inside it to move them. Shift-click to add or remove an item.';pane.append(empty);}
+  else if(!item){const empty=document.createElement('div');empty.className='empty-state';empty.textContent=regionSelection?'Drag inside the selection to move it. Cut, copy and paste work with the usual keys or a right-click.':state.canvas.picturePage?'Draw a box to select part of the image. Drag inside the box to move it.':'Draw a box to select items it touches. Drag inside to move them. Shift-click to add or remove an item.';pane.append(empty);}
   else {
-    const heading=section('Selected item');heading.append(field('Name','name',item.name,'text',true));if(item.hidden){const note=document.createElement('p');note.className='note';note.style.marginTop='8px';note.textContent='This item is removed from the phone. Use Restore below to bring it back.';heading.append(note);}pane.append(heading);
+    const heading=section('Selected item');heading.append(field('Name','name',item.name,'text',true));renderImageEditAction(heading,item);if(item.hidden){const note=document.createElement('p');note.className='note';note.style.marginTop='8px';note.textContent='This item is removed from the phone. Use Restore below to bring it back.';heading.append(note);}pane.append(heading);
     const position=section('Position & size');const fields=document.createElement('div');fields.className='fields';[['X','x',item.x],['Y','y',item.y],['Width','w',item.w],['Height','h',item.h]].forEach(args=>fields.append(field(...args)));position.append(fields);pane.append(position);
     if(!['shape','image'].includes(item.kind)){
       const text=section('Text & icon');const grid=document.createElement('div');grid.className='fields';
@@ -703,7 +760,7 @@ function renderInspector() {
     const transparent=document.createElement('label');transparent.className='check-line full';transparent.style.gridColumn='1/-1';const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.dataset.transparent='true';checkbox.checked=item.background==='transparent';checkbox.onchange=()=>change(()=>{item.background=checkbox.checked?'transparent':'#242424';});transparent.append(checkbox,document.createTextNode('No fill'));lookFields.append(transparent);look.append(lookFields);pane.append(look);
     const actions=section('Arrange');const buttons=document.createElement('div');buttons.className='action-grid';[['Forward',()=>reorder(1)],['Backward',()=>reorder(-1)],['Duplicate',duplicate],[item.hidden?'Restore':'Delete',()=>change(()=>{item.hidden=!item.hidden;})]].forEach(([title,fn])=>{const button=document.createElement('button');button.textContent=title;button.onclick=fn;if(title==='Delete')button.className='danger';buttons.append(button);});actions.append(buttons);pane.append(actions);
   }
-  const help=section('Your draft');const note=document.createElement('p');note.className='note';note.textContent='Changes save in this browser. Save HTML keeps a copy you can open or send back. Copy layout gives you the exact positions and styles.';help.append(note);const keys=document.createElement('p');keys.className='note';keys.style.marginTop='10px';keys.textContent='Drag: draw a box. Drag inside: move. Shift-click: add or remove. ⌘X / ⌘C / ⌘V: cut, copy and paste. ⌘A: select all. Arrow keys: 1 px. Shift + arrow: 10 px. Delete: remove. ⌘Z: undo. Ctrl works too.';help.append(keys);pane.append(help);
+  const help=section('Your draft');const note=document.createElement('p');note.className='note';note.textContent=imageEditSession?'Choose Done to save the image and return to the page. Cancel discards these edits.':'Changes save in this browser. Copy HTML copies the whole editor with your draft. Copy layout gives you the exact positions and styles.';help.append(note);const keys=document.createElement('p');keys.className='note';keys.style.marginTop='10px';keys.textContent='Drag: draw a box. Drag inside: move. Shift-click: add or remove. ⌘X / ⌘C / ⌘V: cut, copy and paste. ⌘A: select all. Arrow keys: 1 px. Shift + arrow: 10 px. Delete: remove. ⌘Z: undo. Ctrl works too.';help.append(keys);pane.append(help);
 }
 function render(){selected=new Set([...selected].filter(id=>state.items.some(item=>item.id===id)));document.body.classList.remove('preview');renderPhone();renderLayers();renderInspector();save();}
 function reorder(direction){const index=state.items.findIndex(item=>selected.has(item.id)),target=clamp(index+direction,0,state.items.length-1);if(target!==index)change(()=>{const [item]=state.items.splice(index,1);state.items.splice(target,0,item);});}
@@ -836,12 +893,11 @@ stage.addEventListener('pointercancel',event=>endDrag(event,true));
 stage.addEventListener('lostpointercapture',event=>endDrag(event,true));
 $('undo').onclick=()=>{if(!history.length)return;future.push(JSON.stringify(state));state=JSON.parse(history.pop());render();};
 $('redo').onclick=()=>{if(!future.length)return;history.push(JSON.stringify(state));state=JSON.parse(future.pop());render();};
-$('reset').onclick=()=>change(()=>{state=original();selected.clear();});
 $('zoom').onchange=fit;new ResizeObserver(fit).observe($('stage'));
 const toolLocations=[
   ['editor-topbar','home-topbar','tools-actions'],
   ['editor-canvas-bar','home-canvas-bar','tools-actions'],
-  ['editor-layers','home-layers','tools-items'],
+  ['editor-items','home-items','tools-items'],
   ['inspector','home-inspector','tools-edit'],
   ['editor-add','home-add','tools-add'],
 ];
@@ -852,6 +908,10 @@ function placeTools(compact,root=document){
     if(compact)root.querySelector('#'+panel).append(node);
     else root.querySelector('#'+home).after(node);
   }
+  const items=root.querySelector('#editor-items');
+  items.hidden=!compact&&root.querySelector('#sidebar-tab-items').getAttribute('aria-selected')!=='true';
+  items.setAttribute('role',compact?'group':'tabpanel');
+  items.setAttribute('aria-labelledby',compact?'tools-tab-items':'sidebar-tab-items');
 }
 function showToolPanel(name,focus=false){
   $('editor-tools-title').textContent={edit:'Edit',items:'Items',add:'Add',actions:'Actions'}[name];
@@ -991,7 +1051,7 @@ $('icon-picker').addEventListener('close',()=>{
 });
 for(const id of ['icon-search','icon-style'])$(id).addEventListener(id==='icon-search'?'input':'change',()=>{iconResultLimit=72;renderIconChoices();$('icon-picker-results').scrollTop=0;});
 $('icon-picker-more').onclick=()=>{iconResultLimit+=72;renderIconChoices();};
-$('copy').onclick=async()=>{try{await navigator.clipboard.writeText(JSON.stringify(state,null,2));notify('Layout copied');}catch{notify('Copy is unavailable here. Use Save HTML.');}};
+$('copy').onclick=async()=>{try{await navigator.clipboard.writeText(JSON.stringify(state,null,2));notify('Layout copied');}catch{notify('Could not copy. Please try again.');}};
 function downloadBlob(blob,name){
   const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=name;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
@@ -1024,11 +1084,9 @@ function exportHtml(){
 }
 for(const button of document.querySelectorAll('[data-copy-html]'))button.onclick=async()=>{
   try{await navigator.clipboard.writeText(exportHtml());button.textContent='Copied';setTimeout(()=>{button.textContent='Copy HTML';},1600);notify('HTML copied');}
-  catch{notify('Copy is unavailable here. Use Save HTML.');}
+  catch{notify('Could not copy. Please try again.');}
 };
-$('download').onclick=()=>{
-  downloadBlob(new Blob([exportHtml()],{type:'text/html'}),'dark-player-layout.html');notify('Saved HTML includes your layout and fonts');
-};
+
 document.addEventListener('keydown',event=>{
   if(!$('item-menu').hidden){
     if(event.key==='Escape'){event.preventDefault();closeItemMenu(true);}
@@ -1077,9 +1135,59 @@ function pictureDropPlan(pictures,action,canvas,point){
     const box={x:round((width-picture.width)*factor/2),y:round(y*factor),w:Math.max(.1,round(picture.width*factor)),h:Math.max(.1,round(picture.height*factor))};
     y+=picture.height;return box;
   });
-  return {canvas:{...canvas,width:Math.ceil(width*factor),height:Math.ceil(height*factor),picturePage:true},replace:true,boxes};
+  const pageSize={width:Math.ceil(width*factor),height:Math.ceil(height*factor)};
+  return {canvas:{...canvas,...pageSize,picturePage:true,picturePageSize:pageSize},replace:true,boxes};
 }
 // END PICTURE HELPERS
+
+// BEGIN PAGE SIZE HELPERS
+function validPicturePageSize(size){return size&&['width','height'].every(key=>Number.isInteger(size[key])&&size[key]>0&&size[key]<=16000)&&size.width*size.height<=24000000;}
+function storedPictureSize(src){
+  if(!safePictureSource(src))return null;
+  try{
+    const bytes=Uint8Array.from(atob(src.slice(src.indexOf(',')+1).slice(0,32)),char=>char.charCodeAt(0));
+    if(bytes.length!==24||![137,80,78,71,13,10,26,10].every((value,index)=>bytes[index]===value)||String.fromCharCode(...bytes.slice(12,16))!=='IHDR')return null;
+    const header=new DataView(bytes.buffer),size={width:header.getUint32(16),height:header.getUint32(20)};
+    return validPicturePageSize(size)?size:null;
+  }catch{return null;}
+}
+function picturePageSizeFor(layout){
+  if(validPicturePageSize(layout.canvas.picturePageSize))return {...layout.canvas.picturePageSize};
+  if(layout.canvas.picturePage)return {width:layout.canvas.width,height:layout.canvas.height};
+  const bases=layout.items.filter(entry=>entry.imageBase&&!entry.pictureFragment);
+  const sizes=bases.map(entry=>storedPictureSize(entry.src));
+  if(!sizes.length||sizes.some(size=>!size))return null;
+  const page=pictureDropPlan(sizes,'new',layout.canvas,{x:0,y:0}).canvas;
+  return {width:page.width,height:page.height};
+}
+function pageSizeChoices(layout){
+  const page=picturePageSizeFor(layout),options=[
+    {value:'393,852',text:'iPhone 16 · 393 × 852'},
+    {value:'402,874',text:'iPhone 17 Pro · 402 × 874'},
+    {value:'440,956',text:'Large phone · 440 × 956'},
+  ];
+  if(page)options.unshift({value:'page',text:'Page · '+page.width+' × '+page.height});
+  const value=layout.canvas.picturePage?'page':layout.canvas.width+','+layout.canvas.height;
+  if(!options.some(option=>option.value===value))options.push({value,text:layout.canvas.width+' × '+layout.canvas.height});
+  return {page,options,value};
+}
+function setPageSize(layout,value){
+  const page=picturePageSizeFor(layout),size=value==='page'?page:(()=>{const [width,height]=value.split(',').map(Number);return {width,height};})();
+  if(!size||!['width','height'].every(key=>Number.isInteger(size[key])&&size[key]>0&&size[key]<=16000))return;
+  if(page)layout.canvas.picturePageSize=page;
+  const sx=size.width/layout.canvas.width,sy=size.height/layout.canvas.height;
+  layout.items.forEach(entry=>{entry.x=round(entry.x*sx);entry.y=round(entry.y*sy);entry.w=round(entry.w*sx);entry.h=round(entry.h*sy);});
+  layout.canvas.width=size.width;layout.canvas.height=size.height;
+  if(value==='page')layout.canvas.picturePage=true;else delete layout.canvas.picturePage;
+}
+// END PAGE SIZE HELPERS
+function renderPageSizePicker(preset){
+  const choices=pageSizeChoices(state);
+  if(choices.page)state.canvas.picturePageSize=choices.page;
+  for(const choice of choices.options){const option=document.createElement('option');option.value=choice.value;option.textContent=choice.text;preset.append(option);}
+  preset.value=choices.value;
+  preset.onchange=()=>change(()=>{if(typeof clearCanvasRegion==='function')clearCanvasRegion();setPageSize(state,preset.value);});
+}
 
 const pictureChoice=$('picture-drop-choice');
 function choosePictureDrop(files){
@@ -1099,13 +1207,17 @@ function cleanPictureExport(doc){
   doc.querySelector('#picture-drop-choice')?.removeAttribute('open');
   const files=doc.querySelector('#picture-choice-files');if(files)files.textContent='';
   const menu=doc.querySelector('#canvas-edit-menu');if(menu)menu.hidden=true;
+  const bar=doc.querySelector('#image-edit-bar');if(bar)bar.hidden=true;
   doc.querySelectorAll('.pixel-selection,.marquee').forEach(node=>node.remove());
 }
 
+function validEditorPage(page){
+  return Boolean(page?.version===1&&page.canvas&&['width','height'].every(key=>Number.isFinite(page.canvas[key])&&page.canvas[key]>0&&page.canvas[key]<=16000)&&Array.isArray(page.items)&&page.items.every(entry=>entry&&['x','y','w','h'].every(key=>Number.isFinite(entry[key]))&&entry.w>0&&entry.h>0&&['label','icon','shape','reading','tab','button','textbox','image'].includes(entry.kind)&&(entry.kind!=='image'||safePictureSource(entry.src))));
+}
 async function readEditorPage(file){
   const doc=new DOMParser().parseFromString(await file.text(),'text/html');
   let page;try{page=JSON.parse(doc.getElementById('initial-layout')?.textContent||'null');}catch{}
-  if(page?.version!==1||!page.canvas||!['width','height'].every(key=>Number.isFinite(page.canvas[key])&&page.canvas[key]>0&&page.canvas[key]<=16000)||!Array.isArray(page.items)||!page.items.every(entry=>entry&&['x','y','w','h'].every(key=>Number.isFinite(entry[key]))&&entry.w>0&&entry.h>0&&['label','icon','shape','reading','tab','button','textbox','image'].includes(entry.kind)&&(entry.kind!=='image'||safePictureSource(entry.src))))throw new Error('Use an HTML file saved by this editor.');
+  if(!validEditorPage(page))throw new Error('Use an HTML file saved by this editor.');
   return copy(page);
 }
 function addEditorPage(page,point){
@@ -1215,7 +1327,7 @@ document.addEventListener('drop',handlePictureDrop);
 
 // Keep large pictures when the draft exceeds the browser's small text store.
 let pictureDB=null,pictureStoreReady=false,pictureSaved='',pictureSaveWarning=false,pictureLocalSaved=true;
-function warnPictureSave(){if(!pictureSaveWarning){pictureSaveWarning=true;notify('Could not save this draft here. Use Save HTML to keep it.');}}
+function warnPictureSave(){if(!pictureSaveWarning){pictureSaveWarning=true;notify('Could not save this draft here. Use Copy HTML to keep a copy.');}}
 function savePictureDraft(localSaved){
   pictureLocalSaved=localSaved;if(!pictureStoreReady)return;
   if(!pictureDB){if(!localSaved)warnPictureSave();return;}
@@ -1259,7 +1371,7 @@ function sourcePixelArea(box,entry,width,height){
   return {x,y,w:right-x,h:bottom-y};
 }
 function itemIdsInSelection(items,box){
-  return items.filter(entry=>!entry.hidden&&entry.x>=box.x-.01&&entry.y>=box.y-.01&&entry.x+entry.w<=box.x+box.w+.01&&entry.y+entry.h<=box.y+box.h+.01).map(entry=>entry.id);
+  return items.filter(entry=>!entry.hidden&&entry.x<=box.x+box.w+.01&&entry.x+entry.w>=box.x-.01&&entry.y<=box.y+box.h+.01&&entry.y+entry.h>=box.y-.01).map(entry=>entry.id);
 }
 function fillPixelArea(data,width,height,box,background=[0,0,0,255]){
   const samples=[],colors=new Map();
@@ -1284,6 +1396,68 @@ function fillPixelArea(data,width,height,box,background=[0,0,0,255]){
   return data;
 }
 // END PIXEL HELPERS
+
+// BEGIN FIT CONTENT
+function canFitContent(entry){
+  return ['label','icon','reading','tab','button','textbox'].includes(entry.kind)&&Boolean(entry.text?.trim()||entry.icon);
+}
+function fitContentRects(node){
+  const content=node.querySelector('.content');if(!content)return [];
+  const rects=[],walker=document.createTreeWalker(content,NodeFilter.SHOW_TEXT);
+  while(walker.nextNode()){
+    if(!walker.currentNode.textContent.trim())continue;
+    const range=document.createRange();range.selectNodeContents(walker.currentNode);
+    rects.push(...[...range.getClientRects()].filter(rect=>rect.width>0&&rect.height>0));
+  }
+  return rects;
+}
+function fitContentBounds(rects){
+  if(!rects.length)return null;
+  const left=Math.min(...rects.map(rect=>rect.left)),top=Math.min(...rects.map(rect=>rect.top));
+  return {left,top,width:Math.max(...rects.map(rect=>rect.right))-left,height:Math.max(...rects.map(rect=>rect.bottom))-top};
+}
+function measureContentBox(entry,node){
+  const before=fitContentBounds(fitContentRects(node));if(!before)return null;
+  const original=node.getBoundingClientRect(),zoom=original.width/entry.w;
+  if(!(zoom>0))return null;
+  const probe=node.cloneNode(true);probe.classList.remove('selected');probe.setAttribute('aria-hidden','true');probe.removeAttribute('tabindex');
+  Object.assign(probe.style,{left:'0',top:'0',height:'auto',width:entry.wrap?entry.w+'px':'max-content',visibility:'hidden',pointerEvents:'none'});
+  node.parentNode.append(probe);
+  try{
+    if(entry.wrap){
+      const lines=fitContentRects(probe),bounds=fitContentBounds(lines);if(!bounds)return null;
+      const styles=getComputedStyle(probe),inset=['paddingLeft','paddingRight','borderLeftWidth','borderRightWidth'].reduce((sum,key)=>sum+(parseFloat(styles[key])||0),0);
+      probe.style.width=Math.ceil((bounds.width/zoom+inset)*64)/64+'px';
+      const fitted=fitContentRects(probe);
+      // Keep each line as it was before the box changed.
+      if(lines.length!==fitted.length||lines.some((rect,index)=>Math.abs(rect.width-fitted[index].width)>.01||Math.abs(rect.height-fitted[index].height)>.01))probe.style.width=entry.w+'px';
+    }
+    const box=probe.getBoundingClientRect(),after=fitContentBounds(fitContentRects(probe));if(!after)return null;
+    return {
+      x:round(entry.x+(before.left-original.left-after.left+box.left)/zoom),
+      y:round(entry.y+(before.top-original.top-after.top+box.top)/zoom),
+      w:Math.ceil(box.width/zoom*100)/100,h:Math.ceil(box.height/zoom*100)/100,
+    };
+  }finally{probe.remove();}
+}
+async function fitCanvasSelection(){
+  if(!editing||canvasGesture||canvasEditBusy||regionSelection)return;
+  const entries=selectedItems().filter(canFitContent);if(!entries.length)return;
+  const before=JSON.stringify(state),ids=[...selected].join(',');canvasEditBusy=true;
+  try{
+    await document.fonts?.ready;
+    if(before!==JSON.stringify(state)||ids!==[...selected].join(',')||!editing||regionSelection)return;
+    const nodes=[...$('phone').querySelectorAll('.item')],plans=[];
+    for(const entry of entries){
+      const node=nodes.find(node=>node.dataset.id===entry.id);if(!node)continue;
+      const box=measureContentBox(entry,node);
+      if(box&&['x','y','w','h'].every(key=>Number.isFinite(box[key]))&&box.w>0&&box.h>0&&['x','y','w','h'].some(key=>Math.abs(box[key]-entry[key])>.02))plans.push({entry,box});
+    }
+    if(plans.length)change(()=>{for(const {entry,box} of plans)Object.assign(entry,box);});
+    notify(plans.length?'Box fitted to content':'Box already fits content');
+  }catch{notify('Could not fit this box.');}finally{canvasEditBusy=false;}
+}
+// END FIT CONTENT
 
 let regionSelection=null,canvasGesture=null,canvasClipboard=null,canvasPasteCount=0,canvasEditBusy=false;
 const canvasMenu=$('canvas-edit-menu');
@@ -1349,9 +1523,44 @@ async function makeRegionPlan(region){
   })();
   return region.pending;
 }
-function applyRegionPatches(plan){for(const patch of plan.patches){const entry=state.items.find(item=>item.id===patch.id);if(entry)Object.assign(entry,patch);}}
+function applyRegionPatches(plan){for(const patch of plan.patches){const entry=state.items.find(item=>item.id===patch.id);if(entry){Object.assign(entry,patch);delete entry.imageContents;}}}
 function prepareRegion(region){makeRegionPlan(region).catch(error=>{if(regionSelection===region)notify(error.message);});}
 function closeCanvasMenu(){canvasMenu.hidden=true;}
+function backgroundMergeSelection(){
+  const entries=selectedItems(),bases=state.items.filter(entry=>!entry.hidden&&isPagePicture(entry));
+  if(regionSelection||!entries.length||!bases.length||entries.some(entry=>entry.kind!=='image'||!entry.pictureFragment))return null;
+  return {entries,bases};
+}
+async function mergeSelectionIntoBackground(){
+  if(!editing||canvasGesture||canvasEditBusy||pictureDropBusy||pictureChoice.open)return;
+  const selection=backgroundMergeSelection();if(!selection)return;
+  canvasEditBusy=true;
+  const before=JSON.stringify(state),{entries,bases}=selection,ids=new Set([...bases,...entries].map(entry=>entry.id));
+  const sources=state.items.filter(entry=>ids.has(entry.id)),width=state.canvas.width,height=state.canvas.height;
+  try{
+    const images=await Promise.all(sources.map(source=>selectionImage(source.src)));
+    if(JSON.stringify(state)!==before)throw new Error('The page changed. Choose No item again.');
+    const ratio=Math.min(4,Math.sqrt(24000000/(width*height)),Math.max(1,...images.map((image,index)=>Math.max(image.naturalWidth/sources[index].w,image.naturalHeight/sources[index].h))));
+    const canvas=await html2canvas($('phone'),{
+      width,height,scale:ratio,scrollX:0,scrollY:0,logging:false,backgroundColor:state.canvas.background,
+      windowWidth:Math.max(document.documentElement.clientWidth,width),windowHeight:Math.max(document.documentElement.clientHeight,height),
+      ignoreElements:element=>['selection-overlay','pixel-selection','guide','marquee'].some(name=>element.classList?.contains(name))||(element.classList?.contains('item')&&!ids.has(element.dataset.id)),
+      onclone:cloned=>{
+        const phone=cloned.getElementById('phone');phone.classList.remove('editing');
+        Object.assign(phone.style,{position:'fixed',left:'0',top:'0',width:width+'px',height:height+'px',transform:'none',boxShadow:'none',borderRadius:'0'});
+        cloned.querySelectorAll('dialog').forEach(dialog=>dialog.removeAttribute('open'));
+      },
+    });
+    if(JSON.stringify(state)!==before)throw new Error('The page changed. Choose No item again.');
+    const background=item(bases[0].id,bases.length===1?bases[0].name:'Page background','image',0,0,width,height,{src:canvas.toDataURL('image/png'),imageBase:true});
+    change(()=>{
+      state.items=state.items.flatMap(entry=>entry.id===background.id?[background]:ids.has(entry.id)?[]:[entry]);
+      regionSelection=null;selected.clear();
+    });
+    stage.focus({preventScroll:true});notify('Merged into background');
+  }catch(error){notify(error.message||'Could not merge this item.');}
+  finally{canvasEditBusy=false;}
+}
 function endCanvasGesture(cancel=false){
   const gesture=canvasGesture;if(!gesture)return;
   canvasGesture=null;gesture.cancelled=cancel;gesture.box?.remove();
@@ -1406,7 +1615,7 @@ stage.addEventListener('pointermove',event=>{
   const distance=Math.hypot(gesture.latest.x-gesture.start.x,gesture.latest.y-gesture.start.y);
   if(distance>.1)gesture.moved=true;
   if(gesture.type==='box'){
-    drawBox(gesture,event);const box=clippedArea(boxBetween(gesture.start,gesture.latest),state.canvas);
+    drawBox(gesture,event);const box=boxBetween(gesture.start,gesture.latest);
     if(gesture.pixels){regionSelection=rememberRegion(box);renderSelection();}
     else{selected=new Set([...gesture.base,...itemIdsInSelection(state.items.filter(entry=>!isPagePicture(entry)),box)]);refreshSelection();}
   }else if(gesture.type==='pixels'){
@@ -1473,8 +1682,16 @@ for(const type of ['copy','cut'])document.addEventListener(type,event=>{
   event.preventDefault();event.stopImmediatePropagation();void copyCanvasSelection(type==='cut',event);
 },true);
 document.addEventListener('paste',event=>{
-  if(!canEditCanvas(event))return;const payload=readCanvasClipboard(event.clipboardData?.getData('text/plain'));if(!payload)return;
-  event.preventDefault();event.stopImmediatePropagation();canvasPasteCount=0;pasteCanvasClipboard(payload);
+  if(!canEditCanvas(event))return;
+  const files=[...(event.clipboardData?.files||[])].filter(file=>pictureType(file));
+  if(files.length){
+    event.preventDefault();event.stopImmediatePropagation();
+    void handlePictureDrop({dataTransfer:{files},clientX:NaN,clientY:NaN,preventDefault(){}});return;
+  }
+  const payload=readCanvasClipboard(event.clipboardData?.getData('text/plain'));if(!payload)return;
+  event.preventDefault();event.stopImmediatePropagation();
+  if(JSON.stringify(payload)!==JSON.stringify(canvasClipboard))canvasPasteCount=0;
+  pasteCanvasClipboard(payload);
 },true);
 document.addEventListener('keydown',event=>{
   if(canvasTextTarget(event.target)||pictureChoice.open||$('icon-picker')?.open)return;
@@ -1483,7 +1700,6 @@ document.addEventListener('keydown',event=>{
   if(!editing||canvasEditBusy||$('editor-tools')?.open)return;
   const command=event.metaKey||event.ctrlKey,key=event.key.toLowerCase();
   if(command&&(key==='c'||key==='x')&&(regionSelection||selectedItems().length)){event.preventDefault();event.stopImmediatePropagation();void copyCanvasSelection(key==='x');return;}
-  if(command&&key==='v'&&canvasClipboard){event.preventDefault();event.stopImmediatePropagation();pasteCanvasClipboard();return;}
   if(command&&key==='a'&&state.canvas.picturePage){event.preventDefault();event.stopImmediatePropagation();selected.clear();regionSelection=rememberRegion({x:0,y:0,w:state.canvas.width,h:state.canvas.height});renderSelection();prepareRegion(regionSelection);return;}
   if(event.key==='Escape'&&regionSelection){event.preventDefault();event.stopImmediatePropagation();regionSelection=null;render();return;}
   if(regionSelection&&(event.key==='Delete'||event.key==='Backspace')){
@@ -1498,16 +1714,107 @@ if($('paste-items'))$('paste-items').onclick=async()=>{
   notify('Copy items or a picture selection first.');
 };
 stage.addEventListener('contextmenu',event=>{
-  if(editing&&!regionSelection){const id=event.target.closest('.item')?.dataset.id;if(id&&!selected.has(id)){selected=new Set([id]);refreshSelection();}}
-  if(!editing||(!regionSelection&&!selectedItems().length))return;
+  if(!canEditCanvas(event)||pictureDropBusy)return;
+  if(!regionSelection||!pointInArea(phonePoint(event),regionSelection.box)){
+    const id=event.target.closest('.item,.selection-overlay')?.dataset.id;
+    if(id&&!selected.has(id)){regionSelection=null;selected=new Set([id]);refreshSelection();}
+  }
+  if(!regionSelection&&!selectedItems().length)return;
   event.preventDefault();event.stopImmediatePropagation();canvasMenu.hidden=false;
+  $('canvas-menu-edit-image').hidden=!pictureToEdit();
+  $('canvas-menu-fit-content').disabled=Boolean(regionSelection)||!selectedItems().some(canFitContent);
+  $('canvas-menu-no-item').hidden=!backgroundMergeSelection();
   canvasMenu.style.left=clamp(event.clientX,8,Math.max(8,window.innerWidth-canvasMenu.offsetWidth-8))+'px';canvasMenu.style.top=clamp(event.clientY,8,Math.max(8,window.innerHeight-canvasMenu.offsetHeight-8))+'px';
   $('canvas-menu-paste').disabled=!canvasClipboard;$('canvas-menu-cut').focus({preventScroll:true});
 },true);
 $('canvas-menu-cut').onclick=()=>{closeCanvasMenu();void copyCanvasSelection(true);};
 $('canvas-menu-copy').onclick=()=>{closeCanvasMenu();void copyCanvasSelection();};
 $('canvas-menu-paste').onclick=()=>{closeCanvasMenu();pasteCanvasClipboard();};
+$('canvas-menu-fit-content').onclick=()=>{closeCanvasMenu();return fitCanvasSelection();};
+$('canvas-menu-no-item').onclick=()=>{closeCanvasMenu();return mergeSelectionIntoBackground();};
+$('canvas-menu-edit-image').onclick=()=>{closeCanvasMenu();const entry=pictureToEdit();if(entry)return openImageEditor(entry.id);};
 document.addEventListener('pointerdown',event=>{if(!canvasMenu.contains(event.target))closeCanvasMenu();},true);
+
+let imageEditSession=null,imageEditSaving=false;
+function editablePicture(entry){return !imageEditSession&&entry&&!entry.hidden&&entry.kind==='image'&&!isPagePicture(entry)&&safePictureSource(entry.src);}
+function pictureToEdit(){const entries=selectedItems();return !regionSelection&&entries.length===1&&editablePicture(entries[0])?entries[0]:null;}
+function renderImageEditStatus(){
+  const bar=$('image-edit-bar');if(!bar)return;
+  bar.hidden=!imageEditSession;
+  $('image-edit-name').textContent=imageEditSession?.name||'';
+  $('image-edit-done').disabled=imageEditSaving;
+  $('image-edit-done').textContent=imageEditSaving?'Saving…':'Done';
+  $('image-edit-cancel').disabled=imageEditSaving;
+}
+function renderImageEditAction(heading,entry){
+  if(!editablePicture(entry))return;
+  const button=document.createElement('button');button.textContent='Edit image';button.className='primary image-edit-action';
+  button.onclick=()=>openImageEditor(entry.id);
+  const note=document.createElement('p');note.className='note';note.textContent='Select and move parts of this image.';
+  heading.append(button,note);
+}
+async function openImageEditor(id){
+  if(!editing||imageEditSession||canvasGesture||canvasEditBusy||pictureDropBusy||pictureChoice.open)return;
+  const entry=state.items.find(entry=>entry.id===id);if(!editablePicture(entry))return;
+  canvasEditBusy=true;
+  try{
+    await picturesReady;
+    if(!state.items.includes(entry))throw new Error('The page changed. Choose Edit image again.');
+    const parent=state,before=JSON.stringify(state),image=await selectionImage(entry.src);
+    if(state!==parent||JSON.stringify(state)!==before)throw new Error('The page changed. Choose Edit image again.');
+    const width=image.naturalWidth,height=image.naturalHeight;
+    if(!validPicturePageSize({width,height}))throw new Error('Could not open this image for editing.');
+    const layout=validEditorPage(entry.imageContents)&&validPicturePageSize(entry.imageContents.canvas)?copy(entry.imageContents):{
+      version:1,canvas:{width,height,background:'transparent',picturePage:true,picturePageSize:{width,height}},
+      items:[item('item-'+crypto.randomUUID(),entry.name,'image',0,0,width,height,{src:entry.src,imageBase:true})],
+    };
+    layout.canvas.picturePage=true;
+    imageEditSession={parent,id,name:entry.name,history,future,selected:[...selected],zoom:$('zoom').value,initial:JSON.stringify(layout)};
+    state=layout;history=[];future=[];selected.clear();clearCanvasRegion();fieldEdit=null;
+    $('zoom').value='fit';closeCanvasMenu();
+    if($('editor-tools')?.open)$('editor-tools').close();
+    render();stage.focus({preventScroll:true});notify('Edit image. Choose Done to save your changes.');
+  }catch(error){notify(error.message||'Could not edit this image.');}
+  finally{canvasEditBusy=false;}
+}
+function restoreImagePage(session){
+  state=session.parent;history=session.history;future=session.future;selected=new Set(session.selected);
+  imageEditSession=null;imageEditSaving=false;editing=true;clearCanvasRegion();fieldEdit=null;
+  $('zoom').value=session.zoom;closeCanvasMenu();
+  if($('editor-tools')?.open)$('editor-tools').close();
+}
+async function finishImageEditor(cancel=false){
+  const session=imageEditSession;
+  if(!session||imageEditSaving||canvasGesture||canvasEditBusy||pictureDropBusy||pictureChoice.open)return;
+  if(cancel||JSON.stringify(state)===session.initial){
+    restoreImagePage(session);render();stage.focus({preventScroll:true});return;
+  }
+  imageEditSaving=true;canvasEditBusy=true;renderImageEditStatus();closeCanvasMenu();
+  const before=JSON.stringify(state),width=state.canvas.width,height=state.canvas.height;
+  try{
+    const canvas=await html2canvas($('phone'),{
+      width,height,scale:1,scrollX:0,scrollY:0,logging:false,backgroundColor:null,
+      windowWidth:Math.max(document.documentElement.clientWidth,width),windowHeight:Math.max(document.documentElement.clientHeight,height),
+      ignoreElements:element=>['selection-overlay','pixel-selection','guide','marquee'].some(name=>element.classList?.contains(name)),
+      onclone:cloned=>{
+        const phone=cloned.getElementById('phone');phone.classList.remove('editing');
+        Object.assign(phone.style,{position:'fixed',left:'0',top:'0',width:width+'px',height:height+'px',transform:'none',boxShadow:'none',borderRadius:'0'});
+        cloned.querySelectorAll('dialog').forEach(dialog=>dialog.removeAttribute('open'));
+      },
+    });
+    if(imageEditSession!==session||JSON.stringify(state)!==before)throw new Error('The image changed. Choose Done again.');
+    const src=canvas.toDataURL('image/png'),contents=copy(state);
+    restoreImagePage(session);
+    change(()=>{const entry=state.items.find(entry=>entry.id===session.id);entry.src=src;entry.imageContents=contents;selected=new Set([entry.id]);});
+    stage.focus({preventScroll:true});notify('Image saved');
+  }catch(error){notify(error.message||'Could not save this image.');}
+  finally{imageEditSaving=false;canvasEditBusy=false;renderImageEditStatus();}
+}
+$('image-edit-done').onclick=()=>finishImageEditor();
+$('image-edit-cancel').onclick=()=>finishImageEditor(true);
+for(const type of ['click','keydown'])document.addEventListener(type,event=>{
+  if(imageEditSaving){event.preventDefault();event.stopImmediatePropagation();}
+},true);
 // END CANVAS EDITOR
 syncToolLayout();render();
 </script>

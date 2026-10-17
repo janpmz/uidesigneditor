@@ -6,18 +6,20 @@ const vm = require('node:vm');
 
 const source = readFileSync(join(__dirname, 'image-drop.js'), 'utf8');
 const helpers = source.split('// BEGIN PICTURE HELPERS')[1].split('// END PICTURE HELPERS')[0];
+const sizes = source.split('// BEGIN PAGE SIZE HELPERS')[1].split('// END PAGE SIZE HELPERS')[0];
 const reader = source.split('// BEGIN PICTURE READER')[1].split('// END PICTURE READER')[0];
 const context = vm.createContext({
   round: v => Math.round(v * 10) / 10,
   clamp: (v, min, max) => Math.max(min, Math.min(max, v)),
+  atob,
 });
-vm.runInContext(helpers, context);
+vm.runInContext(helpers + sizes, context);
 const run = code => JSON.parse(JSON.stringify(vm.runInContext(code, context)));
 
 test('new page uses the picture size and includes no old items', () => {
   const plan = run('pictureDropPlan([{width:903,height:552}],"new",{width:393,height:852,background:"#000000"},{x:100,y:100})');
   assert.equal(plan.replace, true);
-  assert.deepEqual(plan.canvas, { width: 903, height: 552, background: '#000000', picturePage: true });
+  assert.deepEqual(plan.canvas, { width: 903, height: 552, background: '#000000', picturePage: true, picturePageSize: { width: 903, height: 552 } });
   assert.deepEqual(plan.boxes, [{ x: 0, y: 0, w: 903, h: 552 }]);
 });
 test('add to page keeps the current canvas and fits the picture inside it', () => {
@@ -30,6 +32,43 @@ test('a new page holds several pictures without placing one over another', () =>
   const plan = run('pictureDropPlan([{width:800,height:400},{width:400,height:300}],"new",{width:393,height:852},{x:0,y:0})');
   assert.deepEqual([plan.canvas.width, plan.canvas.height], [800, 700]);
   assert.deepEqual(plan.boxes, [{ x: 0, y: 0, w: 800, h: 400 }, { x: 200, y: 400, w: 400, h: 300 }]);
+  assert.deepEqual(plan.canvas.picturePageSize,{width:800,height:700});
+});
+
+test('a picture can switch to every phone size and back to its page size', () => {
+  for(const phone of ['393,852','402,874','440,956']){
+    const result=run(`(()=>{
+      const layout={canvas:{width:903,height:552,picturePage:true},items:[{x:0,y:0,w:903,h:552},{x:100,y:100,w:160,h:70}]};
+      setPageSize(layout,${JSON.stringify(phone)});const phoneChoices=pageSizeChoices(layout),phoneMode=Boolean(layout.canvas.picturePage);
+      setPageSize(layout,'page');return {layout,phoneChoices,phoneMode};
+    })()`);
+    assert.equal(result.phoneMode,false);
+    assert.deepEqual(result.phoneChoices.options[0],{value:'page',text:'Page · 903 × 552'});
+    assert.equal(result.phoneChoices.value,phone);
+    assert.deepEqual(result.layout.canvas,{width:903,height:552,picturePage:true,picturePageSize:{width:903,height:552}});
+    assert.deepEqual(result.layout.items[0],{x:0,y:0,w:903,h:552});
+    for(const key of ['x','y','w','h'])assert.ok(Math.abs(result.layout.items[1][key]-{x:100,y:100,w:160,h:70}[key])<=.2);
+  }
+});
+test('the page option survives saving and reloading while a phone size is active', () => {
+  assert.deepEqual(run(`(()=>{
+    const layout={canvas:{width:800,height:500,picturePage:true},items:[]};setPageSize(layout,'402,874');
+    const saved=JSON.parse(JSON.stringify(layout));setPageSize(saved,'page');return [pageSizeChoices(saved).value,saved.canvas];
+  })()`),['page',{width:800,height:500,picturePage:true,picturePageSize:{width:800,height:500}}]);
+});
+test('a picture with phone dimensions still has separate Page and iPhone choices', () => {
+  const choices=run('pageSizeChoices({canvas:{width:393,height:852,picturePage:true},items:[]})');
+  assert.equal(choices.value,'page');assert.deepEqual(choices.options.slice(0,2).map(option=>option.value),['page','393,852']);
+});
+test('a plain phone draft keeps the three phone choices', () => {
+  const choices=run('pageSizeChoices({canvas:{width:393,height:852},items:[]})');
+  assert.equal(choices.page,null);assert.deepEqual(choices.options.map(option=>option.value),['393,852','402,874','440,956']);
+});
+test('old picture pages recover their page size after a switch to a phone', () => {
+  const header=Buffer.alloc(24);Buffer.from([137,80,78,71,13,10,26,10]).copy(header);header.write('IHDR',12);header.writeUInt32BE(903,16);header.writeUInt32BE(552,20);
+  const src='data:image/png;base64,'+header.toString('base64');
+  assert.deepEqual(run(`picturePageSizeFor({canvas:{width:393,height:852},items:[{imageBase:true,src:${JSON.stringify(src)},x:0,y:0,w:393,h:852}]})`),{width:903,height:552});
+  assert.equal(run('storedPictureSize("data:image/png;base64,AAAA")'),null);
 });
 
 const action = source.split('// BEGIN DROP ACTION')[1].split('// END DROP ACTION')[0];
@@ -132,6 +171,8 @@ for (const page of readdirSync(join(__dirname, '../drafts'), { withFileTypes: tr
     assert.equal(html.split('id="picture-drop-choice"').length - 1, 1);
     assert.ok(html.includes('aria-label="Add to page?"'));
     assert.ok(html.includes('aria-label="Open as new page?"'));
+    assert.ok(html.includes('renderPageSizePicker(preset);canvas.append(preset);'));
+    assert.equal(html.includes('preset.onchange=()=>{const [w,h]=preset.value.split'),false);
     new vm.Script(html.match(/<script>\s*([\s\S]*?)<\/script>/)[1]);
   });
 }

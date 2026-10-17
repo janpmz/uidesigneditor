@@ -62,9 +62,44 @@ async function makeRegionPlan(region){
   })();
   return region.pending;
 }
-function applyRegionPatches(plan){for(const patch of plan.patches){const entry=state.items.find(item=>item.id===patch.id);if(entry)Object.assign(entry,patch);}}
+function applyRegionPatches(plan){for(const patch of plan.patches){const entry=state.items.find(item=>item.id===patch.id);if(entry){Object.assign(entry,patch);delete entry.imageContents;}}}
 function prepareRegion(region){makeRegionPlan(region).catch(error=>{if(regionSelection===region)notify(error.message);});}
 function closeCanvasMenu(){canvasMenu.hidden=true;}
+function backgroundMergeSelection(){
+  const entries=selectedItems(),bases=state.items.filter(entry=>!entry.hidden&&isPagePicture(entry));
+  if(regionSelection||!entries.length||!bases.length||entries.some(entry=>entry.kind!=='image'||!entry.pictureFragment))return null;
+  return {entries,bases};
+}
+async function mergeSelectionIntoBackground(){
+  if(!editing||canvasGesture||canvasEditBusy||pictureDropBusy||pictureChoice.open)return;
+  const selection=backgroundMergeSelection();if(!selection)return;
+  canvasEditBusy=true;
+  const before=JSON.stringify(state),{entries,bases}=selection,ids=new Set([...bases,...entries].map(entry=>entry.id));
+  const sources=state.items.filter(entry=>ids.has(entry.id)),width=state.canvas.width,height=state.canvas.height;
+  try{
+    const images=await Promise.all(sources.map(source=>selectionImage(source.src)));
+    if(JSON.stringify(state)!==before)throw new Error('The page changed. Choose No item again.');
+    const ratio=Math.min(4,Math.sqrt(24000000/(width*height)),Math.max(1,...images.map((image,index)=>Math.max(image.naturalWidth/sources[index].w,image.naturalHeight/sources[index].h))));
+    const canvas=await html2canvas($('phone'),{
+      width,height,scale:ratio,scrollX:0,scrollY:0,logging:false,backgroundColor:state.canvas.background,
+      windowWidth:Math.max(document.documentElement.clientWidth,width),windowHeight:Math.max(document.documentElement.clientHeight,height),
+      ignoreElements:element=>['selection-overlay','pixel-selection','guide','marquee'].some(name=>element.classList?.contains(name))||(element.classList?.contains('item')&&!ids.has(element.dataset.id)),
+      onclone:cloned=>{
+        const phone=cloned.getElementById('phone');phone.classList.remove('editing');
+        Object.assign(phone.style,{position:'fixed',left:'0',top:'0',width:width+'px',height:height+'px',transform:'none',boxShadow:'none',borderRadius:'0'});
+        cloned.querySelectorAll('dialog').forEach(dialog=>dialog.removeAttribute('open'));
+      },
+    });
+    if(JSON.stringify(state)!==before)throw new Error('The page changed. Choose No item again.');
+    const background=item(bases[0].id,bases.length===1?bases[0].name:'Page background','image',0,0,width,height,{src:canvas.toDataURL('image/png'),imageBase:true});
+    change(()=>{
+      state.items=state.items.flatMap(entry=>entry.id===background.id?[background]:ids.has(entry.id)?[]:[entry]);
+      regionSelection=null;selected.clear();
+    });
+    stage.focus({preventScroll:true});notify('Merged into background');
+  }catch(error){notify(error.message||'Could not merge this item.');}
+  finally{canvasEditBusy=false;}
+}
 function endCanvasGesture(cancel=false){
   const gesture=canvasGesture;if(!gesture)return;
   canvasGesture=null;gesture.cancelled=cancel;gesture.box?.remove();
@@ -119,7 +154,7 @@ stage.addEventListener('pointermove',event=>{
   const distance=Math.hypot(gesture.latest.x-gesture.start.x,gesture.latest.y-gesture.start.y);
   if(distance>.1)gesture.moved=true;
   if(gesture.type==='box'){
-    drawBox(gesture,event);const box=clippedArea(boxBetween(gesture.start,gesture.latest),state.canvas);
+    drawBox(gesture,event);const box=boxBetween(gesture.start,gesture.latest);
     if(gesture.pixels){regionSelection=rememberRegion(box);renderSelection();}
     else{selected=new Set([...gesture.base,...itemIdsInSelection(state.items.filter(entry=>!isPagePicture(entry)),box)]);refreshSelection();}
   }else if(gesture.type==='pixels'){
@@ -186,8 +221,16 @@ for(const type of ['copy','cut'])document.addEventListener(type,event=>{
   event.preventDefault();event.stopImmediatePropagation();void copyCanvasSelection(type==='cut',event);
 },true);
 document.addEventListener('paste',event=>{
-  if(!canEditCanvas(event))return;const payload=readCanvasClipboard(event.clipboardData?.getData('text/plain'));if(!payload)return;
-  event.preventDefault();event.stopImmediatePropagation();canvasPasteCount=0;pasteCanvasClipboard(payload);
+  if(!canEditCanvas(event))return;
+  const files=[...(event.clipboardData?.files||[])].filter(file=>pictureType(file));
+  if(files.length){
+    event.preventDefault();event.stopImmediatePropagation();
+    void handlePictureDrop({dataTransfer:{files},clientX:NaN,clientY:NaN,preventDefault(){}});return;
+  }
+  const payload=readCanvasClipboard(event.clipboardData?.getData('text/plain'));if(!payload)return;
+  event.preventDefault();event.stopImmediatePropagation();
+  if(JSON.stringify(payload)!==JSON.stringify(canvasClipboard))canvasPasteCount=0;
+  pasteCanvasClipboard(payload);
 },true);
 document.addEventListener('keydown',event=>{
   if(canvasTextTarget(event.target)||pictureChoice.open||$('icon-picker')?.open)return;
@@ -196,7 +239,6 @@ document.addEventListener('keydown',event=>{
   if(!editing||canvasEditBusy||$('editor-tools')?.open)return;
   const command=event.metaKey||event.ctrlKey,key=event.key.toLowerCase();
   if(command&&(key==='c'||key==='x')&&(regionSelection||selectedItems().length)){event.preventDefault();event.stopImmediatePropagation();void copyCanvasSelection(key==='x');return;}
-  if(command&&key==='v'&&canvasClipboard){event.preventDefault();event.stopImmediatePropagation();pasteCanvasClipboard();return;}
   if(command&&key==='a'&&state.canvas.picturePage){event.preventDefault();event.stopImmediatePropagation();selected.clear();regionSelection=rememberRegion({x:0,y:0,w:state.canvas.width,h:state.canvas.height});renderSelection();prepareRegion(regionSelection);return;}
   if(event.key==='Escape'&&regionSelection){event.preventDefault();event.stopImmediatePropagation();regionSelection=null;render();return;}
   if(regionSelection&&(event.key==='Delete'||event.key==='Backspace')){
@@ -211,13 +253,23 @@ if($('paste-items'))$('paste-items').onclick=async()=>{
   notify('Copy items or a picture selection first.');
 };
 stage.addEventListener('contextmenu',event=>{
-  if(editing&&!regionSelection){const id=event.target.closest('.item')?.dataset.id;if(id&&!selected.has(id)){selected=new Set([id]);refreshSelection();}}
-  if(!editing||(!regionSelection&&!selectedItems().length))return;
+  if(!canEditCanvas(event)||pictureDropBusy)return;
+  if(!regionSelection||!pointInArea(phonePoint(event),regionSelection.box)){
+    const id=event.target.closest('.item,.selection-overlay')?.dataset.id;
+    if(id&&!selected.has(id)){regionSelection=null;selected=new Set([id]);refreshSelection();}
+  }
+  if(!regionSelection&&!selectedItems().length)return;
   event.preventDefault();event.stopImmediatePropagation();canvasMenu.hidden=false;
+  $('canvas-menu-edit-image').hidden=!pictureToEdit();
+  $('canvas-menu-fit-content').disabled=Boolean(regionSelection)||!selectedItems().some(canFitContent);
+  $('canvas-menu-no-item').hidden=!backgroundMergeSelection();
   canvasMenu.style.left=clamp(event.clientX,8,Math.max(8,window.innerWidth-canvasMenu.offsetWidth-8))+'px';canvasMenu.style.top=clamp(event.clientY,8,Math.max(8,window.innerHeight-canvasMenu.offsetHeight-8))+'px';
   $('canvas-menu-paste').disabled=!canvasClipboard;$('canvas-menu-cut').focus({preventScroll:true});
 },true);
 $('canvas-menu-cut').onclick=()=>{closeCanvasMenu();void copyCanvasSelection(true);};
 $('canvas-menu-copy').onclick=()=>{closeCanvasMenu();void copyCanvasSelection();};
 $('canvas-menu-paste').onclick=()=>{closeCanvasMenu();pasteCanvasClipboard();};
+$('canvas-menu-fit-content').onclick=()=>{closeCanvasMenu();return fitCanvasSelection();};
+$('canvas-menu-no-item').onclick=()=>{closeCanvasMenu();return mergeSelectionIntoBackground();};
+$('canvas-menu-edit-image').onclick=()=>{closeCanvasMenu();const entry=pictureToEdit();if(entry)return openImageEditor(entry.id);};
 document.addEventListener('pointerdown',event=>{if(!canvasMenu.contains(event.target))closeCanvasMenu();},true);

@@ -2,9 +2,10 @@ import { readFile, writeFile, readdir } from 'node:fs/promises';
 
 const root = new URL('../', import.meta.url);
 const code = await readFile(new URL('editor/image-drop.js', root), 'utf8');
-const selection = (await Promise.all(['pixel-tools.js', 'canvas-selection.js'].map(name => readFile(new URL(`editor/${name}`, root), 'utf8')))).join('\n');
+const selection = (await Promise.all(['pixel-tools.js', 'fit-content.js', 'canvas-selection.js', 'image-edit.js'].map(name => readFile(new URL(`editor/${name}`, root), 'utf8')))).join('\n');
 const dialog = await readFile(new URL('editor/image-drop-dialog.html', root), 'utf8');
 const menu = await readFile(new URL('editor/canvas-edit-menu.html', root), 'utf8');
+const imageEditBar = await readFile(new URL('editor/image-edit-bar.html', root), 'utf8');
 const styles = await readFile(new URL('editor/image-drop.css', root), 'utf8');
 const reader = await readFile(new URL('editor/vendor/heic-to-1.6.6.js', root), 'utf8');
 const license = await readFile(new URL('editor/vendor/heic-to.LICENSE.txt', root), 'utf8');
@@ -19,6 +20,21 @@ for (const entry of await readdir(new URL('drafts/', root), { withFileTypes: tru
   const path = new URL(`drafts/${draft}/index.html`, root);
   let html = await readFile(path, 'utf8');
   if (!html.includes('// BEGIN PICTURE DROP\n')) continue;
+  const imageEditStart = html.indexOf('<!-- BEGIN IMAGE EDIT BAR -->');
+  const imageEditBlock = '<!-- BEGIN IMAGE EDIT BAR -->\n' + imageEditBar.trimEnd() + '\n<!-- END IMAGE EDIT BAR -->';
+  if (imageEditStart < 0) {
+    if (html.includes('<template id="home-canvas-bar"></template>')) html = html.replace('<template id="home-canvas-bar"></template>', imageEditBlock + '\n    <template id="home-canvas-bar"></template>');
+    else html = html.replace('<div class="canvas-bar">', imageEditBlock + '\n    <div class="canvas-bar">');
+  }
+  else {
+    const imageEditEnd = html.indexOf('<!-- END IMAGE EDIT BAR -->', imageEditStart);
+    if (imageEditEnd < 0) throw new Error('Missing image edit bar end mark.');
+    html = html.slice(0, imageEditStart) + imageEditBlock + html.slice(imageEditEnd + '<!-- END IMAGE EDIT BAR -->'.length);
+  }
+  if (!html.includes('if(imageEditSession){')) html = html.replace('function save() {', "function save() { if(imageEditSession){$('undo').disabled=!history.length;$('redo').disabled=!future.length;return;}");
+  if (!html.includes('renderImageEditStatus();')) html = html.replace('function renderInspector() {', 'function renderInspector() {\n  renderImageEditStatus();');
+  if (!html.includes('renderImageEditAction(heading,item);')) html = html.replace("heading.append(field('Name','name',item.name,'text',true));", "heading.append(field('Name','name',item.name,'text',true));renderImageEditAction(heading,item);");
+  html = html.replace("note.textContent='Changes save in this browser.", "note.textContent=imageEditSession?'Choose Done to save the image and return to the page. Cancel discards these edits.':'Changes save in this browser.");
   const start = html.indexOf('<!-- BEGIN HEIC READER -->');
   if (start < 0) html = html.replace('</head>', support + '\n</head>');
   else {
@@ -49,15 +65,19 @@ for (const entry of await readdir(new URL('drafts/', root), { withFileTypes: tru
   html = html.replace('Math.max(.2,Math.min(1,', 'Math.max(state.canvas.picturePage ? .01 : .2,Math.min(1,');
   html = html.replace("const canvas=section('Phone');", "const canvas=section(state.canvas.picturePage?'Page':'Phone');");
   html = html.replace("preset.setAttribute('aria-label','Phone size');", "preset.setAttribute('aria-label',state.canvas.picturePage?'Page size':'Phone size');");
-  html = html.replace("preset.value=state.canvas.width+','+state.canvas.height;", "const pageSize=state.canvas.width+','+state.canvas.height;if(![...preset.options].some(option=>option.value===pageSize)){const option=document.createElement('option');option.value=pageSize;option.textContent=state.canvas.width+' × '+state.canvas.height;preset.append(option);}preset.value=pageSize;");
-  if (!html.includes('delete state.canvas.picturePage;')) html = html.replace('state.canvas.width=w;state.canvas.height=h;', 'state.canvas.width=w;state.canvas.height=h;delete state.canvas.picturePage;');
+  html = html.replace(/\[\['393,852','iPhone 16[^\n]*\n\s*preset\.onchange=[^\n]*canvas\.append\(preset\);/, 'renderPageSizePicker(preset);canvas.append(preset);');
   if (!html.includes('cleanPictureExport(doc);')) html = html.replace('const doc=document.documentElement.cloneNode(true);', 'const doc=document.documentElement.cloneNode(true);cleanPictureExport(doc);');
   html = html.replace('function renderSelection() {', 'function renderNativeSelection() {');
   if (!html.includes("el.classList.toggle('page-image'")) html = html.replace('styleItem(el,item);', "styleItem(el,item);el.classList.toggle('page-image',isPagePicture(item));");
   html = html.replace("$('copy-items').disabled=!editing||!selectedItems().length;", "$('copy-items').disabled=!editing||(!regionSelection&&!selectedItems().length);");
   html = html.replace("empty.textContent='Drag across", "empty.textContent=regionSelection?'Drag inside the selection to move it. Cut, copy and paste work with the usual keys or a right-click.':'Drag across");
-  html = html.replaceAll('Drag across empty space. The box selects every item it touches. Drag any selected item to move them together. Shift-click to add or remove items.', 'Draw a box around items, then drag inside it to move them. Shift-click to add or remove an item.');
-  html = html.replaceAll('Drag across empty space to select items. Drag any selected item to move them together. Shift-click to add or remove items.', 'Draw a box around items, then drag inside it to move them. Shift-click to add or remove an item.');
+  const selectionHelp='Draw a box to select items it touches. Drag inside to move them. Shift-click to add or remove an item.';
+  for (const message of [
+    'Drag across empty space. The box selects every item it touches. Drag any selected item to move them together. Shift-click to add or remove items.',
+    'Drag across empty space to select items. Drag any selected item to move them together. Shift-click to add or remove items.',
+    'Draw a box around items, then drag inside it to move them. Shift-click to add or remove an item.',
+  ]) html = html.replaceAll(message, selectionHelp);
+  if (!html.includes("state.canvas.picturePage?'Draw a box to select part of the image.")) html = html.replace("':'" + selectionHelp + "'", "':state.canvas.picturePage?'Draw a box to select part of the image. Drag inside the box to move it.':'" + selectionHelp + "'");
   html = html.replaceAll('Drag any selected item or the count above the box to move them together.', 'Drag inside the box to move the selected items.');
   html = html.replaceAll('Drag empty space to select · drag items to move · Shift-click to add · Delete to remove', 'Drag to select · drag the selection to move · ⌘X / ⌘V to cut and paste');
   html = html.replaceAll('Drag empty space: select a box.', 'Drag: draw a box. Drag inside: move.');

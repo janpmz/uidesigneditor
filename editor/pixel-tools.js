@@ -14,7 +14,7 @@ function sourcePixelArea(box,entry,width,height){
   return {x,y,w:right-x,h:bottom-y};
 }
 function itemIdsInSelection(items,box){
-  return items.filter(entry=>!entry.hidden&&entry.x>=box.x-.01&&entry.y>=box.y-.01&&entry.x+entry.w<=box.x+box.w+.01&&entry.y+entry.h<=box.y+box.h+.01).map(entry=>entry.id);
+  return items.filter(entry=>!entry.hidden&&entry.x<=box.x+box.w+.01&&entry.x+entry.w>=box.x-.01&&entry.y<=box.y+box.h+.01&&entry.y+entry.h>=box.y-.01).map(entry=>entry.id);
 }
 function fillPixelArea(data,width,height,box,background=[0,0,0,255]){
   const samples=[],colors=new Map();
