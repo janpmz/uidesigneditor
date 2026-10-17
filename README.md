@@ -15,11 +15,23 @@ If another project uses port 3000, stop its server first.
 - Library: http://localhost:3000/drafts/dark-library-layout/
 - Chapters: http://localhost:3000/drafts/dark-chapter-layout/
 
-The player opens by default. Use the links above each canvas to switch drafts.
+The player opens by default. Use **Projects / Pages** at the bottom of the left
+sidebar to switch pages. The list stays there when you switch between Add and Items.
 A narrow window shows the canvas with Edit, Items, Add, and Copy HTML beside it.
 
 Drafts save in your browser. Copy layout exports the item data. Copy HTML
 copies the whole editor with the current draft. Screenshot saves the canvas as an image.
+
+Move, resize, paste, and add items anywhere around the page. The page edge stays
+visible while you edit. New text, shapes, and icons appear in the middle of your
+view. Drop pictures or saved HTML items where you want them, even outside the page.
+Saved drafts and HTML copies keep those items. Screenshots keep the page size.
+
+Scroll to pan, or hold Space and drag. A middle-button drag also pans. Hold
+Cmd/Ctrl while scrolling to zoom at the pointer, or pinch with two fingers.
+Use + and − or choose a zoom from the list between them. Choose **Fit page** to return to
+the page, or **Fit all** to see the page and all your items. Cmd/Ctrl+0 fits the
+page; Cmd/Ctrl+1 shows 100%.
 
 Paste or drop pictures in the editor, then choose **Add to page?** or
 **Open as new page?**. Add keeps the current design and fits the pictures inside

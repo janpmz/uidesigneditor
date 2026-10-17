@@ -11,9 +11,9 @@
 :root{color-scheme:dark;font:13px/1.45 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#eeeef0;background:#151517;--line:#303035;--panel:#1c1c1f;--accent:#c8b6ff}
 *{box-sizing:border-box}body{margin:0}button,input,select,textarea{font:inherit}button{cursor:pointer}button,input,select,textarea{color:inherit;border:1px solid var(--line);background:#252529;border-radius:7px}button{padding:7px 11px}button:hover{background:#34343a}button:disabled{opacity:.35;cursor:default}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}button.active{background:#3b3151;border-color:#746194;color:#e4d9ff}button.danger{color:#ffadad}input,select,textarea{padding:7px 8px;min-width:0}input[type=color]{padding:3px;width:38px;height:32px;cursor:pointer}input[type=checkbox]{accent-color:#b4a0e8}input[type=number]{width:100%}textarea{resize:vertical;min-height:100px;width:100%;line-height:1.5}label{color:#aaaab3;font-size:11px}h1,h2,p{margin:0}h1{font-size:16px;letter-spacing:-.3px;font-weight:600}h2{font-size:12px;font-weight:600;color:#e3e3e8}.muted{color:#93939d}.small{font-size:11px}.mono{font-variant-numeric:tabular-nums}.hidden{display:none!important}
 .topbar{height:68px;border-bottom:1px solid var(--line);padding:0 22px;display:flex;align-items:center;justify-content:space-between;gap:20px;background:#1a1a1d}.brand{display:flex;align-items:baseline;gap:14px}.top-actions{display:flex;align-items:center;gap:7px}.primary{background:#d4c2ff;color:#211733;border-color:#d4c2ff;font-weight:600}.primary:hover{background:#e1d4ff}.divider{height:22px;width:1px;background:var(--line);margin:0 6px}
-.workspace{height:calc(100dvh - 68px);display:grid;grid-template-columns:218px minmax(320px,1fr) 268px}.sidebar{background:var(--panel);min-height:0;overflow:auto}.layers-pane{border-right:1px solid var(--line);display:flex;flex-direction:column}.pane-head{padding:18px 16px 12px;display:flex;align-items:center;justify-content:space-between}.layer-list{overflow:auto;flex:1;padding:0 8px 12px}.layer{display:flex;align-items:center;gap:6px;border:1px solid transparent;border-radius:6px;margin-bottom:3px;min-height:32px}.layer.selected{background:#34303e;border-color:#5c4e78}.layer.deleted .layer-name{opacity:.4;text-decoration:line-through}.layer-name{border:0;background:transparent;flex:1;text-align:left;padding:6px 9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}.layer-state{border:0;background:transparent;color:#94949e;font-size:10px;padding:5px 7px}.layer-state:hover{color:#eee}.add-tools{display:flex;gap:6px;padding:12px;border-top:1px solid var(--line)}.add-tools button{flex:1;font-size:11px}.canvas-area{position:relative;min-width:0;min-height:0;display:flex;flex-direction:column;background-color:#141416;background-image:radial-gradient(#323237 .7px,transparent .7px);background-size:18px 18px}.canvas-bar{height:45px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;background:#141416;border-bottom:1px solid #252529;font-size:11px;color:#a5a5ad;gap:12px}.canvas-bar select{font-size:11px;padding:4px 7px}.canvas-bar label{display:flex;align-items:center;gap:5px}.stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:auto;padding:24px}.phone-mount{position:relative;flex:none}.phone{position:relative;transform-origin:top left;overflow:hidden;border-radius:44px;box-shadow:0 0 0 1px #434348,0 0 0 8px #09090a,0 25px 60px #0005;isolation:isolate}.phone.editing .item{cursor:move;touch-action:none;user-select:none}.item{position:absolute;padding:0;border:0;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:6px;transform-origin:center;white-space:nowrap;outline:none}.phone.editing .item:hover{outline:1px solid #b9a0f7aa;outline-offset:2px}.phone.editing .item.selected{outline:1px solid #d0baff;outline-offset:2px}.item .content{pointer-events:none;display:contents}.ion{font-family:Ionicons!important;font-weight:400!important;font-style:normal;line-height:1;display:inline-block;flex:none;vertical-align:middle}.item.kind-label{display:block;line-height:1.35}.item.kind-reading{display:block;white-space:normal;overflow:auto;scrollbar-width:none}.item.kind-reading::-webkit-scrollbar{display:none}.reading-holder{min-height:100%;display:flex;flex-direction:column;justify-content:center}.reading-lines{margin:0}.word-highlight{color:#19160b;padding:1px 0}.item.kind-tab{flex-direction:column;gap:2px}.selection-overlay{position:absolute;z-index:9998;pointer-events:none;outline:1px solid #d0baff;outline-offset:2px}.resize-handle{position:absolute;width:9px;height:9px;border:1px solid #17131d;background:#d0baff;right:-5px;bottom:-5px;cursor:nwse-resize;z-index:9999;pointer-events:auto}.phone:not(.editing) .resize-handle{display:none}.phone:not(.editing) .item{cursor:default}.phone:not(.editing) .kind-reading{user-select:text}.guide{position:absolute;z-index:1000;background:#b7a1f8;pointer-events:none;display:none}.guide.v{width:1px;height:100%;top:0;left:50%}.guide.h{height:1px;width:100%;left:0;top:50%}.canvas-foot{height:35px;display:flex;align-items:center;justify-content:center;color:#92929c;font-size:11px;background:#141416}.inspector{border-left:1px solid var(--line);padding-bottom:20px}.section{padding:16px;border-top:1px solid var(--line)}.section:first-child{border-top:0}.section h2{margin-bottom:12px}.fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{display:flex;flex-direction:column;gap:4px}.field.full{grid-column:1/-1}.field input[type=text]{width:100%}.color-line{display:flex;align-items:center;gap:8px}.color-line input[type=text]{width:100%;font-size:11px}.align-buttons{display:flex;gap:4px}.align-buttons button{flex:1;font-size:11px;padding:6px}.action-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.action-grid button{font-size:11px}.note{font-size:11px;line-height:1.65;color:#9999a4}.empty-state{padding:20px 16px;color:#a6a6b0;font-size:12px;line-height:1.8}.badge{font-size:10px;color:#9d9da6}.check-line{display:flex;gap:7px;align-items:center}.toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,12px);opacity:0;pointer-events:none;background:#e5dcf6;color:#211b2c;padding:10px 17px;border-radius:9px;box-shadow:0 5px 25px #0005;transition:opacity .15s,transform .15s;z-index:10000}.toast.show{opacity:1;transform:translate(-50%,0)}a{color:#b5a2df}
-@media(max-width:1050px){.workspace{grid-template-columns:175px minmax(300px,1fr) 235px}.brand .muted{display:none}.topbar{padding:0 16px}.top-actions{gap:5px}.top-actions button{padding:7px 9px}.canvas-bar{padding:0 12px}}
-.draft-link{font-size:11px;text-decoration:none;color:#b5a2df;margin-right:6px}.kind-label{overflow:hidden;text-overflow:ellipsis}
+.workspace{height:calc(100dvh - 68px);display:grid;grid-template-columns:218px minmax(320px,1fr) 268px}.sidebar{background:var(--panel);min-height:0;overflow:auto}.layers-pane{border-right:1px solid var(--line);display:flex;flex-direction:column}.pane-head{padding:18px 16px 12px;display:flex;align-items:center;justify-content:space-between}.layer-list{overflow:auto;flex:1;padding:0 8px 12px}.layer{display:flex;align-items:center;gap:6px;border:1px solid transparent;border-radius:6px;margin-bottom:3px;min-height:32px}.layer.selected{background:#34303e;border-color:#5c4e78}.layer.deleted .layer-name{opacity:.4;text-decoration:line-through}.layer-name{border:0;background:transparent;flex:1;text-align:left;padding:6px 9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}.layer-state{border:0;background:transparent;color:#94949e;font-size:10px;padding:5px 7px}.layer-state:hover{color:#eee}.add-tools{display:flex;gap:6px;padding:12px;border-top:1px solid var(--line)}.add-tools button{flex:1;font-size:11px}.canvas-area{position:relative;min-width:0;min-height:0;display:flex;flex-direction:column;background-color:#141416;background-image:radial-gradient(#323237 .7px,transparent .7px);background-size:18px 18px}.stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:auto;padding:24px}.phone-mount{position:relative;flex:none}.phone{position:relative;transform-origin:top left;overflow:hidden;border-radius:44px;box-shadow:0 0 0 1px #434348,0 0 0 8px #09090a,0 25px 60px #0005;isolation:isolate}.phone.editing .item{cursor:move;touch-action:none;user-select:none}.item{position:absolute;padding:0;border:0;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:6px;transform-origin:center;white-space:nowrap;outline:none}.phone.editing .item:hover{outline:1px solid #b9a0f7aa;outline-offset:2px}.phone.editing .item.selected{outline:1px solid #d0baff;outline-offset:2px}.item .content{pointer-events:none;display:contents}.ion{font-family:Ionicons!important;font-weight:400!important;font-style:normal;line-height:1;display:inline-block;flex:none;vertical-align:middle}.item.kind-label{display:block;line-height:1.35}.item.kind-reading{display:block;white-space:normal;overflow:auto;scrollbar-width:none}.item.kind-reading::-webkit-scrollbar{display:none}.reading-holder{min-height:100%;display:flex;flex-direction:column;justify-content:center}.reading-lines{margin:0}.word-highlight{color:#19160b;padding:1px 0}.item.kind-tab{flex-direction:column;gap:2px}.selection-overlay{position:absolute;z-index:9998;pointer-events:none;outline:1px solid #d0baff;outline-offset:2px}.resize-handle{position:absolute;width:9px;height:9px;border:1px solid #17131d;background:#d0baff;right:-5px;bottom:-5px;cursor:nwse-resize;z-index:9999;pointer-events:auto}.phone:not(.editing) .resize-handle{display:none}.phone:not(.editing) .item{cursor:default}.phone:not(.editing) .kind-reading{user-select:text}.guide{position:absolute;z-index:1000;background:#b7a1f8;pointer-events:none;display:none}.guide.v{width:1px;height:100%;top:0;left:50%}.guide.h{height:1px;width:100%;left:0;top:50%}.canvas-foot{height:35px;display:flex;align-items:center;justify-content:center;color:#92929c;font-size:11px;background:#141416}.inspector{border-left:1px solid var(--line);padding-bottom:20px}.section{padding:16px;border-top:1px solid var(--line)}.section:first-child{border-top:0}.section h2{margin-bottom:12px}.fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{display:flex;flex-direction:column;gap:4px}.field.full{grid-column:1/-1}.field input[type=text]{width:100%}.color-line{display:flex;align-items:center;gap:8px}.color-line input[type=text]{width:100%;font-size:11px}.align-buttons{display:flex;gap:4px}.align-buttons button{flex:1;font-size:11px;padding:6px}.action-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.action-grid button{font-size:11px}.note{font-size:11px;line-height:1.65;color:#9999a4}.empty-state{padding:20px 16px;color:#a6a6b0;font-size:12px;line-height:1.8}.badge{font-size:10px;color:#9d9da6}.check-line{display:flex;gap:7px;align-items:center}.toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,12px);opacity:0;pointer-events:none;background:#e5dcf6;color:#211b2c;padding:10px 17px;border-radius:9px;box-shadow:0 5px 25px #0005;transition:opacity .15s,transform .15s;z-index:10000}.toast.show{opacity:1;transform:translate(-50%,0)}a{color:#b5a2df}
+@media(max-width:1050px){.workspace{grid-template-columns:175px minmax(300px,1fr) 235px}.brand .muted{display:none}.topbar{padding:0 16px}.top-actions{gap:5px}.top-actions button{padding:7px 9px}}
+.kind-label{overflow:hidden;text-overflow:ellipsis}
 .stage{touch-action:none;user-select:none;outline:none}
 .marquee{position:fixed;pointer-events:none;z-index:10000;border:1px solid #c8b6ff;background:#c8b6ff22}
 .group-grip{position:absolute;right:0;top:-26px;padding:2px 7px;border-radius:4px;font:11px/18px -apple-system,BlinkMacSystemFont,sans-serif;color:#211733;background:#d0baff;pointer-events:auto;cursor:move;white-space:nowrap}
@@ -21,8 +21,8 @@
 .icon-picker{width:min(840px,calc(100vw - 32px));max-height:calc(100dvh - 32px);padding:0;border:1px solid #424149;border-radius:16px;background:#1c1c1f;color:#eeeef0;box-shadow:0 24px 100px #0009}.icon-picker[open]{display:flex;flex-direction:column}.icon-picker::backdrop{background:#0009;backdrop-filter:blur(4px)}.icon-picker-head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;padding:20px 20px 12px;flex:none}.icon-picker-head h2{font-size:18px;margin-bottom:4px}.icon-picker-tools{display:flex;gap:8px;padding:0 20px 12px;flex:none}.icon-picker-tools input{flex:1;width:100%;min-width:0}.icon-picker-tools select{width:126px}.icon-picker-count{padding:0 20px 12px;flex:none}.icon-picker-results{padding:0 20px 20px;overflow:auto;min-height:0;overscroll-behavior:contain}.icon-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px}.icon-tile{min-height:86px;padding:12px 6px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:#252529;border:1px solid #35353c;border-radius:10px}.icon-tile:hover{color:#dfd3ff;border-color:#9b83cb;background:#34303f}.icon-tile .ion{font-size:28px;color:#d6c6fa}.icon-tile-name{font-size:10px;line-height:1.3;text-align:center;overflow-wrap:anywhere;color:#b7b4c1}.icon-picker-more{width:100%;margin-top:14px}.icon-empty{padding:35px 0;text-align:center;color:#aaaab3}.icon-choice{display:flex;align-items:center;gap:9px;width:100%;text-align:left}.icon-choice .ion{font-size:22px;color:#c8b6ff}.icon-choice-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.remove-icon{margin-top:6px;font-size:11px}
 @media(max-width:440px){.icon-picker-tools{flex-wrap:wrap}.icon-picker-tools select{width:100%}.icon-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .top-actions{min-width:0;max-width:100%;flex-wrap:wrap;justify-content:flex-end}.export-actions{display:flex;align-items:center;gap:7px;margin-left:auto}.brand{min-width:0}@media(max-width:760px){.top-actions{width:100%}.export-actions{gap:5px}}
-.quick-tools{display:none}.compact-tools{position:fixed;inset:auto;right:calc(100vw - var(--preview-left,0px) - var(--preview-width,100vw) + 12px);top:calc(var(--preview-top,0px) + 12px);width:min(380px,calc(var(--preview-width,100vw) - 24px));height:calc(var(--preview-height,100dvh) - 24px);max-width:none;max-height:none;margin:0;padding:0;border:1px solid #424149;border-radius:14px;background:var(--panel);color:#eeeef0;box-shadow:0 16px 80px #0008}.compact-tools[open]{display:flex;flex-direction:column}.compact-tools::backdrop{background:#0006}.tools-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px}.tools-head h2{font-size:16px;flex:1}.tools-head{gap:8px;flex-wrap:wrap}.tools-head button{font-size:11px;padding:7px 9px}.tools-tabs{display:flex;gap:6px;padding:0 16px 14px;border-bottom:1px solid var(--line)}.tools-tabs button{flex:1;min-height:36px;font-size:12px;padding:7px 6px}.tools-tabs [aria-selected=true]{background:#3b3151;border-color:#746194;color:#e4d9ff}.tools-panel{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain}.tools-panel[hidden]{display:none!important}.compact-tools .inspector{border:0;overflow:visible}.compact-tools .layers-pane{height:100%;border:0}.compact-tools .layer-list{min-height:100px}.compact-tools .add-catalog{padding:16px}.compact-tools .add-catalog h2{margin:0 0 12px}.compact-tools .add-grid button{min-height:44px;font-size:12px}.compact-tools .topbar{height:auto;display:block;padding:16px;border:0}.compact-tools .brand .muted{display:none}.compact-tools .top-actions{width:100%;margin-top:16px;justify-content:flex-start;gap:8px}.compact-tools .divider{display:none}.compact-tools .export-actions{width:100%;margin-top:8px;gap:6px;flex-wrap:wrap;justify-content:flex-end}.compact-tools .canvas-bar{height:auto;min-height:56px;padding:16px;flex-wrap:wrap;border-top:1px solid var(--line)}
-@media(max-width:900px){body{overflow:hidden}.workspace{position:fixed;left:var(--preview-left,0px);top:var(--preview-top,0px);width:var(--preview-width,100%);height:var(--preview-height,100dvh);display:block}.canvas-area{height:100%;min-height:0}.canvas-foot{display:none}.stage{padding:12px;margin-right:88px}.phone{box-shadow:none}.quick-tools{display:flex;flex-direction:column;gap:6px;width:68px;position:fixed;right:calc(100vw - var(--preview-left,0px) - var(--preview-width,100vw) + 12px);top:calc(var(--preview-top,0px) + max(12px,env(safe-area-inset-top)));z-index:10001}.quick-tools button{min-height:36px;padding:7px 4px;font-size:11px;border-radius:10px;background:#252529ed;box-shadow:0 2px 14px #0005}body>.topbar,.workspace>.sidebar,.canvas-area>.canvas-bar{display:none}}
+.quick-tools{display:none}.compact-tools{position:fixed;inset:auto;right:calc(100vw - var(--preview-left,0px) - var(--preview-width,100vw) + 12px);top:calc(var(--preview-top,0px) + 12px);width:min(380px,calc(var(--preview-width,100vw) - 24px));height:calc(var(--preview-height,100dvh) - 24px);max-width:none;max-height:none;margin:0;padding:0;border:1px solid #424149;border-radius:14px;background:var(--panel);color:#eeeef0;box-shadow:0 16px 80px #0008}.compact-tools[open]{display:flex;flex-direction:column}.compact-tools::backdrop{background:#0006}.tools-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px}.tools-head h2{font-size:16px;flex:1}.tools-head{gap:8px;flex-wrap:wrap}.tools-head button{font-size:11px;padding:7px 9px}.tools-tabs{display:flex;gap:6px;padding:0 16px 14px;border-bottom:1px solid var(--line)}.tools-tabs button{flex:1;min-height:36px;font-size:12px;padding:7px 6px}.tools-tabs [aria-selected=true]{background:#3b3151;border-color:#746194;color:#e4d9ff}.tools-panel{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain}.tools-panel[hidden]{display:none!important}.compact-tools .inspector{border:0;overflow:visible}.compact-tools .layers-pane{height:100%;border:0}.compact-tools .layer-list{min-height:100px}.compact-tools .add-catalog{padding:16px}.compact-tools .add-catalog h2{margin:0 0 12px}.compact-tools .add-grid button{min-height:44px;font-size:12px}.compact-tools .topbar{height:auto;display:block;padding:16px;border:0}.compact-tools .brand .muted{display:none}.compact-tools .top-actions{width:100%;margin-top:16px;justify-content:flex-start;gap:8px}.compact-tools .divider{display:none}.compact-tools .export-actions{width:100%;margin-top:8px;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+@media(max-width:900px){body{overflow:hidden}.workspace{position:fixed;left:var(--preview-left,0px);top:var(--preview-top,0px);width:var(--preview-width,100%);height:var(--preview-height,100dvh);display:block}.canvas-area{height:100%;min-height:0}.canvas-foot{display:none}.stage{padding:12px;margin-right:88px}.phone{box-shadow:none}.quick-tools{display:flex;flex-direction:column;gap:6px;width:68px;position:fixed;right:calc(100vw - var(--preview-left,0px) - var(--preview-width,100vw) + 12px);top:calc(var(--preview-top,0px) + max(12px,env(safe-area-inset-top)));z-index:10001}.quick-tools button{min-height:36px;padding:7px 4px;font-size:11px;border-radius:10px;background:#252529ed;box-shadow:0 2px 14px #0005}body>.topbar,.workspace>.sidebar{display:none}}
 .item-menu{position:fixed;z-index:20000;min-width:140px;padding:5px;border:1px solid #49424f;border-radius:9px;background:#252529;box-shadow:0 8px 30px #0007}.item-menu[hidden]{display:none}.item-menu button{width:100%;text-align:left;border:0;background:transparent}.item-menu button:hover,.item-menu button:focus-visible{background:#3b3151}
 .item.kind-image{overflow:hidden;line-height:0}.item.kind-image img{display:block;width:100%;height:100%;pointer-events:none;user-select:none}.picture-drop{outline:2px solid #c8b6ff;outline-offset:-4px}
 
@@ -37,6 +37,18 @@
 .sidebar-panel>.add-catalog{padding:12px}
 .sidebar-panel>.add-catalog h2{display:none}
 .compact-tools .sidebar-items{height:100%}
+
+.layers-pane{overflow:hidden}
+.project-pages{display:flex;flex-direction:column;flex:none;min-height:0;max-height:45%;margin-top:auto;padding:16px 8px 10px;border-top:1px solid var(--line)}
+.project-pages h2{padding:0 8px 10px}
+.project-page-list{min-height:0;overflow:auto;display:flex;flex-direction:column;gap:3px}
+.project-page{display:flex;align-items:center;gap:9px;min-height:34px;flex:none;padding:7px 9px;border:1px solid transparent;border-radius:6px;color:#aaaab3;font-size:12px;text-decoration:none}
+.project-page svg{width:14px;height:16px;flex:none}
+.project-page span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.project-page:hover{background:#2a2a30;color:#eeeef0}
+.project-page[aria-current=page]{background:#34303e;border-color:#5c4e78;color:#e4d9ff}
+.project-page[aria-current=page]::after{content:'';width:5px;height:5px;flex:none;margin-left:auto;border-radius:50%;background:var(--accent)}
+.project-page:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 </style>
 
 <!-- Screenshot library: html2canvas 1.4.1
@@ -111,6 +123,21 @@ OTHER DEALINGS IN THE SOFTWARE.
 .image-edit-name{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:#b9afc5;margin-top:3px}
 .image-edit-action{display:block;width:100%;margin-top:12px}
 @media(max-width:900px){.image-edit-bar{padding-right:100px}}
+
+.stage{position:relative;display:block;overflow:hidden;padding:0;background-color:#141416;background-image:radial-gradient(#38383f .8px,transparent .8px)}
+.phone-mount{position:absolute}
+.phone.editing{overflow:visible}
+.stage.pan-ready,.stage.pan-ready *{cursor:grab!important}
+.stage.panning,.stage.panning *{cursor:grabbing!important}
+.canvas-view-tools{display:flex;align-items:center;gap:4px;flex:none}
+.canvas-view-tools button{padding:3px 7px;min-width:26px;font-size:14px}
+.canvas-view-tools select{min-width:85px;max-width:100px;padding:4px 7px;font-size:11px}
+.topbar-start{display:flex;align-items:center;gap:20px;min-width:0}
+.history-actions{display:flex;align-items:center;gap:7px;flex:none}
+.compact-tools .topbar-start{flex-wrap:wrap;gap:12px}
+.top-actions{row-gap:4px}
+.canvas-foot{flex-shrink:0;text-align:center;padding:0 8px}
+@media(max-width:900px){.stage{padding:0}.canvas-view-tools{flex-wrap:wrap}}
 
 </style>
 <script data-vendor="heic-to" data-version="1.6.6">
@@ -437,10 +464,21 @@ Library.
 <body>
 <template id="home-topbar"></template>
 <header class="topbar" id="editor-topbar">
-  <div class="brand"><h1>Player layout</h1><span class="muted small">Draw a box to select items.</span></div>
+  <div class="topbar-start">
+    <div class="brand"><h1>Player layout</h1><span class="muted small">Draw a box to select items.</span></div>
+    <div class="history-actions" role="group" aria-label="Edit history">
+      <button id="undo" title="Undo · ⌘Z">Undo</button><button id="redo" title="Redo · ⌘⇧Z">Redo</button>
+    </div>
+  </div>
   <div class="top-actions">
-    <button id="undo" title="Undo · ⌘Z">Undo</button><button id="redo" title="Redo · ⌘⇧Z">Redo</button>
-    <a class="draft-link" href="../dark-chapter-layout/">Chapters draft</a><a class="draft-link" href="../dark-library-layout/">Library draft</a>
+    <!-- BEGIN CANVAS VIEW TOOLS -->
+<div class="canvas-view-tools" role="group" aria-label="Canvas view">
+  <button id="zoom-out" aria-label="Zoom out" title="Zoom out">−</button>
+  <select id="zoom" aria-label="Canvas zoom"><option value="fit">Fit page</option><option value="all">Fit all</option><option value=".25">25%</option><option value=".5">50%</option><option value="1">100%</option><option value="2">200%</option><option value="4">400%</option><option value="8">800%</option><option id="zoom-custom" value="custom" hidden>Custom</option></select>
+  <button id="zoom-in" aria-label="Zoom in" title="Zoom in">+</button>
+</div>
+<!-- END CANVAS VIEW TOOLS -->
+
     <span class="divider"></span><div class="export-actions"><button id="screenshot" title="Save a PNG of the design">Screenshot</button><button data-copy-html>Copy HTML</button><button id="copy" class="primary">Copy layout</button></div>
   </div>
 </header>
@@ -470,6 +508,16 @@ Library.
         <p class="note">Select items, then ⌘C / ⌘V to copy and paste. Ctrl works too.</p>
       </div>
     </div>
+    <template id="home-pages"></template>
+    <nav class="project-pages" id="editor-pages" aria-labelledby="project-pages-title">
+      <h2 id="project-pages-title">Projects / Pages</h2>
+      <div class="project-page-list">
+        <a class="project-page" href="../dark-player-layout/" aria-current="page"><svg viewBox="0 0 16 18" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><path d="M9.5 1.5H3a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V6L9.5 1.5Z"/><path d="M9 1.5V6h5M5 10h6M5 13h4"/></svg><span>Player</span></a>
+        <a class="project-page" href="../dark-library-layout/"><svg viewBox="0 0 16 18" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><path d="M9.5 1.5H3a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V6L9.5 1.5Z"/><path d="M9 1.5V6h5M5 10h6M5 13h4"/></svg><span>Library</span></a>
+        <a class="project-page" href="../dark-chapter-layout/"><svg viewBox="0 0 16 18" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><path d="M9.5 1.5H3a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V6L9.5 1.5Z"/><path d="M9 1.5V6h5M5 10h6M5 13h4"/></svg><span>Chapters</span></a>
+        <a class="project-page" href="../dark-add-layout/"><svg viewBox="0 0 16 18" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><path d="M9.5 1.5H3a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V6L9.5 1.5Z"/><path d="M9 1.5V6h5M5 10h6M5 13h4"/></svg><span>Upload</span></a>
+      </div>
+    </nav>
   </aside>
   <section class="canvas-area" aria-label="Player layout canvas">
     <!-- BEGIN IMAGE EDIT BAR -->
@@ -479,10 +527,8 @@ Library.
   <button id="image-edit-done" class="primary">Done</button>
 </div>
 <!-- END IMAGE EDIT BAR -->
-    <template id="home-canvas-bar"></template>
-    <div class="canvas-bar" id="editor-canvas-bar"><span id="canvas-size" class="mono"></span><label><input id="snap" type="checkbox"> Snap to 4 px</label><select id="zoom" aria-label="Canvas zoom"><option value="fit">Fit</option><option value=".5">50%</option><option value=".75">75%</option><option value="1">100%</option><option value="1.25">125%</option></select></div>
     <div class="stage" id="stage" tabindex="0"><div class="phone-mount" id="phone-mount"><div class="phone editing" id="phone" aria-label="Dark player preview"></div></div></div>
-    <div class="canvas-foot" id="canvas-help">Drag to select · drag the selection to move · ⌘X / ⌘V to cut and paste</div>
+    <div class="canvas-foot" id="canvas-help">Drag to select · Space + drag to pan · ⌘/Ctrl + scroll to zoom</div>
   </section>
   <template id="home-inspector"></template>
   <aside class="sidebar inspector" id="inspector" aria-label="Item settings"></aside>
@@ -604,7 +650,12 @@ const STORAGE='dark-player-layout-v2:'+location.pathname;
 const compactViewport=window.matchMedia('(max-width:900px)');
 let state=original(),selected=new Set(),editing=true,scale=1,drag=null,history=[],future=[],toastTimer,fieldEdit=null;
 try { const saved=JSON.parse(localStorage.getItem(STORAGE)||'null'); const embedded=JSON.parse($('initial-layout').textContent); if(saved?.version===1)state=saved;else if(embedded?.version===1)state=embedded; } catch {}
-for(const entry of state.items){if(['explain','ask'].includes(entry.id)&&entry.color==='#a78bfa')entry.color='#dbc4ff';}
+function updateVoiceActionColors(){
+  if(state.voiceActionColorVersion===1)return;
+  for(const entry of state.items){if(['explain','ask'].includes(entry.id)&&entry.color==='#a78bfa')entry.color='#dbc4ff';}
+  state.voiceActionColorVersion=1;
+}
+updateVoiceActionColors();
 function remember(before=JSON.stringify(state)) { history.push(before); if(history.length>80)history.shift(); future=[]; }
 function save() { if(imageEditSession){$('undo').disabled=!history.length;$('redo').disabled=!future.length;return;} let stored=true;try{localStorage.setItem(STORAGE,JSON.stringify(state));}catch{stored=false;}savePictureDraft(stored); $('undo').disabled=!history.length; $('redo').disabled=!future.length; }
 function notify(text) { $('toast').textContent=text;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),2100); }
@@ -621,18 +672,15 @@ function itemsInBox(items,box) {
   return items.filter(item=>!item.hidden&&item.x<=box.x+box.w+.01&&item.x+item.w>=box.x-.01&&item.y<=box.y+box.h+.01&&item.y+item.h>=box.y-.01).map(item=>item.id);
 }
 function moveWithin(items,dx,dy,canvas) {
-  const bounds=boundsOf(items);if(!bounds)return;
-  dx=clamp(dx,-bounds.x,Math.max(-bounds.x,canvas.width-bounds.x-bounds.w));
-  dy=clamp(dy,-bounds.y,Math.max(-bounds.y,canvas.height-bounds.y-bounds.h));
   items.forEach(item=>{item.x=round(item.x+dx);item.y=round(item.y+dy);});
 }
 // END SELECTION GEOMETRY
 // BEGIN ITEM SCALE
-function scaleItemFromCorner(item,start,dx,dy,canvas,snap=round) {
+function scaleItemFromCorner(item,start,dx,dy,canvas) {
   const requested=1+(dx*start.w+dy*start.h)/(start.w*start.w+start.h*start.h);
-  const maximum=Math.max(.01,Math.min((canvas.width-start.x)/start.w,(canvas.height-start.y)/start.h));
+  const maximum=Infinity;
   const minimum=Math.min(maximum,1,Math.max(12/Math.max(start.w,start.h),.1/Math.min(start.w,start.h)));
-  const factor=clamp(snap(start.w*requested)/start.w,minimum,maximum);
+  const factor=clamp(round(start.w*requested)/start.w,minimum,maximum);
   item.w=round(start.w*factor);item.h=round(start.h*factor);
   for(const key of ['fontSize','iconSize','radius','borderWidth','iconOffsetX']) {
     if(Number.isFinite(start[key]))item[key]=round(start[key]*factor);
@@ -692,12 +740,7 @@ function renderNativeSelection() {
   }
   $('phone').append(overlay);
 }
-function fit() {
-  const available=$('stage').getBoundingClientRect();const zoom=$('zoom').value;
-  const gapX=compactViewport.matches?24:64,gapY=compactViewport.matches?24:48;
-  scale=zoom==='fit'?Math.max(state.canvas.picturePage ? .01 : .2,Math.min(1,(Math.floor(available.width)-gapX)/state.canvas.width,(Math.floor(available.height)-gapY)/state.canvas.height)):Number(zoom);
-  $('phone').style.transform=`scale(${scale})`;$('phone-mount').style.width=state.canvas.width*scale+'px';$('phone-mount').style.height=state.canvas.height*scale+'px';$('canvas-size').textContent=`${state.canvas.width} × ${state.canvas.height}`;
-}
+function fit() {renderCanvasView();}
 function select(id,add=false) {if(add){if(selected.has(id))selected.delete(id);else selected.add(id);}else selected=new Set([id]);render();}
 function renderLayers() {
   $('copy-items').disabled=!editing||(!regionSelection&&!selectedItems().length);
@@ -762,7 +805,7 @@ function renderInspector() {
   }
   const help=section('Your draft');const note=document.createElement('p');note.className='note';note.textContent=imageEditSession?'Choose Done to save the image and return to the page. Cancel discards these edits.':'Changes save in this browser. Copy HTML copies the whole editor with your draft. Copy layout gives you the exact positions and styles.';help.append(note);const keys=document.createElement('p');keys.className='note';keys.style.marginTop='10px';keys.textContent='Drag: draw a box. Drag inside: move. Shift-click: add or remove. ⌘X / ⌘C / ⌘V: cut, copy and paste. ⌘A: select all. Arrow keys: 1 px. Shift + arrow: 10 px. Delete: remove. ⌘Z: undo. Ctrl works too.';help.append(keys);pane.append(help);
 }
-function render(){selected=new Set([...selected].filter(id=>state.items.some(item=>item.id===id)));document.body.classList.remove('preview');renderPhone();renderLayers();renderInspector();save();}
+function render(){updateVoiceActionColors();selected=new Set([...selected].filter(id=>state.items.some(item=>item.id===id)));document.body.classList.remove('preview');renderPhone();renderLayers();renderInspector();save();}
 function reorder(direction){const index=state.items.findIndex(item=>selected.has(item.id)),target=clamp(index+direction,0,state.items.length-1);if(target!==index)change(()=>{const [item]=state.items.splice(index,1);state.items.splice(target,0,item);});}
 function duplicate(){
   const sources=selectedItems();if(!sources.length)return;
@@ -865,13 +908,12 @@ stage.addEventListener('pointermove',event=>{
     selected=new Set([...d.base,...itemsInBox(state.items,boxBetween(d.start,phonePoint(event)))]);
     drawBox(d,event);refreshSelection();return;
   }
-  const snap=value=>$('snap').checked&&!event.altKey?Math.round(value/4)*4:round(value);
   d.items.forEach((item,index)=>Object.assign(item,d.starts[index]));
   if(d.type==='resize'){
-    scaleItemFromCorner(d.items[0],d.starts[0],dx,dy,state.canvas,snap);
+    scaleItemFromCorner(d.items[0],d.starts[0],dx,dy,state.canvas);
   } else {
     if(event.shiftKey){if(Math.abs(dx)>Math.abs(dy))dy=0;else dx=0;}
-    moveWithin(d.items,dx===0?0:snap(d.bounds.x+dx)-d.bounds.x,dy===0?0:snap(d.bounds.y+dy)-d.bounds.y,state.canvas);
+    moveWithin(d.items,dx,dy,state.canvas);
   }
   d.items.forEach(item=>{const node=[...$('phone').querySelectorAll('.item')].find(node=>node.dataset.id===item.id);if(node)styleItem(node,item);});
   renderSelection();const bounds=boundsOf(d.items);
@@ -896,10 +938,10 @@ $('redo').onclick=()=>{if(!future.length)return;history.push(JSON.stringify(stat
 $('zoom').onchange=fit;new ResizeObserver(fit).observe($('stage'));
 const toolLocations=[
   ['editor-topbar','home-topbar','tools-actions'],
-  ['editor-canvas-bar','home-canvas-bar','tools-actions'],
   ['editor-items','home-items','tools-items'],
   ['inspector','home-inspector','tools-edit'],
   ['editor-add','home-add','tools-add'],
+  ['editor-pages','home-pages','editor-tools'],
 ];
 let toolTrigger=null,itemMenuId=null;
 function placeTools(compact,root=document){
@@ -1008,7 +1050,7 @@ const ADD_ITEMS={
 function addCanvasItem(type,overrides={}){change(()=>{
   const preset={...ADD_ITEMS[type],...overrides};
   const {name,kind,w,h,...look}=preset;
-  const entry=item('item-'+crypto.randomUUID(),name,kind,round((state.canvas.width-w)/2),round((state.canvas.height-h)/2),w,h,look);
+  const entry=item('item-'+crypto.randomUUID(),name,kind,round(canvasViewCenter().x-w/2),round(canvasViewCenter().y-h/2),w,h,look);
   state.items.push(entry);selected=new Set([entry.id]);
 });if(compactViewport.matches&&$('editor-tools').open)openToolPanel('edit');}
 Object.keys(ADD_ITEMS).forEach(type=>{$('add-'+type).onclick=()=>type==='icon'?openIconPicker():addCanvasItem(type);});
@@ -1123,7 +1165,7 @@ function editorPageFile(file){return file.type==='text/html'||/\.html?$/i.test(f
 function picturePlacement(width,height,canvas,point,index=0){
   const factor=Math.min(1,canvas.width*.9/width,canvas.height*.9/height);
   const w=Math.max(.1,round(width*factor)),h=Math.max(.1,round(height*factor));
-  return {w,h,x:round(clamp(point.x-w/2+index*12,0,canvas.width-w)),y:round(clamp(point.y-h/2+index*12,0,canvas.height-h))};
+  return {w,h,x:round(point.x-w/2+index*12),y:round(point.y-h/2+index*12)};
 }
 function pictureDropPlan(pictures,action,canvas,point){
   if(action==='add')return {canvas,replace:false,boxes:pictures.map((picture,index)=>picturePlacement(picture.width,picture.height,canvas,point,index))};
@@ -1222,7 +1264,7 @@ async function readEditorPage(file){
 }
 function addEditorPage(page,point){
   const factor=Math.min(1,state.canvas.width*.9/page.canvas.width,state.canvas.height*.9/page.canvas.height);
-  const x=clamp(point.x-page.canvas.width*factor/2,0,state.canvas.width-page.canvas.width*factor),y=clamp(point.y-page.canvas.height*factor/2,0,state.canvas.height-page.canvas.height*factor);
+  const x=point.x-page.canvas.width*factor/2,y=point.y-page.canvas.height*factor/2;
   const entries=page.items.filter(entry=>!entry.hidden).map(source=>{
     const entry=copy(source);entry.id='item-'+crypto.randomUUID();entry.x=round(x+source.x*factor);entry.y=round(y+source.y*factor);entry.w=Math.max(.1,round(source.w*factor));entry.h=Math.max(.1,round(source.h*factor));delete entry.imageBase;
     for(const key of ['fontSize','iconSize','radius','borderWidth','iconOffsetX'])if(Number.isFinite(source[key]))entry[key]=round(source[key]*factor);
@@ -1282,11 +1324,14 @@ async function handlePictureDrop(event){
   try{
     await picturesReady;
     const targetState=state;
+    const stageRect=$('stage').getBoundingClientRect();
+    const onStage=Number.isFinite(event.clientX)&&Number.isFinite(event.clientY)&&event.clientX>=stageRect.left&&event.clientX<=stageRect.right&&event.clientY>=stageRect.top&&event.clientY<=stageRect.bottom;
+    const dropPoint=onStage?phonePoint(event):canvasViewCenter();
     const action=await choosePictureDrop(files);if(!action)return;
     if(files.some(editorPageFile)){
       if(files.length!==1)throw new Error('Drop one HTML page at a time.');
       const page=await readEditorPage(files[0]);if(state!==targetState)throw new Error('The page changed. Drop the file again.');
-      change(()=>{if(typeof clearCanvasRegion==='function')clearCanvasRegion();if(action==='new'){state=page;selected.clear();}else addEditorPage(page,{x:state.canvas.width/2,y:state.canvas.height/2});});
+      change(()=>{if(typeof clearCanvasRegion==='function')clearCanvasRegion();if(action==='new'){state=page;selected.clear();resetCanvasView();}else addEditorPage(page,dropPoint);});
       if($('editor-tools')?.open)$('editor-tools').close();$('stage').focus({preventScroll:true});notify(action==='new'?'Page opened':'Page items added');return;
     }
     const pictures=[],errors=[];
@@ -1296,13 +1341,10 @@ async function handlePictureDrop(event){
     }
     if(!pictures.length){notify(errors[0]);return;}
     if(state!==targetState){notify('The draft changed. Please drop the pictures again.');return;}
-    const rect=$('phone').getBoundingClientRect();
-    const inside=event.clientX>=rect.left&&event.clientX<=rect.right&&event.clientY>=rect.top&&event.clientY<=rect.bottom;
-    const point=inside?{x:(event.clientX-rect.left)/scale,y:(event.clientY-rect.top)/scale}:{x:state.canvas.width/2,y:state.canvas.height/2};
-    const plan=pictureDropPlan(pictures,action,state.canvas,point);
+    const plan=pictureDropPlan(pictures,action,state.canvas,dropPoint);
     change(()=>{
       if(typeof clearCanvasRegion==='function')clearCanvasRegion();
-      if(plan.replace){state.canvas=plan.canvas;state.items=[];}
+      if(plan.replace){state.canvas=plan.canvas;state.items=[];resetCanvasView();}
       const entries=pictures.map((picture,index)=>{
         const box=plan.boxes[index];
         return item('item-'+crypto.randomUUID(),picture.name,'image',box.x,box.y,box.w,box.h,{src:picture.src,...(plan.replace?{imageBase:true}:{})});
@@ -1354,6 +1396,137 @@ const picturesReady=(async()=>{
   pictureStoreReady=true;savePictureDraft(pictureLocalSaved);
 })();
 // END PICTURE DROP
+// BEGIN CANVAS VIEW
+const canvasView={x:0,y:0,width:0,height:0,page:'',mode:null};
+let canvasPan=null,canvasSpace=false;
+const canvasTouches=new Map();
+let canvasPinch=null;
+function canvasViewBounds(all=false){
+  const page={x:0,y:0,w:state.canvas.width,h:state.canvas.height};
+  return all?boundsOf([page,...state.items.filter(entry=>!entry.hidden)]):page;
+}
+function canvasViewPoint(clientX,clientY){
+  const rect=stage.getBoundingClientRect();
+  return {x:(clientX-rect.left-canvasView.x)/scale,y:(clientY-rect.top-canvasView.y)/scale};
+}
+function canvasViewCenter(){
+  return {x:(canvasView.width/2-canvasView.x)/scale,y:(canvasView.height/2-canvasView.y)/scale};
+}
+function drawCanvasView(){
+  const mount=$('phone-mount');
+  Object.assign(mount.style,{left:canvasView.x+'px',top:canvasView.y+'px',width:state.canvas.width*scale+'px',height:state.canvas.height*scale+'px'});
+  $('phone').style.transform=`scale(${scale})`;
+  stage.style.backgroundPosition=canvasView.x+'px '+canvasView.y+'px';
+  stage.style.backgroundSize=(24*scale)+'px '+(24*scale)+'px';
+}
+function renderCanvasView(){
+  const {width,height}=stage.getBoundingClientRect();if(width<1||height<1)return;
+  const mode=$('zoom').value,page=[state.canvas.width,state.canvas.height,Boolean(state.canvas.picturePage)].join(',');
+  const changed=canvasView.page!==page||canvasView.mode!==mode;
+  if(changed||canvasView.width!==width||canvasView.height!==height){
+    if(mode==='fit'||mode==='all'){
+      const box=canvasViewBounds(mode==='all');
+      scale=clamp(Math.min(1,(width-64)/box.w,(height-64)/box.h),.01,16);
+      canvasView.x=(width-box.w*scale)/2-box.x*scale;canvasView.y=(height-box.h*scale)/2-box.y*scale;
+    }else{
+      const center=canvasView.width?canvasViewCenter():{x:state.canvas.width/2,y:state.canvas.height/2};
+      scale=clamp(Number(mode)||1,.01,16);
+      canvasView.x=width/2-center.x*scale;canvasView.y=height/2-center.y*scale;
+    }
+  }
+  Object.assign(canvasView,{width,height,page,mode});drawCanvasView();
+}
+function setCanvasZoom(value,anchor){
+  if(!Number.isFinite(value))return;
+  const next=clamp(value,.01,16),rect=stage.getBoundingClientRect();
+  const at=anchor?{x:anchor.x-rect.left,y:anchor.y-rect.top}:{x:rect.width/2,y:rect.height/2};
+  const world={x:(at.x-canvasView.x)/scale,y:(at.y-canvasView.y)/scale};
+  const option=$('zoom-custom');option.value=String(next);option.textContent=Math.round(next*10000)/100+'%';
+  $('zoom').value=String(next);canvasView.mode=String(next);
+  scale=next;canvasView.x=at.x-world.x*scale;canvasView.y=at.y-world.y*scale;drawCanvasView();
+}
+function resetCanvasView(){canvasView.mode=null;canvasView.page='';$('zoom').value='fit';}
+function holdCanvasView(){setCanvasZoom(scale);}
+function canvasViewBusy(){return Boolean(canvasGesture||canvasEditBusy||pictureDropBusy);}
+function endCanvasPan(event){
+  if(canvasPan?.pointer!==event.pointerId)return;
+  canvasPan=null;stage.classList.remove('panning');
+  if(stage.hasPointerCapture(event.pointerId))stage.releasePointerCapture(event.pointerId);
+}
+function stopCanvasTouch(event){
+  if(!canvasTouches.has(event.pointerId))return;
+  canvasTouches.delete(event.pointerId);
+  if(canvasPinch){
+    event.preventDefault();event.stopImmediatePropagation();
+    if(canvasTouches.size===0){canvasPinch=null;stage.classList.remove('panning');}
+    if(stage.hasPointerCapture(event.pointerId))stage.releasePointerCapture(event.pointerId);
+  }
+}
+stage.addEventListener('pointerdown',event=>{
+  if(event.pointerType==='touch'){
+    canvasTouches.set(event.pointerId,{x:event.clientX,y:event.clientY});
+    if(canvasTouches.size===2){
+      if(canvasEditBusy||pictureDropBusy)return;
+      if(canvasGesture)endCanvasGesture(true);
+      if(drag)endDrag({pointerId:drag.pointer},true);
+      const [a,b]=[...canvasTouches.values()];
+      canvasPinch={distance:Math.max(1,Math.hypot(b.x-a.x,b.y-a.y)),scale,world:canvasViewPoint((a.x+b.x)/2,(a.y+b.y)/2)};
+      for(const pointer of canvasTouches.keys())stage.setPointerCapture(pointer);
+      stage.classList.add('panning');
+    }
+    if(canvasPinch){event.preventDefault();event.stopImmediatePropagation();stage.setPointerCapture(event.pointerId);return;}
+  }
+  if(!(event.button===1||(event.button===0&&canvasSpace))||canvasViewBusy())return;
+  event.preventDefault();event.stopImmediatePropagation();closeCanvasMenu();stage.focus({preventScroll:true});holdCanvasView();
+  canvasPan={pointer:event.pointerId,x:event.clientX,y:event.clientY,left:canvasView.x,top:canvasView.y};
+  stage.classList.add('panning');stage.setPointerCapture(event.pointerId);
+},true);
+stage.addEventListener('pointermove',event=>{
+  if(canvasTouches.has(event.pointerId))canvasTouches.set(event.pointerId,{x:event.clientX,y:event.clientY});
+  if(canvasPinch){
+    event.preventDefault();event.stopImmediatePropagation();
+    if(canvasTouches.size===2){
+      const [a,b]=[...canvasTouches.values()],rect=stage.getBoundingClientRect();
+      setCanvasZoom(canvasPinch.scale*Math.hypot(b.x-a.x,b.y-a.y)/canvasPinch.distance);
+      canvasView.x=(a.x+b.x)/2-rect.left-canvasPinch.world.x*scale;canvasView.y=(a.y+b.y)/2-rect.top-canvasPinch.world.y*scale;drawCanvasView();
+    }
+    return;
+  }
+  if(canvasPan?.pointer!==event.pointerId)return;
+  event.preventDefault();event.stopImmediatePropagation();
+  canvasView.x=canvasPan.left+event.clientX-canvasPan.x;canvasView.y=canvasPan.top+event.clientY-canvasPan.y;drawCanvasView();
+},true);
+for(const type of ['pointerup','pointercancel','lostpointercapture'])stage.addEventListener(type,event=>{
+  if(type!=='lostpointercapture')stopCanvasTouch(event);
+  if(canvasPan?.pointer===event.pointerId){event.preventDefault();event.stopImmediatePropagation();endCanvasPan(event);}
+},true);
+stage.addEventListener('wheel',event=>{
+  event.preventDefault();if(canvasViewBusy())return;
+  const unit=event.deltaMode===1?16:event.deltaMode===2?stage.clientHeight:1;
+  if(event.ctrlKey||event.metaKey){
+    const delta=clamp(event.deltaY*unit,-50,50);
+    setCanvasZoom(scale*Math.exp(-delta*.001),{x:event.clientX,y:event.clientY});
+  }
+  else{holdCanvasView();canvasView.x-=(event.shiftKey?event.deltaY:event.deltaX)*unit;canvasView.y-=(event.shiftKey?event.deltaX:event.deltaY)*unit;drawCanvasView();}
+},{passive:false});
+document.addEventListener('keydown',event=>{
+  if(canvasTextTarget(event.target)||pictureChoice.open||$('icon-picker')?.open||$('editor-tools')?.open)return;
+  if(event.code==='Space'){event.preventDefault();event.stopImmediatePropagation();canvasSpace=true;stage.classList.add('pan-ready');return;}
+  if(canvasViewBusy())return;
+  if((event.metaKey||event.ctrlKey)&&['+','=','-','0','1'].includes(event.key)){
+    event.preventDefault();event.stopImmediatePropagation();
+    if(event.key==='0'){resetCanvasView();fit();}
+    else setCanvasZoom(event.key==='1'?1:scale*(event.key==='-'?1/1.2:1.2));
+  }
+  if(event.key==='Escape'&&canvasPan){event.preventDefault();event.stopImmediatePropagation();endCanvasPan({pointerId:canvasPan.pointer});}
+},true);
+function releaseCanvasSpace(){canvasSpace=false;stage.classList.remove('pan-ready');}
+document.addEventListener('keyup',event=>{if(event.code==='Space')releaseCanvasSpace();});
+window.addEventListener('blur',()=>{releaseCanvasSpace();if(canvasPan)endCanvasPan({pointerId:canvasPan.pointer});});
+$('zoom').onchange=()=>{if(canvasViewBusy())return;canvasView.mode=null;fit();};
+$('zoom-in').onclick=()=>{if(!canvasViewBusy())setCanvasZoom(scale*1.2);};
+$('zoom-out').onclick=()=>{if(!canvasViewBusy())setCanvasZoom(scale/1.2);};
+// END CANVAS VIEW
 // BEGIN CANVAS EDITOR
 // BEGIN PIXEL HELPERS
 function clippedArea(box,canvas){
@@ -1573,9 +1746,8 @@ function moveGestureItems(gesture,point,event){
   let dx=point.x-gesture.start.x,dy=point.y-gesture.start.y;
   if(event?.shiftKey){if(Math.abs(dx)>Math.abs(dy))dy=0;else dx=0;}
   gesture.items.forEach((entry,index)=>Object.assign(entry,gesture.starts[index]));
-  const snap=value=>gesture.type!=='pixels'&&$('snap')?.checked&&!event?.altKey?Math.round(value/4)*4:round(value);
-  if(gesture.type==='resize')scaleItemFromCorner(gesture.items[0],gesture.starts[0],dx,dy,state.canvas,snap);
-  else{const bounds=boundsOf(gesture.items);moveWithin(gesture.items,dx===0?0:snap(bounds.x+dx)-bounds.x,dy===0?0:snap(bounds.y+dy)-bounds.y,state.canvas);}
+  if(gesture.type==='resize')scaleItemFromCorner(gesture.items[0],gesture.starts[0],dx,dy,state.canvas);
+  else moveWithin(gesture.items,dx,dy,state.canvas);
   gesture.changed=gesture.before!==JSON.stringify(state);
   for(const entry of gesture.items){const node=[...$('phone').querySelectorAll('.item')].find(node=>node.dataset.id===entry.id);if(node)styleItem(node,entry);}
   renderSelection();
@@ -1604,7 +1776,7 @@ stage.addEventListener('pointerdown',event=>{
     regionSelection=null;canvasGesture={...common,type:event.target.closest('.resize-handle')?'resize':'move',items,starts:items.map(copy)};
   }else{
     regionSelection=null;
-    canvasGesture={...common,type:'box',pixels:Boolean(state.canvas.picturePage&&(!entry||entry.kind==='image')),hitId:entry&&!isPagePicture(entry)?id:null,base:event.shiftKey?[...selected]:[],startX:event.clientX,startY:event.clientY};
+    canvasGesture={...common,type:'box',pixels:Boolean(state.canvas.picturePage&&pointInArea(point,{x:0,y:0,w:state.canvas.width,h:state.canvas.height})&&(!entry||entry.kind==='image')),hitId:entry&&!isPagePicture(entry)?id:null,base:event.shiftKey?[...selected]:[],startX:event.clientX,startY:event.clientY};
     if(canvasGesture.pixels||!event.shiftKey)selected.clear();drawBox(canvasGesture,event);refreshSelection();
   }
   stage.setPointerCapture(event.pointerId);
@@ -1619,7 +1791,7 @@ stage.addEventListener('pointermove',event=>{
     if(gesture.pixels){regionSelection=rememberRegion(box);renderSelection();}
     else{selected=new Set([...gesture.base,...itemIdsInSelection(state.items.filter(entry=>!isPagePicture(entry)),box)]);refreshSelection();}
   }else if(gesture.type==='pixels'){
-    const box=gesture.regionBefore.box;gesture.preview={...box,x:clamp(box.x+gesture.latest.x-gesture.start.x,0,state.canvas.width-box.w),y:clamp(box.y+gesture.latest.y-gesture.start.y,0,state.canvas.height-box.h)};
+    const box=gesture.regionBefore.box;gesture.preview={...box,x:box.x+gesture.latest.x-gesture.start.x,y:box.y+gesture.latest.y-gesture.start.y};
     applyPixelGesture(gesture);renderSelection();
   }else if(gesture.moved)moveGestureItems(gesture,gesture.latest,gesture.event);
 },true);
@@ -1769,9 +1941,9 @@ async function openImageEditor(id){
       items:[item('item-'+crypto.randomUUID(),entry.name,'image',0,0,width,height,{src:entry.src,imageBase:true})],
     };
     layout.canvas.picturePage=true;
-    imageEditSession={parent,id,name:entry.name,history,future,selected:[...selected],zoom:$('zoom').value,initial:JSON.stringify(layout)};
+    imageEditSession={parent,id,name:entry.name,history,future,selected:[...selected],zoom:$('zoom').value,customZoom:$('zoom-custom').value,view:{...canvasView},viewScale:scale,initial:JSON.stringify(layout)};
     state=layout;history=[];future=[];selected.clear();clearCanvasRegion();fieldEdit=null;
-    $('zoom').value='fit';closeCanvasMenu();
+    resetCanvasView();closeCanvasMenu();
     if($('editor-tools')?.open)$('editor-tools').close();
     render();stage.focus({preventScroll:true});notify('Edit image. Choose Done to save your changes.');
   }catch(error){notify(error.message||'Could not edit this image.');}
@@ -1780,7 +1952,8 @@ async function openImageEditor(id){
 function restoreImagePage(session){
   state=session.parent;history=session.history;future=session.future;selected=new Set(session.selected);
   imageEditSession=null;imageEditSaving=false;editing=true;clearCanvasRegion();fieldEdit=null;
-  $('zoom').value=session.zoom;closeCanvasMenu();
+  Object.assign(canvasView,session.view);scale=session.viewScale;
+  $('zoom-custom').value=session.customZoom;$('zoom').value=session.zoom;closeCanvasMenu();
   if($('editor-tools')?.open)$('editor-tools').close();
 }
 async function finishImageEditor(cancel=false){

@@ -82,7 +82,8 @@ function dropHarness(choice) {
     readPicture: async file => { reads.push(file); return { name: file.name, src: 'data:image/png;base64,AAAA', width: 903, height: 552 }; },
     crypto: { randomUUID: () => String(++id) },
     item: (id, name, kind, x, y, w, h, extra) => ({ id, name, kind, x, y, w, h, ...extra }),
-    $: id => id === 'stage' ? { classList: { remove() {} }, focus() {} } : id === 'phone' ? { getBoundingClientRect: () => ({ left: 0, top: 0, right: 393, bottom: 852 }) } : null,
+    $: id => id === 'stage' ? { classList: { remove() {} }, focus() {}, getBoundingClientRect: () => ({left:-500,top:-500,right:1000,bottom:1000}) } : id === 'phone' ? { getBoundingClientRect: () => ({ left: 0, top: 0, right: 393, bottom: 852 }) } : null,
+    phonePoint:event=>({x:event.clientX,y:event.clientY}),canvasViewCenter:()=>({x:196.5,y:426}),resetCanvasView(){},
     notify() {},
   });
   sandbox.change = fn => { history.push(JSON.parse(JSON.stringify(sandbox.state))); fn(); };
@@ -110,6 +111,13 @@ test('add to page keeps the old items', async () => {
   assert.equal(harness.sandbox.state.items[0].id, 'title');
   assert.equal(harness.sandbox.state.canvas.width, 393);
 });
+test('a picture dropped outside the page keeps that spot and one undo step', async () => {
+  const h=dropHarness('add');h.sandbox.event.clientX=750;h.sandbox.event.clientY=-200;
+  await h.drop();const entry=h.sandbox.state.items[1];
+  assert.ok(entry.x>393);assert.ok(entry.y<0);
+  assert.ok(Math.abs(entry.x+entry.w/2-750)<.1);assert.ok(Math.abs(entry.y+entry.h/2+200)<.1);
+  assert.equal(h.history.length,1);assert.deepEqual(h.history[0],h.start);
+});
 
 test('HEIC drops work with a macOS file type or just a file name', () => {
   for (const file of [
@@ -125,9 +133,9 @@ test('a large picture fits without changing its shape', () => {
   const box = run('picturePlacement(1600,800,{width:400,height:800},{x:200,y:400})');
   assert.deepEqual(box, { w: 360, h: 180, x: 20, y: 310 });
 });
-test('pictures dropped at an edge stay inside the canvas', () => {
-  assert.deepEqual(run('picturePlacement(100,50,{width:400,height:800},{x:0,y:800})'), { w: 100, h: 50, x: 0, y: 750 });
-  assert.deepEqual(run('picturePlacement(100,50,{width:400,height:800},{x:400,y:0},3)'), { w: 100, h: 50, x: 300, y: 11 });
+test('pictures keep their drop spot across page edges', () => {
+  assert.deepEqual(run('picturePlacement(100,50,{width:400,height:800},{x:0,y:800})'), { w: 100, h: 50, x: -50, y: 775 });
+  assert.deepEqual(run('picturePlacement(100,50,{width:400,height:800},{x:400,y:0},3)'), { w: 100, h: 50, x: 386, y: 11 });
 });
 test('a very thin picture still has a width after fitting', () => {
   assert.equal(run('picturePlacement(1,16000,{width:393,height:852},{x:100,y:100})').w, .1);

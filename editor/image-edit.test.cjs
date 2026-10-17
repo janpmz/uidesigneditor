@@ -25,6 +25,7 @@ function harness(){
   ]};
   const sandbox=vm.createContext({
     state:structuredClone(parent),selected:new Set(['image']),editing:true,stage,history:['older'],future:['later'],fieldEdit:null,
+    canvasView:{x:150,y:-50,width:800,height:600,page:"parent",mode:"1"},scale:1,resetCanvasView:()=>{get("zoom").value="fit";},
     pictureChoice:{open:false},pictureDropBusy:false,picturesReady:Promise.resolve(),$:get,
     document:{documentElement:{clientWidth:1200,clientHeight:800},addEventListener:(type,fn)=>on('document',type,fn),createElement:node},
     window:{innerWidth:1200,innerHeight:800},navigator:{clipboard:{writeText:async()=>{}}},setTimeout,
@@ -77,6 +78,18 @@ test('Done saves one image in place, keeps the other items, and adds one page Un
   assert.equal(h.options.ignoreElements({classList:{contains:name=>name==='item'}}),false);
   assert.deepEqual([...h.sandbox.selected],['image']);
   h.run('state=JSON.parse(history.pop())');assert.deepEqual(h.json('state'),h.parent);
+});
+test('Done and Cancel restore the page pan and custom zoom after editing an image',async()=>{
+  for(const cancel of [false,true]){
+    const h=harness();h.get('zoom').value='2.375';h.get('zoom-custom').value='2.375';h.sandbox.scale=2.375;
+    const view=h.json('canvasView');await h.open();
+    h.run('canvasView.x=-900;canvasView.y=700;scale=.13');h.get('zoom-custom').value='.13';
+    h.run('state.items.push({id:"parked",kind:"image",src:"data:image/png;base64,CCCC",x:-500,y:900,w:100,h:50})');
+    if(cancel)await h.cancel();else await h.done();
+    assert.deepEqual(h.json('canvasView'),view);assert.equal(h.sandbox.scale,2.375);
+    assert.equal(h.get('zoom').value,'2.375');assert.equal(h.get('zoom-custom').value,'2.375');
+    if(!cancel)assert.equal(h.sandbox.state.items[1].imageContents.items[1].x,-500);
+  }
 });
 test('Cancel and Done without changes preserve the page and its Undo and Redo steps',async()=>{
   for(const cancel of [false,true]){

@@ -12,7 +12,7 @@ function editorPageFile(file){return file.type==='text/html'||/\.html?$/i.test(f
 function picturePlacement(width,height,canvas,point,index=0){
   const factor=Math.min(1,canvas.width*.9/width,canvas.height*.9/height);
   const w=Math.max(.1,round(width*factor)),h=Math.max(.1,round(height*factor));
-  return {w,h,x:round(clamp(point.x-w/2+index*12,0,canvas.width-w)),y:round(clamp(point.y-h/2+index*12,0,canvas.height-h))};
+  return {w,h,x:round(point.x-w/2+index*12),y:round(point.y-h/2+index*12)};
 }
 function pictureDropPlan(pictures,action,canvas,point){
   if(action==='add')return {canvas,replace:false,boxes:pictures.map((picture,index)=>picturePlacement(picture.width,picture.height,canvas,point,index))};
@@ -111,7 +111,7 @@ async function readEditorPage(file){
 }
 function addEditorPage(page,point){
   const factor=Math.min(1,state.canvas.width*.9/page.canvas.width,state.canvas.height*.9/page.canvas.height);
-  const x=clamp(point.x-page.canvas.width*factor/2,0,state.canvas.width-page.canvas.width*factor),y=clamp(point.y-page.canvas.height*factor/2,0,state.canvas.height-page.canvas.height*factor);
+  const x=point.x-page.canvas.width*factor/2,y=point.y-page.canvas.height*factor/2;
   const entries=page.items.filter(entry=>!entry.hidden).map(source=>{
     const entry=copy(source);entry.id='item-'+crypto.randomUUID();entry.x=round(x+source.x*factor);entry.y=round(y+source.y*factor);entry.w=Math.max(.1,round(source.w*factor));entry.h=Math.max(.1,round(source.h*factor));delete entry.imageBase;
     for(const key of ['fontSize','iconSize','radius','borderWidth','iconOffsetX'])if(Number.isFinite(source[key]))entry[key]=round(source[key]*factor);
@@ -171,11 +171,14 @@ async function handlePictureDrop(event){
   try{
     await picturesReady;
     const targetState=state;
+    const stageRect=$('stage').getBoundingClientRect();
+    const onStage=Number.isFinite(event.clientX)&&Number.isFinite(event.clientY)&&event.clientX>=stageRect.left&&event.clientX<=stageRect.right&&event.clientY>=stageRect.top&&event.clientY<=stageRect.bottom;
+    const dropPoint=onStage?phonePoint(event):canvasViewCenter();
     const action=await choosePictureDrop(files);if(!action)return;
     if(files.some(editorPageFile)){
       if(files.length!==1)throw new Error('Drop one HTML page at a time.');
       const page=await readEditorPage(files[0]);if(state!==targetState)throw new Error('The page changed. Drop the file again.');
-      change(()=>{if(typeof clearCanvasRegion==='function')clearCanvasRegion();if(action==='new'){state=page;selected.clear();}else addEditorPage(page,{x:state.canvas.width/2,y:state.canvas.height/2});});
+      change(()=>{if(typeof clearCanvasRegion==='function')clearCanvasRegion();if(action==='new'){state=page;selected.clear();resetCanvasView();}else addEditorPage(page,dropPoint);});
       if($('editor-tools')?.open)$('editor-tools').close();$('stage').focus({preventScroll:true});notify(action==='new'?'Page opened':'Page items added');return;
     }
     const pictures=[],errors=[];
@@ -185,13 +188,10 @@ async function handlePictureDrop(event){
     }
     if(!pictures.length){notify(errors[0]);return;}
     if(state!==targetState){notify('The draft changed. Please drop the pictures again.');return;}
-    const rect=$('phone').getBoundingClientRect();
-    const inside=event.clientX>=rect.left&&event.clientX<=rect.right&&event.clientY>=rect.top&&event.clientY<=rect.bottom;
-    const point=inside?{x:(event.clientX-rect.left)/scale,y:(event.clientY-rect.top)/scale}:{x:state.canvas.width/2,y:state.canvas.height/2};
-    const plan=pictureDropPlan(pictures,action,state.canvas,point);
+    const plan=pictureDropPlan(pictures,action,state.canvas,dropPoint);
     change(()=>{
       if(typeof clearCanvasRegion==='function')clearCanvasRegion();
-      if(plan.replace){state.canvas=plan.canvas;state.items=[];}
+      if(plan.replace){state.canvas=plan.canvas;state.items=[];resetCanvasView();}
       const entries=pictures.map((picture,index)=>{
         const box=plan.boxes[index];
         return item('item-'+crypto.randomUUID(),picture.name,'image',box.x,box.y,box.w,box.h,{src:picture.src,...(plan.replace?{imageBase:true}:{})});

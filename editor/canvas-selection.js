@@ -112,9 +112,8 @@ function moveGestureItems(gesture,point,event){
   let dx=point.x-gesture.start.x,dy=point.y-gesture.start.y;
   if(event?.shiftKey){if(Math.abs(dx)>Math.abs(dy))dy=0;else dx=0;}
   gesture.items.forEach((entry,index)=>Object.assign(entry,gesture.starts[index]));
-  const snap=value=>gesture.type!=='pixels'&&$('snap')?.checked&&!event?.altKey?Math.round(value/4)*4:round(value);
-  if(gesture.type==='resize')scaleItemFromCorner(gesture.items[0],gesture.starts[0],dx,dy,state.canvas,snap);
-  else{const bounds=boundsOf(gesture.items);moveWithin(gesture.items,dx===0?0:snap(bounds.x+dx)-bounds.x,dy===0?0:snap(bounds.y+dy)-bounds.y,state.canvas);}
+  if(gesture.type==='resize')scaleItemFromCorner(gesture.items[0],gesture.starts[0],dx,dy,state.canvas);
+  else moveWithin(gesture.items,dx,dy,state.canvas);
   gesture.changed=gesture.before!==JSON.stringify(state);
   for(const entry of gesture.items){const node=[...$('phone').querySelectorAll('.item')].find(node=>node.dataset.id===entry.id);if(node)styleItem(node,entry);}
   renderSelection();
@@ -143,7 +142,7 @@ stage.addEventListener('pointerdown',event=>{
     regionSelection=null;canvasGesture={...common,type:event.target.closest('.resize-handle')?'resize':'move',items,starts:items.map(copy)};
   }else{
     regionSelection=null;
-    canvasGesture={...common,type:'box',pixels:Boolean(state.canvas.picturePage&&(!entry||entry.kind==='image')),hitId:entry&&!isPagePicture(entry)?id:null,base:event.shiftKey?[...selected]:[],startX:event.clientX,startY:event.clientY};
+    canvasGesture={...common,type:'box',pixels:Boolean(state.canvas.picturePage&&pointInArea(point,{x:0,y:0,w:state.canvas.width,h:state.canvas.height})&&(!entry||entry.kind==='image')),hitId:entry&&!isPagePicture(entry)?id:null,base:event.shiftKey?[...selected]:[],startX:event.clientX,startY:event.clientY};
     if(canvasGesture.pixels||!event.shiftKey)selected.clear();drawBox(canvasGesture,event);refreshSelection();
   }
   stage.setPointerCapture(event.pointerId);
@@ -158,7 +157,7 @@ stage.addEventListener('pointermove',event=>{
     if(gesture.pixels){regionSelection=rememberRegion(box);renderSelection();}
     else{selected=new Set([...gesture.base,...itemIdsInSelection(state.items.filter(entry=>!isPagePicture(entry)),box)]);refreshSelection();}
   }else if(gesture.type==='pixels'){
-    const box=gesture.regionBefore.box;gesture.preview={...box,x:clamp(box.x+gesture.latest.x-gesture.start.x,0,state.canvas.width-box.w),y:clamp(box.y+gesture.latest.y-gesture.start.y,0,state.canvas.height-box.h)};
+    const box=gesture.regionBefore.box;gesture.preview={...box,x:box.x+gesture.latest.x-gesture.start.x,y:box.y+gesture.latest.y-gesture.start.y};
     applyPixelGesture(gesture);renderSelection();
   }else if(gesture.moved)moveGestureItems(gesture,gesture.latest,gesture.event);
 },true);

@@ -145,6 +145,24 @@ test('cut fills the old spot and waits for paste before adding the new item', as
   vm.runInContext('pasteCanvasClipboard()',h.sandbox);
   assert.deepEqual(h.read('state.items[1].x'),80);assert.equal(h.sandbox.state.items.length,2);assert.equal(h.undo.length,2);
 });
+test('a lifted picture area can move beyond the page and undo restores its source', async () => {
+  const h=harness(true);
+  vm.runInContext('regionSelection=rememberRegion({x:80,y:80,w:200,h:100});makeRegionPlan=async()=>({entry:{id:"piece",kind:"image",x:80,y:80,w:200,h:100},patches:[{id:"base",src:"filled"}]});',h.sandbox);
+  h.send('pointerdown',h.event(120,120));h.send('pointermove',h.event(-320,-220));
+  assert.deepEqual(h.read('canvasGesture.preview'),{x:-360,y:-260,w:200,h:100});
+  await h.send('pointerup',h.event(-320,-220));
+  assert.deepEqual(h.read('state.items[1]'),{id:'piece',kind:'image',x:-360,y:-260,w:200,h:100});
+  assert.equal(h.undo.length,1);assert.deepEqual(JSON.parse(h.undo[0]),h.start);
+});
+test('a box outside a picture page selects and moves parked items', async () => {
+  const h=harness(true);
+  h.sandbox.state.items.push({id:'parked',kind:'image',x:-250,y:-180,w:100,h:60});
+  h.send('pointerdown',h.event(-280,-200));h.send('pointermove',h.event(-140,-110));
+  assert.equal(h.read('canvasGesture.pixels'),false);assert.deepEqual([...h.sandbox.selected],['parked']);
+  await h.send('pointerup',h.event(-140,-110));
+  h.send('pointerdown',h.event(-200,-150));h.send('pointermove',h.event(1000,900));await h.send('pointerup',h.event(1000,900));
+  assert.deepEqual(h.read('state.items[1]'),{id:'parked',kind:'image',x:950,y:870,w:100,h:60});
+});
 test('adding a picture over the selected area makes the old crop stale', () => {
   const h=harness(true);
   vm.runInContext(`regionSelection=rememberRegion({x:80,y:80,w:200,h:100});state.items.push({id:'new',kind:'image',x:100,y:100,w:10,h:10});`,h.sandbox);

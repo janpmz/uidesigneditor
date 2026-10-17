@@ -29,18 +29,18 @@ test('a rectangle can enclose a whole list without selecting its large backgroun
   ],{x:20,y:275,w:353,h:120})`), ['row1', 'row2']);
 });
 
-test('moving a group against the page edge keeps the spacing between its items', () => {
+test('moving a group past the top and left edges keeps its spacing', () => {
   assert.deepEqual(run(`(()=>{
     const items=[{x:28,y:283,w:24,h:24},{x:62,y:279,w:270,h:28}];
     moveWithin(items,-200,-400,{width:393,height:852});return items;
-  })()`), [{x:0,y:4,w:24,h:24},{x:34,y:0,w:270,h:28}]);
+  })()`), [{x:-172,y:-117,w:24,h:24},{x:-138,y:-121,w:270,h:28}]);
 });
 
-test('the furthest item limits the whole group at the lower and right edges', () => {
+test('a group can move past the bottom and right edges', () => {
   assert.deepEqual(run(`(()=>{
     const items=[{x:28,y:283,w:24,h:24},{x:62,y:339,w:270,h:28}];
     moveWithin(items,900,900,{width:393,height:852});return items;
-  })()`), [{x:89,y:768,w:24,h:24},{x:123,y:824,w:270,h:28}]);
+  })()`), [{x:928,y:1183,w:24,h:24},{x:962,y:1239,w:270,h:28}]);
 });
 
 test('selection and repeated small group moves retain the supplied positions', () => {

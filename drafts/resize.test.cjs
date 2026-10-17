@@ -43,12 +43,12 @@ for (const page of ['dark-player-layout', 'dark-library-layout', 'dark-chapter-l
     assert.deepEqual([item.w, item.h, item.fontSize, item.iconSize], [150, 75, 30, 24]);
   });
 
-  test(page + ': the same scale keeps both sides inside the canvas', () => {
+  test(page + ': resizing can extend past the page edge', () => {
     const start = { ...sample(), x: 200, y: 780 }, item = { ...start };
     resize(item, start, 200, 100, canvas);
-    assert.deepEqual([item.w, item.h, item.fontSize], [144, 72, 28.8]);
-    assert.ok(item.x + item.w <= canvas.width);
-    assert.ok(item.y + item.h <= canvas.height);
+    assert.deepEqual([item.w, item.h, item.fontSize], [300, 150, 60]);
+    assert.ok(item.x + item.w > canvas.width);
+    assert.ok(item.y + item.h > canvas.height);
   });
 
   test(page + ': thin shapes stay thin and zero borders stay zero', () => {
@@ -59,9 +59,9 @@ for (const page of ['dark-player-layout', 'dark-library-layout', 'dark-chapter-l
     assert.equal(item.iconSize, undefined);
   });
 
-  test(page + ': snapping keeps the proportions and contents in step', () => {
+  test(page + ': a small drag keeps its size without rounding to four pixels', () => {
     const start = sample(), item = { ...start };
-    resize(item, start, 17, 8.5, canvas, value => Math.round(value / 4) * 4);
-    assert.deepEqual([item.w, item.h, item.fontSize], [116, 58, 23.2]);
+    resize(item, start, 17, 8.5, canvas);
+    assert.deepEqual([item.w, item.h, item.fontSize], [117, 58.5, 23.4]);
   });
 }

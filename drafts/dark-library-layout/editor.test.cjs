@@ -74,9 +74,9 @@ test('repeated paste offsets copies and gives every item its own identity', () =
   ]);
 });
 
-test('a pasted group stays inside the canvas without changing its spacing', () => {
+test('a pasted group can cross the page edge without changing its spacing', () => {
   const run = harness([item('one', 290, 790), item('two', 310, 825)]);
-  assert.deepEqual(run('copySelectedItems(); pasteCopiedItems(itemClipboard); state.items.slice(2).map(entry=>[entry.x,entry.y])'), [[293, 793], [313, 828]]);
+  assert.deepEqual(run('copySelectedItems(); pasteCopiedItems(itemClipboard); state.items.slice(2).map(entry=>[entry.x,entry.y])'), [[302, 802], [322, 837]]);
 });
 
 test('clipboard data round trips and rejects text, whole layouts, and invalid sizes', () => {

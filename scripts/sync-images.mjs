@@ -6,7 +6,9 @@ const selection = (await Promise.all(['pixel-tools.js', 'fit-content.js', 'canva
 const dialog = await readFile(new URL('editor/image-drop-dialog.html', root), 'utf8');
 const menu = await readFile(new URL('editor/canvas-edit-menu.html', root), 'utf8');
 const imageEditBar = await readFile(new URL('editor/image-edit-bar.html', root), 'utf8');
-const styles = await readFile(new URL('editor/image-drop.css', root), 'utf8');
+const styles = (await Promise.all(['image-drop.css', 'canvas-view.css'].map(name => readFile(new URL(`editor/${name}`, root), 'utf8')))).join('\n');
+const view = await readFile(new URL('editor/canvas-view.js', root), 'utf8');
+const viewTools = (await readFile(new URL('editor/canvas-view-tools.html', root), 'utf8')).trimEnd();
 const reader = await readFile(new URL('editor/vendor/heic-to-1.6.6.js', root), 'utf8');
 const license = await readFile(new URL('editor/vendor/heic-to.LICENSE.txt', root), 'utf8');
 const support = '<!-- BEGIN HEIC READER -->\n' +
@@ -20,11 +22,25 @@ for (const entry of await readdir(new URL('drafts/', root), { withFileTypes: tru
   const path = new URL(`drafts/${draft}/index.html`, root);
   let html = await readFile(path, 'utf8');
   if (!html.includes('// BEGIN PICTURE DROP\n')) continue;
+  const viewStart = html.indexOf('// BEGIN CANVAS VIEW\n');
+  if (viewStart < 0) html = html.replace('// BEGIN CANVAS EDITOR\n', view.trimEnd() + '\n// BEGIN CANVAS EDITOR\n');
+  else {
+    const viewEnd = html.indexOf('// END CANVAS VIEW', viewStart);
+    if (viewEnd < 0) throw new Error('Missing canvas view end mark.');
+    html = html.slice(0, viewStart) + view.trimEnd() + html.slice(viewEnd + '// END CANVAS VIEW'.length);
+  }
+  const toolsBlock = '<!-- BEGIN CANVAS VIEW TOOLS -->\n' + viewTools + '\n<!-- END CANVAS VIEW TOOLS -->';
+  const toolsStart = html.indexOf('<!-- BEGIN CANVAS VIEW TOOLS -->');
+  if (toolsStart < 0) html = html.replace(/(<button id="redo"[^>]*>Redo<\/button>)/, '$1\n    ' + toolsBlock);
+  else {
+    const toolsEnd = html.indexOf('<!-- END CANVAS VIEW TOOLS -->', toolsStart);
+    if (toolsEnd < 0) throw new Error('Missing canvas view tools end mark.');
+    html = html.slice(0, toolsStart) + toolsBlock + html.slice(toolsEnd + '<!-- END CANVAS VIEW TOOLS -->'.length);
+  }
   const imageEditStart = html.indexOf('<!-- BEGIN IMAGE EDIT BAR -->');
   const imageEditBlock = '<!-- BEGIN IMAGE EDIT BAR -->\n' + imageEditBar.trimEnd() + '\n<!-- END IMAGE EDIT BAR -->';
   if (imageEditStart < 0) {
-    if (html.includes('<template id="home-canvas-bar"></template>')) html = html.replace('<template id="home-canvas-bar"></template>', imageEditBlock + '\n    <template id="home-canvas-bar"></template>');
-    else html = html.replace('<div class="canvas-bar">', imageEditBlock + '\n    <div class="canvas-bar">');
+    html = html.replace('<div class="stage"', imageEditBlock + '\n    <div class="stage"');
   }
   else {
     const imageEditEnd = html.indexOf('<!-- END IMAGE EDIT BAR -->', imageEditStart);
