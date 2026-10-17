@@ -5,6 +5,7 @@
   "description": "A small visual editor for quick screen drafts.",
   "scripts": {
     "start": "python3 -m http.server 3000 --bind 127.0.0.1 --directory .",
-    "test": "node --test drafts/resize.test.cjs drafts/dark-library-layout/editor.test.cjs drafts/dark-chapter-layout/selection.test.cjs"
+    "sync-images": "node scripts/sync-images.mjs",
+    "test": "node --test drafts/resize.test.cjs drafts/dark-library-layout/editor.test.cjs drafts/dark-chapter-layout/selection.test.cjs editor/*.test.cjs"
   }
 }

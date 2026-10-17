@@ -1,0 +1,67 @@
+import { readFile, writeFile, readdir } from 'node:fs/promises';
+
+const root = new URL('../', import.meta.url);
+const code = await readFile(new URL('editor/image-drop.js', root), 'utf8');
+const selection = (await Promise.all(['pixel-tools.js', 'canvas-selection.js'].map(name => readFile(new URL(`editor/${name}`, root), 'utf8')))).join('\n');
+const dialog = await readFile(new URL('editor/image-drop-dialog.html', root), 'utf8');
+const menu = await readFile(new URL('editor/canvas-edit-menu.html', root), 'utf8');
+const styles = await readFile(new URL('editor/image-drop.css', root), 'utf8');
+const reader = await readFile(new URL('editor/vendor/heic-to-1.6.6.js', root), 'utf8');
+const license = await readFile(new URL('editor/vendor/heic-to.LICENSE.txt', root), 'utf8');
+const support = '<!-- BEGIN HEIC READER -->\n' +
+  '<style data-picture-drop>\n' + styles + '\n</style>\n' +
+  '<script data-vendor="heic-to" data-version="1.6.6">\n' + reader.replace(/<\/script/gi, '<\\/script') + '\n</script>\n' +
+  '<script type="text/plain" data-license="heic-to">\nSource: https://registry.npmjs.org/heic-to/-/heic-to-1.6.6.tgz\n' + license + '\n</script>\n' +
+  '<!-- END HEIC READER -->';
+for (const entry of await readdir(new URL('drafts/', root), { withFileTypes: true })) {
+  if (!entry.isDirectory()) continue;
+  const draft = entry.name;
+  const path = new URL(`drafts/${draft}/index.html`, root);
+  let html = await readFile(path, 'utf8');
+  if (!html.includes('// BEGIN PICTURE DROP\n')) continue;
+  const start = html.indexOf('<!-- BEGIN HEIC READER -->');
+  if (start < 0) html = html.replace('</head>', support + '\n</head>');
+  else {
+    const end = html.indexOf('<!-- END HEIC READER -->', start);
+    if (end < 0) throw new Error('Missing HEIC reader end mark.');
+    html = html.slice(0, start) + support + html.slice(end + '<!-- END HEIC READER -->'.length);
+  }
+  const begin = html.indexOf('// BEGIN PICTURE DROP\n'), end = html.indexOf('// END PICTURE DROP', begin);
+  if (begin < 0 || end < 0) throw new Error('Missing picture drop marks.');
+  html = html.slice(0, begin) + '// BEGIN PICTURE DROP\n' + code.trimEnd() + '\n' + html.slice(end);
+  const selectionStart = html.indexOf('// BEGIN CANVAS EDITOR\n');
+  const selectionBlock = '// BEGIN CANVAS EDITOR\n' + selection.trimEnd() + '\n// END CANVAS EDITOR';
+  if (selectionStart < 0) html = html.replace('// END PICTURE DROP\n', '// END PICTURE DROP\n' + selectionBlock + '\n');
+  else {
+    const selectionEnd = html.indexOf('// END CANVAS EDITOR', selectionStart);
+    if (selectionEnd < 0) throw new Error('Missing canvas editor end mark.');
+    html = html.slice(0, selectionStart) + selectionBlock + html.slice(selectionEnd + '// END CANVAS EDITOR'.length);
+  }
+  const choice = '<!-- BEGIN PICTURE CHOICE -->\n' + dialog.trimEnd() + '\n' + menu.trimEnd() + '\n<!-- END PICTURE CHOICE -->';
+  const choiceStart = html.indexOf('<!-- BEGIN PICTURE CHOICE -->');
+  if (choiceStart < 0) html = html.replace('<script type="application/json" id="initial-layout">', choice + '\n<script type="application/json" id="initial-layout">');
+  else {
+    const choiceEnd = html.indexOf('<!-- END PICTURE CHOICE -->', choiceStart);
+    if (choiceEnd < 0) throw new Error('Missing picture choice end mark.');
+    html = html.slice(0, choiceStart) + choice + html.slice(choiceEnd + '<!-- END PICTURE CHOICE -->'.length);
+  }
+  if (!html.includes("phone.classList.toggle('picture-page'")) html = html.replace("phone.classList.toggle('editing',editing);", "phone.classList.toggle('editing',editing);phone.classList.toggle('picture-page',Boolean(state.canvas.picturePage));");
+  html = html.replace('Math.max(.2,Math.min(1,', 'Math.max(state.canvas.picturePage ? .01 : .2,Math.min(1,');
+  html = html.replace("const canvas=section('Phone');", "const canvas=section(state.canvas.picturePage?'Page':'Phone');");
+  html = html.replace("preset.setAttribute('aria-label','Phone size');", "preset.setAttribute('aria-label',state.canvas.picturePage?'Page size':'Phone size');");
+  html = html.replace("preset.value=state.canvas.width+','+state.canvas.height;", "const pageSize=state.canvas.width+','+state.canvas.height;if(![...preset.options].some(option=>option.value===pageSize)){const option=document.createElement('option');option.value=pageSize;option.textContent=state.canvas.width+' × '+state.canvas.height;preset.append(option);}preset.value=pageSize;");
+  if (!html.includes('delete state.canvas.picturePage;')) html = html.replace('state.canvas.width=w;state.canvas.height=h;', 'state.canvas.width=w;state.canvas.height=h;delete state.canvas.picturePage;');
+  if (!html.includes('cleanPictureExport(doc);')) html = html.replace('const doc=document.documentElement.cloneNode(true);', 'const doc=document.documentElement.cloneNode(true);cleanPictureExport(doc);');
+  html = html.replace('function renderSelection() {', 'function renderNativeSelection() {');
+  if (!html.includes("el.classList.toggle('page-image'")) html = html.replace('styleItem(el,item);', "styleItem(el,item);el.classList.toggle('page-image',isPagePicture(item));");
+  html = html.replace("$('copy-items').disabled=!editing||!selectedItems().length;", "$('copy-items').disabled=!editing||(!regionSelection&&!selectedItems().length);");
+  html = html.replace("empty.textContent='Drag across", "empty.textContent=regionSelection?'Drag inside the selection to move it. Cut, copy and paste work with the usual keys or a right-click.':'Drag across");
+  html = html.replaceAll('Drag across empty space. The box selects every item it touches. Drag any selected item to move them together. Shift-click to add or remove items.', 'Draw a box around items, then drag inside it to move them. Shift-click to add or remove an item.');
+  html = html.replaceAll('Drag across empty space to select items. Drag any selected item to move them together. Shift-click to add or remove items.', 'Draw a box around items, then drag inside it to move them. Shift-click to add or remove an item.');
+  html = html.replaceAll('Drag any selected item or the count above the box to move them together.', 'Drag inside the box to move the selected items.');
+  html = html.replaceAll('Drag empty space to select · drag items to move · Shift-click to add · Delete to remove', 'Drag to select · drag the selection to move · ⌘X / ⌘V to cut and paste');
+  html = html.replaceAll('Drag empty space: select a box.', 'Drag: draw a box. Drag inside: move.');
+  html = html.replaceAll('⌘C / ⌘V: copy and paste items.', '⌘X / ⌘C / ⌘V: cut, copy and paste.');
+  html = html.replace("element.classList?.contains('selection-overlay')||element.classList?.contains('guide')", "element.classList?.contains('selection-overlay')||element.classList?.contains('pixel-selection')||element.classList?.contains('guide')");
+  await writeFile(path, html);
+}

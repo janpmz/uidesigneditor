@@ -1,0 +1,190 @@
+// Shared by the standalone drafts. Run npm run sync-images after edits.
+// BEGIN PICTURE HELPERS
+function pictureType(file){
+  const type=(file.type||'').toLowerCase().split(';')[0];
+  if(/^image\/(png|jpeg|webp|gif|avif|bmp)$/.test(type))return type;
+  if(/^image\/hei(c|f)(-sequence)?$/.test(type))return 'image/heic';
+  const ext=(file.name||'').split('.').pop().toLowerCase();
+  return {png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',webp:'image/webp',gif:'image/gif',avif:'image/avif',bmp:'image/bmp',heic:'image/heic',heif:'image/heic'}[ext]||null;
+}
+function safePictureSource(src){return typeof src==='string'&&/^data:image\/png;base64,[a-z0-9+/=]+$/i.test(src);}
+function editorPageFile(file){return file.type==='text/html'||/\.html?$/i.test(file.name||'');}
+function picturePlacement(width,height,canvas,point,index=0){
+  const factor=Math.min(1,canvas.width*.9/width,canvas.height*.9/height);
+  const w=Math.max(.1,round(width*factor)),h=Math.max(.1,round(height*factor));
+  return {w,h,x:round(clamp(point.x-w/2+index*12,0,canvas.width-w)),y:round(clamp(point.y-h/2+index*12,0,canvas.height-h))};
+}
+function pictureDropPlan(pictures,action,canvas,point){
+  if(action==='add')return {canvas,replace:false,boxes:pictures.map((picture,index)=>picturePlacement(picture.width,picture.height,canvas,point,index))};
+  const width=Math.max(...pictures.map(picture=>picture.width));
+  const height=pictures.reduce((sum,picture)=>sum+picture.height,0);
+  const factor=Math.min(1,16000/width,16000/height,Math.sqrt(24000000/(width*height)));
+  let y=0;
+  const boxes=pictures.map(picture=>{
+    const box={x:round((width-picture.width)*factor/2),y:round(y*factor),w:Math.max(.1,round(picture.width*factor)),h:Math.max(.1,round(picture.height*factor))};
+    y+=picture.height;return box;
+  });
+  return {canvas:{...canvas,width:Math.ceil(width*factor),height:Math.ceil(height*factor),picturePage:true},replace:true,boxes};
+}
+// END PICTURE HELPERS
+
+const pictureChoice=$('picture-drop-choice');
+function choosePictureDrop(files){
+  $('picture-choice-title').textContent=files.some(editorPageFile)?'Open page':files.length===1?'Open picture':'Open pictures';
+  $('picture-choice-files').textContent=files.length===1?files[0].name:files.length+' pictures';
+  pictureChoice.returnValue='';
+  return new Promise(resolve=>{
+    pictureChoice.addEventListener('close',()=>resolve(['add','new'].includes(pictureChoice.returnValue)?pictureChoice.returnValue:null),{once:true});
+    pictureChoice.showModal();$('picture-choice-add').focus();
+  });
+}
+$('picture-choice-add').onclick=()=>pictureChoice.close('add');
+$('picture-choice-new').onclick=()=>pictureChoice.close('new');
+$('picture-choice-cancel').onclick=()=>pictureChoice.close('cancel');
+document.addEventListener('keydown',event=>{if(pictureChoice.open)event.stopImmediatePropagation();},true);
+function cleanPictureExport(doc){
+  doc.querySelector('#picture-drop-choice')?.removeAttribute('open');
+  const files=doc.querySelector('#picture-choice-files');if(files)files.textContent='';
+  const menu=doc.querySelector('#canvas-edit-menu');if(menu)menu.hidden=true;
+  doc.querySelectorAll('.pixel-selection,.marquee').forEach(node=>node.remove());
+}
+
+async function readEditorPage(file){
+  const doc=new DOMParser().parseFromString(await file.text(),'text/html');
+  let page;try{page=JSON.parse(doc.getElementById('initial-layout')?.textContent||'null');}catch{}
+  if(page?.version!==1||!page.canvas||!['width','height'].every(key=>Number.isFinite(page.canvas[key])&&page.canvas[key]>0&&page.canvas[key]<=16000)||!Array.isArray(page.items)||!page.items.every(entry=>entry&&['x','y','w','h'].every(key=>Number.isFinite(entry[key]))&&entry.w>0&&entry.h>0&&['label','icon','shape','reading','tab','button','textbox','image'].includes(entry.kind)&&(entry.kind!=='image'||safePictureSource(entry.src))))throw new Error('Use an HTML file saved by this editor.');
+  return copy(page);
+}
+function addEditorPage(page,point){
+  const factor=Math.min(1,state.canvas.width*.9/page.canvas.width,state.canvas.height*.9/page.canvas.height);
+  const x=clamp(point.x-page.canvas.width*factor/2,0,state.canvas.width-page.canvas.width*factor),y=clamp(point.y-page.canvas.height*factor/2,0,state.canvas.height-page.canvas.height*factor);
+  const entries=page.items.filter(entry=>!entry.hidden).map(source=>{
+    const entry=copy(source);entry.id='item-'+crypto.randomUUID();entry.x=round(x+source.x*factor);entry.y=round(y+source.y*factor);entry.w=Math.max(.1,round(source.w*factor));entry.h=Math.max(.1,round(source.h*factor));delete entry.imageBase;
+    for(const key of ['fontSize','iconSize','radius','borderWidth','iconOffsetX'])if(Number.isFinite(source[key]))entry[key]=round(source[key]*factor);
+    entry.contentScale=(source.contentScale||1)*factor;return entry;
+  });
+  state.items.push(...entries);selected=new Set(entries.map(entry=>entry.id));
+}
+
+function renderPicture(content,entry){
+  if(!safePictureSource(entry.src))return;
+  const image=document.createElement('img');image.src=entry.src;image.alt=entry.name;image.draggable=false;content.append(image);
+}
+function pictureDeadline(promise,ms){
+  return new Promise((resolve,reject)=>{
+    const timer=setTimeout(()=>reject(new Error('This picture took too long to open.')),ms);
+    promise.then(value=>{clearTimeout(timer);resolve(value);},error=>{clearTimeout(timer);reject(error);});
+  });
+}
+function loadPictureBlob(blob){
+  return new Promise((resolve,reject)=>{
+    const url=URL.createObjectURL(blob),image=new Image();
+    image.onload=()=>{URL.revokeObjectURL(url);resolve(image);};
+    image.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('Could not open this picture.'));};image.src=url;
+  });
+}
+// BEGIN PICTURE READER
+async function readPicture(file){
+  const type=pictureType(file);
+  if(!type)throw new Error('Use a PNG, JPG, WebP, GIF, AVIF, BMP, HEIC, or HEIF picture.');
+  const blob=file.type===type?file:new Blob([file],{type});
+  let image;
+  try{image=await pictureDeadline(loadPictureBlob(blob),20000);}
+  catch(error){
+    if(type!=='image/heic')throw error;
+    try{image=await pictureDeadline(HeicTo({blob,type:'image/png'}).then(loadPictureBlob),30000);}
+    catch{throw new Error('Could not open this HEIC picture.');}
+  }
+  const width=image.naturalWidth,height=image.naturalHeight;
+  if(!width||!height||width>16000||height>16000||width*height>24000000)throw new Error('Use a picture under 24 million pixels, with each side under 16,000 pixels.');
+  const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+  try{
+    canvas.getContext('2d').drawImage(image,0,0);
+    return {name:file.name||'Picture',src:canvas.toDataURL('image/png'),width,height};
+  }finally{canvas.width=canvas.height=1;}
+}
+// END PICTURE READER
+
+// BEGIN DROP ACTION
+let pictureDropBusy=false;
+async function handlePictureDrop(event){
+  $('stage').classList.remove('picture-drop');
+  const files=[...(event.dataTransfer?.files||[])];if(!files.length)return;
+  event.preventDefault();
+  if(!editing){notify('Go back to editing to add pictures.');return;}
+  if(pictureDropBusy){notify('Still opening pictures. Please wait.');return;}
+  pictureDropBusy=true;
+  try{
+    await picturesReady;
+    const targetState=state;
+    const action=await choosePictureDrop(files);if(!action)return;
+    if(files.some(editorPageFile)){
+      if(files.length!==1)throw new Error('Drop one HTML page at a time.');
+      const page=await readEditorPage(files[0]);if(state!==targetState)throw new Error('The page changed. Drop the file again.');
+      change(()=>{if(typeof clearCanvasRegion==='function')clearCanvasRegion();if(action==='new'){state=page;selected.clear();}else addEditorPage(page,{x:state.canvas.width/2,y:state.canvas.height/2});});
+      if($('editor-tools')?.open)$('editor-tools').close();$('stage').focus({preventScroll:true});notify(action==='new'?'Page opened':'Page items added');return;
+    }
+    const pictures=[],errors=[];
+    notify(files.some(file=>pictureType(file)==='image/heic')?'Opening HEIC picture…':'Opening pictures…');
+    for(const file of files){
+      try{pictures.push(await readPicture(file));}catch(error){errors.push(error.message);}
+    }
+    if(!pictures.length){notify(errors[0]);return;}
+    if(state!==targetState){notify('The draft changed. Please drop the pictures again.');return;}
+    const rect=$('phone').getBoundingClientRect();
+    const inside=event.clientX>=rect.left&&event.clientX<=rect.right&&event.clientY>=rect.top&&event.clientY<=rect.bottom;
+    const point=inside?{x:(event.clientX-rect.left)/scale,y:(event.clientY-rect.top)/scale}:{x:state.canvas.width/2,y:state.canvas.height/2};
+    const plan=pictureDropPlan(pictures,action,state.canvas,point);
+    change(()=>{
+      if(typeof clearCanvasRegion==='function')clearCanvasRegion();
+      if(plan.replace){state.canvas=plan.canvas;state.items=[];}
+      const entries=pictures.map((picture,index)=>{
+        const box=plan.boxes[index];
+        return item('item-'+crypto.randomUUID(),picture.name,'image',box.x,box.y,box.w,box.h,{src:picture.src,...(plan.replace?{imageBase:true}:{})});
+      });
+      state.items.push(...entries);selected=new Set(plan.replace?[]:entries.map(entry=>entry.id));
+    });
+    if($('editor-tools')?.open)$('editor-tools').close();
+    $('stage').focus({preventScroll:true});
+    notify((plan.replace?'Picture page opened':pictures.length===1?'Picture added':pictures.length+' pictures added')+(errors.length?'. Could not open '+errors.length+(errors.length===1?' file.':' files.'):''));
+  }catch(error){notify(error.message||'Could not open this picture.');}
+  finally{pictureDropBusy=false;}
+}
+// END DROP ACTION
+document.addEventListener('dragover',event=>{
+  if(![...(event.dataTransfer?.types||[])].includes('Files'))return;
+  event.preventDefault();event.dataTransfer.dropEffect=editing&&!pictureDropBusy?'copy':'none';
+  if(editing&&!pictureDropBusy)$('stage').classList.add('picture-drop');
+});
+document.addEventListener('dragleave',event=>{if(!event.relatedTarget)$('stage').classList.remove('picture-drop');});
+document.addEventListener('dragend',()=>$('stage').classList.remove('picture-drop'));
+document.addEventListener('drop',handlePictureDrop);
+
+// Keep large pictures when the draft exceeds the browser's small text store.
+let pictureDB=null,pictureStoreReady=false,pictureSaved='',pictureSaveWarning=false,pictureLocalSaved=true;
+function warnPictureSave(){if(!pictureSaveWarning){pictureSaveWarning=true;notify('Could not save this draft here. Use Save HTML to keep it.');}}
+function savePictureDraft(localSaved){
+  pictureLocalSaved=localSaved;if(!pictureStoreReady)return;
+  if(!pictureDB){if(!localSaved)warnPictureSave();return;}
+  const value=JSON.stringify(state);if(value===pictureSaved)return;pictureSaved=value;
+  try{
+    const transaction=pictureDB.transaction('drafts','readwrite');transaction.objectStore('drafts').put(copy(state),STORAGE);
+    transaction.onabort=transaction.onerror=()=>{pictureSaved='';if(!localSaved)warnPictureSave();};
+  }catch{pictureSaved='';if(!localSaved)warnPictureSave();}
+}
+const pictureStartState=JSON.stringify(state);
+const picturesReady=(async()=>{
+  try{
+    pictureDB=await new Promise((resolve,reject)=>{
+      const request=indexedDB.open('ui-design-editor-pictures-v1',1);
+      request.onupgradeneeded=()=>request.result.createObjectStore('drafts');
+      request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);
+    });
+    const saved=await new Promise((resolve,reject)=>{
+      const request=pictureDB.transaction('drafts').objectStore('drafts').get(STORAGE);
+      request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);
+    });
+    if(saved?.version===1&&JSON.stringify(state)===pictureStartState){state=saved;selected.clear();render();}
+  }catch{}
+  pictureStoreReady=true;savePictureDraft(pictureLocalSaved);
+})();
