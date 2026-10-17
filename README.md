@@ -9,14 +9,29 @@ Run `npm start` in this folder, then open http://localhost:3000/.
 This needs Node.js and Python 3. There are no packages to install.
 If another project uses port 3000, stop its server first.
 
+The main address opens the editor with **Info** selected in the right sidebar.
+Select an item to show **Edit**, or switch tabs yourself.
+The [About page](guide/index.html) explains the editor and where drafts stay.
+
+## Publish
+
+Use Caddy to serve the static files in production. Run `npm run build` to prepare
+`dist/`, then follow [the Caddy setup](deploy/README.md). Publish only `dist/`.
+Python is for local use. The public site needs no app process or server project store.
+
+The editor and About page have search titles, descriptions, canonical addresses,
+JSON-LD and share pictures. `robots.txt`, `sitemap.xml` and `llms.txt`
+help crawlers read them. The Library sample stays out of search.
+Edit `site/` and `scripts/sync-site.mjs`, then run `npm run sync-site` to update
+the public pages, search files and editor metadata.
+
 ## Drafts
 
-- Player: http://localhost:3000/drafts/dark-player-layout/
+- Player: http://localhost:3000/
 - Library: http://localhost:3000/drafts/dark-library-layout/
-- Chapters: http://localhost:3000/drafts/dark-chapter-layout/
 
-The player opens by default. Use **Projects / Pages** at the bottom of the left
-sidebar to switch pages. The list stays there when you switch between Add and Items.
+The editor opens with the player draft. **Sample** at the bottom of the left
+sidebar links to Library. Click the site name to return to the main editor.
 A narrow window shows the canvas with Edit, Items, Add, and Copy HTML beside it.
 
 Drafts save in your browser. Copy layout exports the item data. Copy HTML
@@ -82,8 +97,8 @@ empty space from its box. The text and icons keep their size and place. Wrapped
 text keeps its line breaks, and buttons keep their padding and border. Pictures
 and plain shapes keep their boxes. A fit uses one Undo step, even for several items.
 
-The draft addresses and saved draft names match the original project, so saved
-changes remain available when you use the same browser at localhost:3000.
+The main editor and Library keep their saved draft names, so saved changes
+remain available in the same browser at localhost:3000.
 
 ## Check
 

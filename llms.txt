@@ -1,0 +1,25 @@
+# UI Design Editor
+
+Source: https://uidesigneditor.com/
+
+## 100% local editor
+
+- All files stay in your browser
+
+- No signup
+
+- Free to use
+
+- Open source
+
+---
+
+# About
+
+Move and resize text, shapes, icons and pictures in your browser.
+
+Your work stays in this browser. The editor sends no project data to a server.
+
+Use **Copy HTML** to keep a file. Clearing browser data removes saved drafts.
+
+[Open editor](https://uidesigneditor.com/)

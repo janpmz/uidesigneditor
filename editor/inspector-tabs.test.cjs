@@ -1,0 +1,90 @@
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const { readFileSync } = require('node:fs');
+const { join } = require('node:path');
+const vm = require('node:vm');
+
+const root = join(__dirname, '..');
+const code = readFileSync(join(__dirname, 'inspector-tabs.js'), 'utf8');
+function harness() {
+  const nodes = new Map(), listeners = new Map();
+  const get = id => {
+    if (!nodes.has(id)) nodes.set(id, { hidden: false, dataset: {}, attributes: {}, textContent: '',
+      setAttribute(name, value) { this.attributes[name] = value; },
+      getAttribute(name) { return this.attributes[name]; },
+      focus() { this.focused = true; },
+    });
+    return nodes.get(id);
+  };
+  const buttons = ['edit', 'info'].map(name => { const button = get('inspector-tab-' + name);button.dataset.inspectorTab = name;return button; });
+  const sandbox = vm.createContext({ selected: new Set(), regionSelection: null, $: get,
+    stage: { contains: target => target.onStage },
+    document: { querySelectorAll: () => buttons, addEventListener: (name, fn) => listeners.set(name, fn) },
+  });
+  vm.runInContext(code, sandbox);
+  return { get, sandbox, run: source => vm.runInContext(source, sandbox), pointer: event => listeners.get('pointerdown')(event) };
+}
+
+test('Info opens first, and selecting an item opens Edit', () => {
+  const h = harness();
+  assert.equal(h.get('inspector-info').hidden, false);
+  assert.equal(h.get('inspector').hidden, true);
+  assert.equal(h.get('inspector-tab-info').attributes['aria-selected'], 'true');
+  assert.equal(h.get('quick-edit').textContent, 'Info');
+  h.sandbox.selected.add('title');h.run('syncInspectorTabs()');
+  assert.equal(h.get('inspector-info').hidden, true);
+  assert.equal(h.get('inspector').hidden, false);
+  assert.equal(h.get('quick-edit').textContent, 'Edit');
+});
+
+test('Info stays open during redraws until the user changes their selection', () => {
+  const h = harness();h.sandbox.selected.add('title');h.run('syncInspectorTabs()');
+  h.get('inspector-tab-info').onclick();h.run('syncInspectorTabs()');
+  assert.equal(h.get('inspector-info').hidden, false);
+  assert.deepEqual([...h.sandbox.selected], ['title']);
+  h.sandbox.selected.add('button');h.run('syncInspectorTabs()');
+  assert.equal(h.get('inspector').hidden, false);
+});
+
+test('clicking a selected canvas item opens Edit, and tab keys update focus and panels', () => {
+  const h = harness();h.sandbox.selected.add('title');h.run('syncInspectorTabs();showInspectorTab("info")');
+  h.pointer({ button: 0, target: { onStage: true, closest: () => ({}) } });
+  assert.equal(h.get('inspector').hidden, false);
+  let prevented = false;h.get('inspector-tab-edit').onkeydown({ key: 'ArrowRight', preventDefault() { prevented = true; } });
+  assert.equal(prevented, true);
+  assert.equal(h.get('inspector-info').hidden, false);
+  assert.equal(h.get('inspector-tab-info').focused, true);
+  assert.equal(h.get('inspector-tab-edit').tabIndex, -1);
+});
+
+test('the root editor uses the same draft key as the previous player address', () => {
+  const html = readFileSync(join(root, 'index.html'), 'utf8');
+  const declaration = html.match(/^const STORAGE=[^\n]+/m)[0];
+  const key = pathname => vm.runInNewContext(declaration + '\nSTORAGE', { location: { pathname } });
+  assert.equal(key('/'), 'dark-player-layout-v2:/drafts/dark-player-layout/');
+  assert.equal(key('/index.html'), key('/'));
+  assert.equal(key('/drafts/dark-player-layout/'), key('/'));
+  assert.equal(key('/saved.html'), 'dark-player-layout-v2:/saved.html');
+});
+
+test('the root is the working editor and each sidebar contains only the requested Info text', () => {
+  const info = ['100% local editor', 'All files stay in your browser', 'No signup', 'Free to use', 'Open source'];
+  for (const file of ['index.html', ...['dark-player-layout', 'dark-library-layout', 'dark-chapter-layout', 'dark-add-layout'].map(name => `drafts/${name}/index.html`)]) {
+    const html = readFileSync(join(root, file), 'utf8');
+    new vm.Script(html.match(/<script>\s*([\s\S]*?)<\/script>/)[1]);
+    const content = html.match(/<section class="inspector-info"[^>]*>([\s\S]*?)<\/section>/)[1];
+    assert.deepEqual(content.replace(/<[^>]+>/g, ' ').trim().split(/\s{2,}/).map(text => text.trim()), info);
+    assert.equal(html.split('id="editor-inspector"').length - 1, 1);
+    assert.equal(html.split('// BEGIN INSPECTOR TABS\n').length - 1, 1);
+    if (html.includes('const toolLocations=')) assert.match(html, /\['editor-inspector','home-inspector','tools-edit'\]/);
+    const sampleLinks = [...html.match(/<nav class="project-pages" id="editor-pages"[\s\S]*?<\/nav>/)[0].matchAll(/<a\b[^>]*href="([^"]+)"/g)];
+    assert.equal(sampleLinks.length, 1);
+    assert.match(sampleLinks[0][1], /dark-library-layout\/$/);
+    if (file === 'index.html') {
+      assert.match(html, /id="phone"/);
+      assert.match(html, /id="stage"/);
+      assert.doesNotMatch(html, /class="hero"|class="hero-copy"|http-equiv="refresh"/);
+      assert.match(html, /href="\/drafts\/dark-library-layout\/"/);
+    }
+  }
+});

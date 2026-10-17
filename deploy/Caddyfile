@@ -1,0 +1,27 @@
+# Add these site blocks to the VPS Caddyfile, below its existing global block.
+# That block already sets the local bind address and Cloudflare DNS checks.
+
+www.uidesigneditor.com {
+	redir https://uidesigneditor.com{uri} 301
+}
+
+uidesigneditor.com {
+	root * /srv/uidesigneditor
+	encode zstd gzip
+
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		Cache-Control "no-cache"
+	}
+
+	file_server {
+		precompressed gzip
+	}
+
+	handle_errors 404 {
+		rewrite * /404.html
+		header X-Robots-Tag noindex
+		file_server
+	}
+}

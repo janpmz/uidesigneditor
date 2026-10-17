@@ -6,13 +6,15 @@ const selection = (await Promise.all(['annotation-shapes.js', 'pixel-tools.js', 
 const dialog = await readFile(new URL('editor/image-drop-dialog.html', root), 'utf8');
 const menu = await readFile(new URL('editor/canvas-edit-menu.html', root), 'utf8');
 const imageEditBar = await readFile(new URL('editor/image-edit-bar.html', root), 'utf8');
-const styles = (await Promise.all(['image-drop.css', 'canvas-view.css', 'sidebar-tabs.css', 'annotation-shapes.css'].map(name => readFile(new URL(`editor/${name}`, root), 'utf8')))).join('\n');
+const inspectorMarkup = (await readFile(new URL('editor/inspector-tabs.html', root), 'utf8')).trimEnd();
+const inspectorCode = (await readFile(new URL('editor/inspector-tabs.js', root), 'utf8')).trimEnd();
+const styles = (await Promise.all(['image-drop.css', 'canvas-view.css', 'sidebar-tabs.css', 'inspector-tabs.css', 'annotation-shapes.css'].map(name => readFile(new URL(`editor/${name}`, root), 'utf8')))).join('\n');
 const view = await readFile(new URL('editor/canvas-view.js', root), 'utf8');
 const viewTools = (await readFile(new URL('editor/canvas-view-tools.html', root), 'utf8')).trimEnd();
 const reader = await readFile(new URL('editor/vendor/heic-to-1.6.6.js', root), 'utf8');
 const license = await readFile(new URL('editor/vendor/heic-to.LICENSE.txt', root), 'utf8');
+const pictureStyles = '<style data-picture-drop>\n' + styles + '\n</style>\n';
 const support = '<!-- BEGIN HEIC READER -->\n' +
-  '<style data-picture-drop>\n' + styles + '\n</style>\n' +
   '<script data-vendor="heic-to" data-version="1.6.6">\n' + reader.replace(/<\/script/gi, '<\\/script') + '\n</script>\n' +
   '<script type="text/plain" data-license="heic-to">\nSource: https://registry.npmjs.org/heic-to/-/heic-to-1.6.6.tgz\n' + license + '\n</script>\n' +
   '<!-- END HEIC READER -->';
@@ -22,6 +24,13 @@ for (const entry of await readdir(new URL('drafts/', root), { withFileTypes: tru
   const path = new URL(`drafts/${draft}/index.html`, root);
   let html = await readFile(path, 'utf8');
   if (!html.includes('// BEGIN PICTURE DROP\n')) continue;
+  html = html.replace('<h1>uidesigneditor.com</h1>', '<h1><a href="/" style="color:inherit;text-decoration:none">uidesigneditor.com</a></h1>');
+  html = html.replace(/<nav class="project-pages" id="editor-pages"[\s\S]*?<\/nav>/, nav => {
+    const library = nav.match(/<a class="project-page"[^>]*href="(?:\.\.\/|\/drafts\/)dark-library-layout\/"[\s\S]*?<\/a>/)?.[0];
+    if (!library) throw new Error('Missing Library link.');
+    return nav.replace(/(<h2 id="project-pages-title">)[^<]+/, '$1Sample')
+      .replace(/<div class="project-page-list">[\s\S]*?<\/div>/, `<div class="project-page-list">\n        ${library}\n      </div>`);
+  });
   if (!html.includes('id="add-rectangle"')) html = html.replace(/(<button id="add-box">[^<]*<\/button>)/, '$1\n          <button id="add-rectangle">Rectangle</button><button id="add-arrow">Arrow</button>');
   html = html.replace("['fontSize','iconSize','radius','borderWidth','iconOffsetX']", "['fontSize','iconSize','radius','borderWidth','iconOffsetX','strokeWidth']");
   if (!html.includes('styleArrowShape(el,item);')) html = html.replace("  if(item.kind==='reading'){el.style.fontFamily=", "  styleArrowShape(el,item);\n  if(item.kind==='reading'){el.style.fontFamily=");
@@ -33,6 +42,19 @@ for (const entry of await readdir(new URL('drafts/', root), { withFileTypes: tru
   if (!html.includes("el.classList.toggle('rectangle-shape'")) html = html.replace('styleArrowShape(el,item);', "styleArrowShape(el,item);el.classList.toggle('rectangle-shape',isRectangleShape(item));");
   if (!html.includes('renderArrowInspector(pane,item);')) html = html.replace("    const look=section('Shape');", "    if(isArrowShape(item))renderArrowInspector(pane,item);else {\n    const look=section('Shape');").replace("look.append(lookFields);pane.append(look);", "look.append(lookFields);pane.append(look);\n    }");
   if (!html.includes("if(key==='strokeWidth')")) html = html.replace("if(['radius','borderWidth'].includes(key))value=Math.max(0,value);", "if(key==='strokeWidth')value=Math.max(.5,value);if(['radius','borderWidth'].includes(key))value=Math.max(0,value);");
+  const inspectorBlock = '<!-- BEGIN INSPECTOR TABS -->\n' + inspectorMarkup + '\n<!-- END INSPECTOR TABS -->';
+  if (html.includes('<!-- BEGIN INSPECTOR TABS -->')) html = html.replace(/<!-- BEGIN INSPECTOR TABS -->[\s\S]*?<!-- END INSPECTOR TABS -->/, inspectorBlock);
+  else html = html.replace('<aside class="sidebar inspector" id="inspector" aria-label="Item settings"></aside>', inspectorBlock);
+  const inspectorScript = '// BEGIN INSPECTOR TABS\n' + inspectorCode + '\n// END INSPECTOR TABS';
+  if (html.includes('// BEGIN INSPECTOR TABS\n')) html = html.replace(/\/\/ BEGIN INSPECTOR TABS\n[\s\S]*?\/\/ END INSPECTOR TABS/, inspectorScript);
+  else html = html.replace('// END CANVAS EDITOR\n', '// END CANVAS EDITOR\n' + inspectorScript + '\n');
+  if (!html.includes('function renderInspector() {\n  syncInspectorTabs();')) html = html.replace('function renderInspector() {', 'function renderInspector() {\n  syncInspectorTabs();');
+  html = html.replace("['inspector','home-inspector','tools-edit']", "['editor-inspector','home-inspector','tools-edit']");
+  html = html.replace("function select(id,add=false) {if(add)", "function select(id,add=false) {showInspectorTab('edit');if(add)");
+  html = html.replace("showToolPanel(name);\n  if(name==='edit'&&current())", "showToolPanel(name);syncInspectorTabs();\n  if(name==='edit'&&inspectorTab==='edit'&&current())");
+  html = html.replace("textContent={edit:'Edit',items:", "textContent={edit:inspectorTab==='info'?'Info':'Edit',items:");
+  html = html.replaceAll('href="../dark-player-layout/"', 'href="/"');
+  if (draft === 'dark-player-layout') html = html.replace("const STORAGE='dark-player-layout-v2:'+location.pathname;", "const STORAGE='dark-player-layout-v2:'+(['/', '/index.html'].includes(location.pathname)?'/drafts/dark-player-layout/':location.pathname);");
   const viewStart = html.indexOf('// BEGIN CANVAS VIEW\n');
   if (viewStart < 0) html = html.replace('// BEGIN CANVAS EDITOR\n', view.trimEnd() + '\n// BEGIN CANVAS EDITOR\n');
   else {
@@ -67,13 +89,11 @@ for (const entry of await readdir(new URL('drafts/', root), { withFileTypes: tru
   html = html.replace(/^function reorder\(direction\)\{[^\n]*\}\n/m, '');
   if (!html.includes('renderOrderActions(actions);')) html = html.replace("actions.className='action-grid';actions.style.marginTop='12px';", "actions.className='action-grid';actions.style.marginTop='12px';renderOrderActions(actions);");
   html = html.replace("note.textContent='Changes save in this browser.", "note.textContent=imageEditSession?'Choose Done to save the image and return to the page. Cancel discards these edits.':'Changes save in this browser.");
-  const start = html.indexOf('<!-- BEGIN HEIC READER -->');
-  if (start < 0) html = html.replace('</head>', support + '\n</head>');
-  else {
-    const end = html.indexOf('<!-- END HEIC READER -->', start);
-    if (end < 0) throw new Error('Missing HEIC reader end mark.');
-    html = html.slice(0, start) + support + html.slice(end + '<!-- END HEIC READER -->'.length);
-  }
+  html = html.replace(/<!-- BEGIN HEIC READER -->[\s\S]*?<!-- END HEIC READER -->\n?/, '');
+  if (html.includes('<style data-picture-drop>')) html = html.replace(/<style data-picture-drop>[\s\S]*?<\/style>\n?/, pictureStyles);
+  else html = html.replace('</head>', pictureStyles + '</head>');
+  // Put the page text and editor before the large HEIC reader.
+  html = html.replace('</body>', support + '\n</body>');
   const begin = html.indexOf('// BEGIN PICTURE DROP\n'), end = html.indexOf('// END PICTURE DROP', begin);
   if (begin < 0 || end < 0) throw new Error('Missing picture drop marks.');
   html = html.slice(0, begin) + '// BEGIN PICTURE DROP\n' + code.trimEnd() + '\n' + html.slice(end);
