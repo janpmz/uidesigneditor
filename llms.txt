@@ -20,6 +20,8 @@ Move and resize text, shapes, icons and pictures in your browser.
 
 Your work stays in this browser. The editor sends no project data to a server.
 
+Player and Library start as local projects. Use **Projects** to switch between them. Each keeps its own edits.
+
 Use **Copy HTML** to keep a file. Clearing browser data removes saved drafts.
 
 Free to use. [View the code on GitHub](https://github.com/janpmz/uidesigneditor).

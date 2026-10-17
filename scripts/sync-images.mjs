@@ -25,12 +25,6 @@ for (const entry of await readdir(new URL('drafts/', root), { withFileTypes: tru
   let html = await readFile(path, 'utf8');
   if (!html.includes('// BEGIN PICTURE DROP\n')) continue;
   html = html.replace('<h1>uidesigneditor.com</h1>', '<h1><a href="/" style="color:inherit;text-decoration:none">uidesigneditor.com</a></h1>');
-  html = html.replace(/<nav class="project-pages" id="editor-pages"[\s\S]*?<\/nav>/, nav => {
-    const library = nav.match(/<a class="project-page"[^>]*href="(?:\.\.\/|\/drafts\/)dark-library-layout\/"[\s\S]*?<\/a>/)?.[0];
-    if (!library) throw new Error('Missing Library link.');
-    return nav.replace(/(<h2 id="project-pages-title">)[^<]+/, '$1Sample')
-      .replace(/<div class="project-page-list">[\s\S]*?<\/div>/, `<div class="project-page-list">\n        ${library}\n      </div>`);
-  });
   if (!html.includes('id="add-rectangle"')) html = html.replace(/(<button id="add-box">[^<]*<\/button>)/, '$1\n          <button id="add-rectangle">Rectangle</button><button id="add-arrow">Arrow</button>');
   html = html.replace("['fontSize','iconSize','radius','borderWidth','iconOffsetX']", "['fontSize','iconSize','radius','borderWidth','iconOffsetX','strokeWidth']");
   if (!html.includes('styleArrowShape(el,item);')) html = html.replace("  if(item.kind==='reading'){el.style.fontFamily=", "  styleArrowShape(el,item);\n  if(item.kind==='reading'){el.style.fontFamily=");
@@ -92,8 +86,8 @@ for (const entry of await readdir(new URL('drafts/', root), { withFileTypes: tru
   html = html.replace(/<!-- BEGIN HEIC READER -->[\s\S]*?<!-- END HEIC READER -->\n?/, '');
   if (html.includes('<style data-picture-drop>')) html = html.replace(/<style data-picture-drop>[\s\S]*?<\/style>\n?/, pictureStyles);
   else html = html.replace('</head>', pictureStyles + '</head>');
-  // Put the page text and editor before the large HEIC reader.
-  html = html.replace('</body>', support + '\n</body>');
+  // Keep dollar signs in the reader unchanged when adding it after the editor.
+  html = html.replace('</body>', () => support + '\n</body>');
   const begin = html.indexOf('// BEGIN PICTURE DROP\n'), end = html.indexOf('// END PICTURE DROP', begin);
   if (begin < 0 || end < 0) throw new Error('Missing picture drop marks.');
   html = html.slice(0, begin) + '// BEGIN PICTURE DROP\n' + code.trimEnd() + '\n' + html.slice(end);

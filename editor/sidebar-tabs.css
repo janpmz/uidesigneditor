@@ -7,3 +7,4 @@
 .sidebar-tabs [aria-selected=true]:hover{background:var(--panel)}
 .action-grid button{min-width:0}
 .action-grid .order-action{grid-column:1/-1}
+.project-page{background:transparent;text-align:left}

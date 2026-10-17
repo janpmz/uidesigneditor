@@ -8,7 +8,6 @@ export const publicFiles = [
   'index.html', '404.html', 'robots.txt', 'sitemap.xml', 'llms.txt',
   'guide/index.html',
   'assets/site.css', 'assets/icon.svg', 'assets/social-card.jpg',
-  'drafts/dark-library-layout/index.html',
 ];
 
 export async function buildSite(destination = new URL('dist/', root)) {

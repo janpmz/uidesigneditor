@@ -65,7 +65,7 @@ test('the first 2 MB include the editor text and complete editor script', () => 
   for (const file of ['index.html', 'drafts/dark-library-layout/index.html']) {
     const html = read(file), prefix = Buffer.from(html).subarray(0, 2_000_000).toString('utf8');
     assert.match(prefix, /<section class="inspector-info"[^>]*>[\s\S]*?All files stay in your browser[\s\S]*?<\/section>/);
-    assert.match(prefix, /<script>\s*[\s\S]*?syncToolLayout\(\);render\(\);\s*<\/script>/);
+    assert.match(prefix, /<script>\s*[\s\S]*?syncToolLayout\(\);render\(\);\s*(?:const projectsReady=initializeProjects\(\);\s*)?<\/script>/);
     assert.equal((html.match(/<style data-picture-drop>/g) || []).length, 1);
     assert.equal((html.match(/<script data-vendor="heic-to"/g) || []).length, 1);
     assert.ok(html.indexOf('<script data-vendor="heic-to"') > html.indexOf('syncToolLayout();render();'));
@@ -124,7 +124,7 @@ test('the build ships only public files, with gzip copies that keep the same con
     assert.deepEqual(actual, [...publicFiles, ...compressed.map(file => file + '.gz')].sort());
     for (const file of publicFiles) assert.deepEqual(readFileSync(join(destination, file)), readFileSync(join(root, file)));
     for (const file of compressed) assert.deepEqual(gunzipSync(readFileSync(join(destination, file + '.gz'))), readFileSync(join(root, file)));
-    for (const privateFile of ['.git', '.env', 'README.md', 'package.json', 'scripts', 'editor', 'deploy', 'tests', 'site', 'llms-full.txt', 'index.md', 'guide/index.md', 'drafts/dark-player-layout', 'drafts/dark-chapter-layout', 'drafts/dark-add-layout']) assert.equal(existsSync(join(destination, privateFile)), false);
+    for (const privateFile of ['.git', '.env', 'README.md', 'package.json', 'scripts', 'editor', 'deploy', 'tests', 'site', 'llms-full.txt', 'index.md', 'guide/index.md', 'drafts']) assert.equal(existsSync(join(destination, privateFile)), false);
   } finally {
     await rm(folder, { recursive: true, force: true });
   }

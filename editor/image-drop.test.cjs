@@ -170,6 +170,28 @@ test('a bad HEIC file gives a clear error', async () => {
   vm.runInContext(reader, sandbox);
   await assert.rejects(vm.runInContext('readPicture(file)', sandbox), /Could not open this HEIC picture/);
 });
+test('the main page and saved copies keep a working HEIC reader', async () => {
+  const pages = ['../index.html', ...readdirSync(join(__dirname, '../drafts'), { withFileTypes: true })
+    .filter(entry => entry.isDirectory()).map(entry => '../drafts/' + entry.name + '/index.html')];
+  const vendor = readFileSync(join(__dirname, 'vendor/heic-to-1.6.6.js'), 'utf8').replace(/<\/script/gi, '<\\/script');
+  for (const page of pages) {
+    const html = readFileSync(join(__dirname, page), 'utf8');
+    const included = html.match(/<script data-vendor="heic-to"[^>]*>\n([\s\S]*?)\n<\/script>/)[1];
+    let workerBlob;
+    const stopped = new Error('Worker captured');
+    const sandbox = vm.createContext({
+      Blob,
+      URL: { createObjectURL(blob) { workerBlob = blob; return 'blob:test'; } },
+      Worker: class { constructor() { throw stopped; } },
+    });
+    vm.runInContext(included, sandbox);
+    await assert.rejects(sandbox.HeicTo({ blob: new Blob(['heic']), type: 'image/png' }), error => error === stopped);
+    assert.ok(workerBlob, page + ': HEIC reader must create its worker.');
+    try { new vm.Script(await workerBlob.text()); }
+    catch (error) { assert.fail(page + ': HEIC reader could not start: ' + error.message); }
+    assert.ok(included === vendor, page + ': Keep the HEIC reader unchanged.');
+  }
+});
 for (const page of readdirSync(join(__dirname, '../drafts'), { withFileTypes: true }).filter(entry => entry.isDirectory()).map(entry => entry.name)) {
   test(page + ': saved copies keep the drop tools and HEIC reader', () => {
     const html = readFileSync(join(__dirname, '../drafts', page, 'index.html'), 'utf8');

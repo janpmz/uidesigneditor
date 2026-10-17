@@ -1,4 +1,5 @@
 import { readFile, writeFile, mkdir, rm } from 'node:fs/promises';
+import { runInNewContext } from 'node:vm';
 
 const root = new URL('../', import.meta.url);
 export const origin = 'https://uidesigneditor.com';
@@ -104,7 +105,29 @@ for (const [name, title, description] of drafts) {
   else html = html.replace(/<meta name="robots"[^>]*>\s*<title>[^<]*<\/title>/, block);
   await writeFile(file, html);
 }
-let editorHome = await readFile(new URL('drafts/dark-player-layout/index.html', root), 'utf8');
+const playerFile = new URL('drafts/dark-player-layout/index.html', root);
+let editorHome = await readFile(playerFile, 'utf8');
+const librarySource = await readFile(new URL('drafts/dark-library-layout/index.html', root), 'utf8');
+const libraryOriginal = librarySource.match(/function original\(\) \{[\s\S]*?\n\}/)[0];
+const libraryUpdates = librarySource.slice(librarySource.indexOf('// Update older saved drafts'), librarySource.indexOf('function remember('));
+const libraryLayout = runInNewContext(`const round=value=>Math.round(value*10)/10;\n${libraryOriginal}\nlet state=original();\n${libraryUpdates}\nJSON.stringify(state);`);
+const projects = JSON.stringify({version:1,active:'player',projects:[{id:'player',name:'Player',layout:null},{id:'library',name:'Library',layout:JSON.parse(libraryLayout)}]}).replaceAll('<', '\\u003c');
+const projectData = `<script type="application/json" id="initial-projects">${projects}</script>`;
+if (editorHome.includes('id="initial-projects"')) editorHome = editorHome.replace(/<script type="application\/json" id="initial-projects">[\s\S]*?<\/script>/, () => projectData);
+else editorHome = editorHome.replace('<script type="application/json" id="initial-layout">', () => projectData + '\n<script type="application/json" id="initial-layout">');
+const projectCode = '// BEGIN LOCAL PROJECTS\n' + (await readFile(new URL('editor/projects.js', root), 'utf8')).trimEnd() + '\n// END LOCAL PROJECTS';
+if (editorHome.includes('// BEGIN LOCAL PROJECTS\n')) editorHome = editorHome.replace(/\/\/ BEGIN LOCAL PROJECTS\n[\s\S]*?\/\/ END LOCAL PROJECTS/, () => projectCode);
+else editorHome = editorHome.replace(/^const STORAGE=[^\n]+/m, () => projectCode);
+editorHome = editorHome.replace('let state=original(),selected=', 'let state=localProjectLayout(activeProject),selected=');
+editorHome = editorHome.replace(/^try \{ const saved=JSON.parse\(localStorage.getItem\(STORAGE\)[^\n]+\n/m, '');
+const pageIcon = '<svg viewBox="0 0 16 18" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><path d="M9.5 1.5H3a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V6L9.5 1.5Z"/><path d="M9 1.5V6h5M5 10h6M5 13h4"/></svg>';
+editorHome = editorHome.replace(/<nav class="project-pages" id="editor-pages"[\s\S]*?<\/nav>/, `<nav class="project-pages" id="editor-pages" aria-labelledby="project-pages-title">\n      <h2 id="project-pages-title">Projects</h2>\n      <div class="project-page-list">\n${['Player','Library'].map(name => `        <button type="button" class="project-page" data-project="${name.toLowerCase()}"${name === 'Player' ? ' aria-current="page"' : ''}>${pageIcon}<span>${name}</span></button>`).join('\n')}\n      </div>\n    </nav>`);
+if (!editorHome.includes('save();renderProjects();}')) editorHome = editorHome.replace(/^(function render\(\)\{[^\n]*)save\(\);\}/m, '$1save();renderProjects();}');
+if (!editorHome.includes('cleanPictureExport(doc);exportProjects(doc);')) editorHome = editorHome.replace('cleanPictureExport(doc);', 'cleanPictureExport(doc);exportProjects(doc);');
+if (!editorHome.includes('await projectsReady;await navigator.clipboard.writeText(exportHtml())')) editorHome = editorHome.replace('await navigator.clipboard.writeText(exportHtml())', 'await projectsReady;await navigator.clipboard.writeText(exportHtml())');
+editorHome = editorHome.replace("downloadBlob(blob,'player-design.png');", "downloadBlob(blob,activeProject+'-design.png');");
+if (!editorHome.includes('const projectsReady=initializeProjects();')) editorHome = editorHome.replace('syncToolLayout();render();', 'syncToolLayout();render();\nconst projectsReady=initializeProjects();');
+await writeFile(playerFile, editorHome);
 editorHome = editorHome.replace(/<!-- BEGIN SITE META -->[\s\S]*?<!-- END SITE META -->/, `<!-- BEGIN SITE META -->\n${metadata(pages[0])}\n<!-- END SITE META -->`);
 for (const name of ['dark-library-layout', 'dark-chapter-layout', 'dark-add-layout']) editorHome = editorHome.replaceAll(`href="../${name}/"`, `href="/drafts/${name}/"`);
 await writeFile(new URL('index.html', root), editorHome);

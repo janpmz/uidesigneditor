@@ -57,16 +57,6 @@ test('clicking a selected canvas item opens Edit, and tab keys update focus and 
   assert.equal(h.get('inspector-tab-edit').tabIndex, -1);
 });
 
-test('the root editor uses the same draft key as the previous player address', () => {
-  const html = readFileSync(join(root, 'index.html'), 'utf8');
-  const declaration = html.match(/^const STORAGE=[^\n]+/m)[0];
-  const key = pathname => vm.runInNewContext(declaration + '\nSTORAGE', { location: { pathname } });
-  assert.equal(key('/'), 'dark-player-layout-v2:/drafts/dark-player-layout/');
-  assert.equal(key('/index.html'), key('/'));
-  assert.equal(key('/drafts/dark-player-layout/'), key('/'));
-  assert.equal(key('/saved.html'), 'dark-player-layout-v2:/saved.html');
-});
-
 test('the root is the working editor and each sidebar contains only the requested Info text', () => {
   const info = ['100% local editor', 'All files stay in your browser', 'No signup', 'Free to use', 'Open source on GitHub'];
   for (const file of ['index.html', ...['dark-player-layout', 'dark-library-layout', 'dark-chapter-layout', 'dark-add-layout'].map(name => `drafts/${name}/index.html`)]) {
@@ -77,14 +67,16 @@ test('the root is the working editor and each sidebar contains only the requeste
     assert.equal(html.split('id="editor-inspector"').length - 1, 1);
     assert.equal(html.split('// BEGIN INSPECTOR TABS\n').length - 1, 1);
     if (html.includes('const toolLocations=')) assert.match(html, /\['editor-inspector','home-inspector','tools-edit'\]/);
-    const sampleLinks = [...html.match(/<nav class="project-pages" id="editor-pages"[\s\S]*?<\/nav>/)[0].matchAll(/<a\b[^>]*href="([^"]+)"/g)];
-    assert.equal(sampleLinks.length, 1);
-    assert.match(sampleLinks[0][1], /dark-library-layout\/$/);
+    const projects = html.match(/<nav class="project-pages" id="editor-pages"[\s\S]*?<\/nav>/)[0];
+    if (file === 'index.html' || file === 'drafts/dark-player-layout/index.html') {
+      assert.deepEqual([...projects.matchAll(/data-project="([^"]+)"/g)].map(([, id]) => id), ['player', 'library']);
+      assert.match(projects, />Projects<\/h2>/);
+      assert.doesNotMatch(projects, /href=/);
+    }
     if (file === 'index.html') {
       assert.match(html, /id="phone"/);
       assert.match(html, /id="stage"/);
       assert.doesNotMatch(html, /class="hero"|class="hero-copy"|http-equiv="refresh"/);
-      assert.match(html, /href="\/drafts\/dark-library-layout\/"/);
     }
   }
 });
