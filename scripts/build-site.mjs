@@ -1,6 +1,7 @@
 import { readFile, writeFile, mkdir, mkdtemp, rename, rm } from 'node:fs/promises';
 import { gzipSync } from 'node:zlib';
-import { pathToFileURL } from 'node:url';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = new URL('../', import.meta.url);
 export const publicFiles = [
@@ -11,7 +12,10 @@ export const publicFiles = [
 ];
 
 export async function buildSite(destination = new URL('dist/', root)) {
-  const temporary = await mkdtemp(new URL('.site-build-', root));
+  const outputPath = resolve(fileURLToPath(destination));
+  const parent = dirname(outputPath);
+  await mkdir(parent, { recursive: true });
+  const temporary = await mkdtemp(join(parent, '.site-build-'));
   const folder = pathToFileURL(temporary + '/');
   let bytes = 0, compressedBytes = 0;
   try {
@@ -27,8 +31,8 @@ export async function buildSite(destination = new URL('dist/', root)) {
         compressedBytes += compressed.length;
       } else compressedBytes += data.length;
     }
-    await rm(destination, { recursive: true, force: true });
-    await rename(temporary, destination);
+    await rm(outputPath, { recursive: true, force: true });
+    await rename(temporary, outputPath);
     console.log(`Built ${publicFiles.length} public files in ${destination.pathname}`);
     console.log(`${(bytes / 1048576).toFixed(2)} MB, ${(compressedBytes / 1048576).toFixed(2)} MB with gzip.`);
   } finally {

@@ -2,7 +2,9 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { readFileSync, existsSync } = require('node:fs');
 const { readdir, mkdtemp, rm } = require('node:fs/promises');
-const { join } = require('node:path');
+const fileSystem = require('node:fs/promises');
+const { syncBuiltinESMExports } = require('node:module');
+const { join, sep } = require('node:path');
 const { tmpdir } = require('node:os');
 const { pathToFileURL } = require('node:url');
 const { gunzipSync } = require('node:zlib');
@@ -124,6 +126,28 @@ test('the build ships only public files, with gzip copies that keep the same con
     for (const file of compressed) assert.deepEqual(gunzipSync(readFileSync(join(destination, file + '.gz'))), readFileSync(join(root, file)));
     for (const privateFile of ['.git', '.env', 'README.md', 'package.json', 'scripts', 'editor', 'deploy', 'tests', 'site', 'llms-full.txt', 'index.md', 'guide/index.md', 'drafts/dark-player-layout', 'drafts/dark-chapter-layout', 'drafts/dark-add-layout']) assert.equal(existsSync(join(destination, privateFile)), false);
   } finally {
+    await rm(folder, { recursive: true, force: true });
+  }
+});
+
+test('build succeeds when the output uses another file system', async context => {
+  const { buildSite } = await import('../scripts/build-site.mjs');
+  const folder = await mkdtemp(join(tmpdir(), 'uidesigneditor-other-disk-'));
+  const destination = join(folder, 'site'), originalRename = fileSystem.rename;
+  let moves = 0;
+  context.mock.method(fileSystem, 'rename', async (source, target) => {
+    moves++;
+    if (!source.startsWith(folder + sep)) throw Object.assign(new Error('Cannot rename across file systems'), { code: 'EXDEV' });
+    return originalRename(source, target);
+  });
+  syncBuiltinESMExports();
+  try {
+    await buildSite(pathToFileURL(destination));
+    assert.equal(moves, 1);
+    assert.ok(existsSync(join(destination, 'index.html')));
+    assert.deepEqual(await readdir(folder), ['site']);
+  } finally {
+    context.mock.restoreAll();syncBuiltinESMExports();
     await rm(folder, { recursive: true, force: true });
   }
 });
