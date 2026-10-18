@@ -59,18 +59,19 @@ test('a simple gradient continues through the filled area', () => {
   })()`), true);
 });
 
-function harness(picturePage = false) {
+function harness(picturePage = false, mobile = false) {
   const stageListeners = new Map(), layerListeners = new Map(), documentListeners = new Map(), undo = [];
-  const node = () => ({hidden:true,style:{setProperty(){}},dataset:{},className:'',classList:{add(){}},children:[],attributes:{},offsetWidth:140,offsetHeight:150,setAttribute(key,value){this.attributes[key]=value;},append(...children){this.children.push(...children);},remove(){},focus(){},contains(){return false;},querySelector(){return null;},querySelectorAll(){return [];}});
+  const node = () => ({hidden:true,style:{setProperty(){}},dataset:{},className:'',classList:{add(){},remove(){}},children:[],attributes:{},offsetWidth:140,offsetHeight:150,setAttribute(key,value){this.attributes[key]=value;},append(...children){this.children.push(...children);},remove(){},focus(){},contains(){return false;},querySelector(){return null;},querySelectorAll(){return [];}});
   const nodes = new Map();
   const get = id => {if(!nodes.has(id))nodes.set(id,node());return nodes.get(id);};
   const stage = get('stage');let captured = null;
   get('layers').addEventListener=(type,fn)=>layerListeners.set(type,fn);
-  stage.addEventListener=(type,fn)=>stageListeners.set(type,fn);
+  stage.addEventListener=(type,fn)=>stageListeners.set(type,[...(stageListeners.get(type)||[]),fn]);
+  stage.getBoundingClientRect=()=>({left:0,top:0,width:390,height:844});
   stage.setPointerCapture=id=>{captured=id;};stage.hasPointerCapture=id=>captured===id;stage.releasePointerCapture=()=>{captured=null;};
   const start = {version:1,canvas:{width:800,height:500,background:'#000000',picturePage},items:picturePage?[{id:'base',name:'Base',kind:'image',src:'data:image/png;base64,AAAA',x:0,y:0,w:800,h:500,imageBase:true}]:[{id:'background',kind:'shape',x:0,y:0,w:800,h:500},{id:'a',kind:'label',x:100,y:100,w:100,h:40},{id:'b',kind:'label',x:100,y:170,w:100,h:40}]};
   const sandbox = vm.createContext({
-    state:structuredClone(start),selected:new Set(),editing:true,stage,canvasTextTarget:()=>false,
+    state:structuredClone(start),selected:new Set(),editing:true,stage,canvasTextTarget:()=>false,scale:1,compactViewport:{matches:mobile},drag:null,
     pictureChoice:{open:false},pictureDropBusy:false,$:get,
     document:{documentElement:{clientWidth:1200,clientHeight:800},addEventListener:(type,fn)=>documentListeners.set(type,fn),createElement:node},
     window:{innerWidth:1200,innerHeight:800,addEventListener(){}},
@@ -85,10 +86,11 @@ function harness(picturePage = false) {
   sandbox.remember=before=>undo.push(before);
   sandbox.change=fn=>{undo.push(JSON.stringify(sandbox.state));fn();};
   sandbox.deleteSelected=()=>sandbox.change(()=>{sandbox.state.items.forEach(item=>{if(sandbox.selected.has(item.id))item.hidden=true;});sandbox.selected.clear();});
-  vm.runInContext(defaults + geometry + scaling + shapes + helpers + fitContent + controller + textEditor, sandbox);
+  const view=mobile?readFileSync(join(__dirname,'canvas-view.js'),'utf8'):'';
+  vm.runInContext(defaults + geometry + scaling + shapes + helpers + fitContent + view + controller + textEditor, sandbox);
   const read=code=>JSON.parse(JSON.stringify(vm.runInContext(code,sandbox)));
   const event=(x,y,options={})=>({button:0,pointerId:1,clientX:x,clientY:y,target:{closest:()=>null},preventDefault(){this.prevented=true;},stopImmediatePropagation(){this.stopped=true;},...options});
-  return {sandbox,start,undo,read,event,get,send:(type,event)=>stageListeners.get(type)(event),list:(type,event)=>layerListeners.get(type)(event),key:event=>documentListeners.get('keydown')(event)};
+  return {sandbox,start,undo,read,event,get,send:(type,event)=>{for(const fn of stageListeners.get(type)||[]){fn(event);if(event.stopped)break;}},list:(type,event)=>layerListeners.get(type)(event),key:event=>documentListeners.get('keydown')(event)};
 }
 function mockPictureCrop(h){
   h.sandbox.makeRegionPlan=async region=>({
@@ -96,6 +98,34 @@ function mockPictureCrop(h){
     patches:[{id:'base',src:'filled'}],
   });
 }
+test('a phone tap selects an item, the next one-finger drag moves it, and empty canvas drags pan',()=>{
+  for(const kind of ['label','image','video','shape']){
+    const h=harness(false,true);h.sandbox.state.items=[{id:'a',kind,x:100,y:100,w:100,h:40}];
+    h.read('renderCanvasView();true');const view=h.read('canvasView'),zoom=h.read('scale');
+    const target={closest:selector=>selector==='.item,.selection-overlay'?{dataset:{id:'a'}}:null};
+    const touch=(x,y,extra={})=>h.event(x,y,{pointerType:'touch',...extra});
+    h.send('pointerdown',touch(110,110,{target}));h.send('pointerup',touch(110,110));
+    assert.deepEqual([...h.sandbox.selected],['a']);assert.equal(h.read('canvasGesture'),null);
+    h.send('pointerdown',touch(110,110,{target}));assert.equal(h.read('canvasGesture.type'),'move');
+    h.send('pointermove',touch(130,140));h.send('pointerup',touch(130,140));
+    assert.deepEqual(h.read('state.items.map(entry=>[entry.x,entry.y])'),[[120,130]]);
+    assert.equal(h.undo.length,1);assert.deepEqual(h.read('canvasView'),view);
+    h.send('pointerdown',touch(20,20));h.send('pointermove',touch(70,80));h.send('pointerup',touch(70,80));
+    assert.equal(h.read('canvasView.x'),view.x+50);assert.equal(h.read('canvasView.y'),view.y+60);
+    assert.equal(h.read('scale'),zoom);assert.deepEqual([...h.sandbox.selected],['a']);assert.equal(h.undo.length,1);
+    assert.deepEqual(h.read('state.items.map(entry=>[entry.x,entry.y])'),[[120,130]]);
+  }
+});
+test('one-finger panning over the phone page picture keeps it fixed and the rectangle tool still selects an area',()=>{
+  const h=harness(true,true);h.read('renderCanvasView();true');const before=h.read('state');
+  const target={closest:selector=>selector==='.item,.selection-overlay'?{dataset:{id:'base'}}:null};
+  const touch=(x,y,extra={})=>h.event(x,y,{pointerType:'touch',...extra});
+  h.send('pointerdown',touch(100,100,{target}));h.send('pointermove',touch(140,150));h.send('pointerup',touch(140,150));
+  assert.deepEqual(h.read('state'),before);assert.equal(h.read('canvasGesture'),null);assert.equal(h.read('regionSelection'),null);
+  h.get('select-rectangle').onclick();h.send('pointerdown',touch(100,100,{target}));
+  assert.equal(h.read('canvasGesture.type'),'box');h.send('pointermove',touch(140,150));h.send('pointerup',touch(140,150));
+  assert.deepEqual(h.read('regionSelection.box'),{x:100,y:100,w:40,h:50});assert.deepEqual(h.read('state'),before);
+});
 test('clicks in editable text leave browser selection alone and cannot start a canvas move',()=>{
   const h=harness(),event=h.event(110,110,{target:{closest:selector=>selector.includes('contenteditable')?{}:null}});
   h.sandbox.selected.add('a');h.send('pointerdown',event);

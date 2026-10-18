@@ -11,6 +11,7 @@ const dialog = await readFile(new URL('editor/image-drop-dialog.html', root), 'u
 const menu = await readFile(new URL('editor/canvas-edit-menu.html', root), 'utf8');
 const imageEditBar = await readFile(new URL('editor/image-edit-bar.html', root), 'utf8');
 const selectTools = (await readFile(new URL('editor/select-tools.html', root), 'utf8')).trimEnd();
+const mobileTools = (await readFile(new URL('editor/mobile-tools.html', root), 'utf8')).trimEnd();
 const inspectorMarkup = (await readFile(new URL('editor/inspector-tabs.html', root), 'utf8')).trimEnd();
 const inspectorCode = (await readFile(new URL('editor/inspector-tabs.js', root), 'utf8')).trimEnd();
 const itemInspector = (await readFile(new URL('editor/item-inspector.js', root), 'utf8')).trimEnd();
@@ -37,6 +38,8 @@ for (const file of editorFiles) {
   try { html = await readFile(path, 'utf8'); }
   catch (error) { if (error.code === 'ENOENT') continue; throw error; }
   if (!html.includes('// BEGIN PICTURE DROP\n')) continue;
+  html = html.replace(/<nav class="quick-tools"[\s\S]*?<\/nav>/, () => mobileTools);
+  html = html.replace("toolTrigger=trigger||$('quick-'+name)||$('quick-edit');", "toolTrigger=trigger||$('mobile-tools-toggle');");
   html = html.replace(/<!-- BEGIN AI INSTRUCTIONS -->[\s\S]*?<!-- END AI INSTRUCTIONS -->\n?/g, '');
   html = html.replace(/<body\b[^>]*>/, body => body + '\n' + aiInstructionsHtml);
   html = html.replace('<h1>uidesigneditor.com</h1>', '<h1><a href="/" style="color:inherit;text-decoration:none">uidesigneditor.com</a></h1>');

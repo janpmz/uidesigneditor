@@ -24,4 +24,9 @@
 .compact-tools .topbar-start{flex-wrap:wrap;gap:12px}
 .top-actions{row-gap:4px}
 .canvas-foot{flex-shrink:0;text-align:center;padding:0 8px}
-@media(max-width:900px){.stage{padding:0}.canvas-view-tools{flex-wrap:wrap}}
+@media(max-width:900px){
+  .stage{padding:0;margin-right:0}
+  .canvas-view-tools{flex-wrap:wrap}
+  .quick-tools{width:auto}
+  .quick-tools button{min-width:60px;min-height:44px;padding:8px 12px}
+}

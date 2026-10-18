@@ -174,7 +174,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 .compact-tools .topbar-start{flex-wrap:wrap;gap:12px}
 .top-actions{row-gap:4px}
 .canvas-foot{flex-shrink:0;text-align:center;padding:0 8px}
-@media(max-width:900px){.stage{padding:0}.canvas-view-tools{flex-wrap:wrap}}
+@media(max-width:900px){
+  .stage{padding:0;margin-right:0}
+  .canvas-view-tools{flex-wrap:wrap}
+  .quick-tools{width:auto}
+  .quick-tools button{min-width:60px;min-height:44px;padding:8px 12px}
+}
 
 .sidebar-tabs{gap:4px;padding:12px 10px 0;background:#171719;border-bottom:1px solid #45404d;isolation:isolate}
 .sidebar-tabs button{position:relative;flex:1;min-height:38px;margin-bottom:-1px;padding:9px 8px;border:1px solid transparent;border-bottom-color:#45404d;border-radius:8px 8px 0 0;background:transparent;color:#9996a3;font-size:12px;font-weight:500;white-space:nowrap}
@@ -785,10 +790,7 @@ Read the instructions: https://uidesigneditor.com/instructions.txt</textarea>
 <!-- END INSPECTOR TABS -->
 </main>
 <nav class="quick-tools" aria-label="Canvas tools">
-  <button id="quick-edit" data-open-panel="edit" aria-haspopup="dialog" aria-controls="editor-tools" aria-expanded="false">Edit</button>
-  <button id="quick-items" data-open-panel="items" aria-haspopup="dialog" aria-controls="editor-tools" aria-expanded="false">Items</button>
-  <button id="quick-add" data-open-panel="add" aria-haspopup="dialog" aria-controls="editor-tools" aria-expanded="false">Add</button>
-  <button id="quick-copy-html" data-copy-html>Copy HTML</button>
+  <button id="mobile-tools-toggle" data-open-panel="edit" aria-haspopup="dialog" aria-controls="editor-tools" aria-expanded="false">Tools</button>
 </nav>
 <dialog class="compact-tools" id="editor-tools" aria-labelledby="editor-tools-title">
   <div class="tools-head"><h2 id="editor-tools-title">Edit</h2><button data-copy-html>Copy HTML</button><button id="hide-tools">Close</button></div>
@@ -1339,7 +1341,7 @@ function showToolPanel(name,focus=false){
 function openToolPanel(name,trigger){
   closeItemMenu();
   if(compactViewport.matches){
-    toolTrigger=trigger||$('quick-'+name)||$('quick-edit');
+    toolTrigger=trigger||$('mobile-tools-toggle');
     if(!$('editor-tools').open)$('editor-tools').showModal();
   }
   showToolPanel(name);syncInspectorTabs();
@@ -1946,6 +1948,13 @@ function setCanvasZoom(value,anchor){
 function resetCanvasView(){canvasView.mode=null;canvasView.page='';$('zoom').value='fit';}
 function holdCanvasView(){setCanvasZoom(scale);}
 function canvasViewBusy(){return Boolean(canvasGesture||canvasEditBusy||pictureDropBusy);}
+function canvasTouchPans(event){
+  if(event.pointerType!=='touch'||typeof compactViewport==='undefined'||!compactViewport.matches||rectangleSelectionArmed||canvasTextTarget(event.target)||event.target.closest('.make-item-action'))return false;
+  if(!editing)return true;
+  if(event.target.closest('.group-grip,.resize-handle,[data-rectangle-resize],[data-arrow-end]'))return false;
+  const id=event.target.closest('.item,.selection-overlay')?.dataset.id;
+  return !selectedItems().some(entry=>entry.id===id&&!isPagePicture(entry));
+}
 function endCanvasPan(event){
   if(canvasPan?.pointer!==event.pointerId)return;
   canvasPan=null;stage.classList.remove('panning');
@@ -1965,6 +1974,7 @@ stage.addEventListener('pointerdown',event=>{
     canvasTouches.set(event.pointerId,{x:event.clientX,y:event.clientY});
     if(canvasTouches.size===2){
       if(canvasEditBusy||pictureDropBusy)return;
+      if(canvasPan)endCanvasPan({pointerId:canvasPan.pointer});
       if(canvasGesture)endCanvasGesture(true);
       if(drag)endDrag({pointerId:drag.pointer},true);
       const [a,b]=[...canvasTouches.values()];
@@ -1974,9 +1984,13 @@ stage.addEventListener('pointerdown',event=>{
     }
     if(canvasPinch){event.preventDefault();event.stopImmediatePropagation();stage.setPointerCapture(event.pointerId);return;}
   }
-  if(!(event.button===1||(event.button===0&&canvasSpace))||canvasViewBusy())return;
-  event.preventDefault();event.stopImmediatePropagation();closeCanvasMenu();stage.focus({preventScroll:true});holdCanvasView();
-  canvasPan={pointer:event.pointerId,x:event.clientX,y:event.clientY,left:canvasView.x,top:canvasView.y};
+  const touch=canvasTouchPans(event);
+  if(!(touch||event.button===1||(event.button===0&&canvasSpace))||canvasViewBusy())return;
+  event.preventDefault();event.stopImmediatePropagation();closeCanvasMenu();stage.focus({preventScroll:true});
+  if(!touch)holdCanvasView();
+  const id=touch?event.target.closest('.item,.selection-overlay')?.dataset.id:null;
+  const hit=touch&&editing?state.items.find(entry=>entry.id===id&&!entry.hidden&&!isPagePicture(entry)):null;
+  canvasPan={pointer:event.pointerId,x:event.clientX,y:event.clientY,left:canvasView.x,top:canvasView.y,touch,hitId:hit?.id,moved:false};
   stage.classList.add('panning');stage.setPointerCapture(event.pointerId);
 },true);
 stage.addEventListener('pointermove',event=>{
@@ -1992,11 +2006,21 @@ stage.addEventListener('pointermove',event=>{
   }
   if(canvasPan?.pointer!==event.pointerId)return;
   event.preventDefault();event.stopImmediatePropagation();
+  if(canvasPan.touch&&!canvasPan.moved){
+    if(Math.hypot(event.clientX-canvasPan.x,event.clientY-canvasPan.y)<6)return;
+    holdCanvasView();canvasPan.moved=true;
+  }
   canvasView.x=canvasPan.left+event.clientX-canvasPan.x;canvasView.y=canvasPan.top+event.clientY-canvasPan.y;drawCanvasView();
 },true);
 for(const type of ['pointerup','pointercancel','lostpointercapture'])stage.addEventListener(type,event=>{
   if(type!=='lostpointercapture')stopCanvasTouch(event);
-  if(canvasPan?.pointer===event.pointerId){event.preventDefault();event.stopImmediatePropagation();endCanvasPan(event);}
+  if(canvasPan?.pointer===event.pointerId){
+    event.preventDefault();event.stopImmediatePropagation();
+    if(type==='pointerup'&&canvasPan.touch&&!canvasPan.moved&&editing){
+      selected=new Set(canvasPan.hitId?[canvasPan.hitId]:[]);regionSelection=null;refreshSelection();
+    }
+    endCanvasPan(event);
+  }
 },true);
 stage.addEventListener('wheel',event=>{
   event.preventDefault();if(canvasViewBusy())return;

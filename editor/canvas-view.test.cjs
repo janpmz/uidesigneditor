@@ -6,7 +6,7 @@ const vm=require('node:vm');
 const source=readFileSync(join(__dirname,'canvas-view.js'),'utf8');
 const draft=readFileSync(join(__dirname,'../index.html'),'utf8');
 const geometry=draft.split('// BEGIN SELECTION GEOMETRY')[1].split('// END SELECTION GEOMETRY')[0];
-function harness(){
+function harness({mobile=false}={}){
   const nodes=new Map(),listeners={stage:new Map(),document:new Map(),window:new Map()},captures=new Set();
   const get=id=>{
     if(!nodes.has(id))nodes.set(id,{value:id==='zoom'?'fit':'',style:{},classList:{add(){},remove(){}},focus(){}});
@@ -18,16 +18,18 @@ function harness(){
   const sandbox=vm.createContext({
     $:get,stage,scale:1,state:{canvas:{width:393,height:852},items:[]},selected:new Set(['kept']),
     canvasGesture:null,canvasEditBusy:false,pictureDropBusy:false,drag:null,pictureChoice:{open:false},
+    compactViewport:{matches:mobile},editing:true,rectangleSelectionArmed:false,regionSelection:null,
     document:{addEventListener:on('document')},window:{addEventListener:on('window')},
     clamp:(value,min,max)=>Math.max(min,Math.min(max,value)),round:value=>Math.round(value*10)/10,
-    canvasTextTarget:()=>false,closeCanvasMenu(){},
+    canvasTextTarget:()=>false,closeCanvasMenu(){},refreshSelection(){},isPagePicture:entry=>Boolean(entry.imageBase),
   });
+  sandbox.selectedItems=()=>sandbox.state.items.filter(entry=>sandbox.selected.has(entry.id)&&!entry.hidden);
   const run=code=>vm.runInContext(code,sandbox),read=code=>JSON.parse(JSON.stringify(run(code)));
   sandbox.fit=()=>run('renderCanvasView()');
   sandbox.endCanvasGesture=()=>{sandbox.canvasGesture=null;};
   sandbox.endDrag=()=>{sandbox.drag=null;};
   run(geometry+source);sandbox.fit();
-  const event=extra=>({pointerId:1,button:0,clientX:400,clientY:300,deltaMode:0,deltaX:0,deltaY:0,target:{},preventDefault(){this.prevented=true;},stopImmediatePropagation(){this.stopped=true;},...extra});
+  const event=extra=>({pointerId:1,button:0,clientX:400,clientY:300,deltaMode:0,deltaX:0,deltaY:0,target:{closest:()=>null},preventDefault(){this.prevented=true;},stopImmediatePropagation(){this.stopped=true;},...extra});
   const send=(where,type,extra)=>{const e=event(extra);for(const fn of listeners[where].get(type)||[]){fn(e);if(e.stopped)break;}return e;};
   return {get,run,read,send,sandbox};
 }
@@ -115,13 +117,79 @@ test('two touches pan and zoom, cancel a pending selection, and end after both f
   h.send('stage','pointerup',{pointerId:1});assert.equal(h.read('Boolean(canvasPinch)'),true);
   h.send('stage','pointerup',{pointerId:2});assert.equal(h.read('canvasPinch'),null);
 });
+const itemTarget=id=>({closest:selector=>selector==='.item,.selection-overlay'?{dataset:{id}}:null});
+test('one finger pans the phone canvas, including over an unselected item, and keeps the selection',()=>{
+  for(const target of [{closest:()=>null},itemTarget('other')]){
+    const h=harness({mobile:true});h.run("state.items=[{id:'other',x:0,y:0,w:100,h:100}]");
+    const before=h.read('canvasView'),state=h.read('state');
+    assert.equal(h.send('stage','pointerdown',{pointerType:'touch',target}).stopped,true);
+    h.send('stage','pointermove',{clientX:460,clientY:340});h.send('stage','pointerup',{});
+    near(h.read('canvasView.x'),before.x+60);near(h.read('canvasView.y'),before.y+40);
+    assert.deepEqual(h.read('state'),state);assert.deepEqual(h.read('[...selected]'),['kept']);
+    assert.equal(h.read('canvasPan'),null);assert.equal(h.read('canvasTouches.size'),0);
+    const panned=h.read('canvasView');h.sandbox.fit();assert.deepEqual(h.read('canvasView'),panned);
+  }
+});
+test('a phone tap selects an item despite small finger motion, then lets its next touch move it',()=>{
+  const h=harness({mobile:true});h.run("state.items=[{id:'other',x:0,y:0,w:100,h:100}]");
+  const before=h.read('canvasView'),target=itemTarget('other');
+  h.send('stage','pointerdown',{pointerType:'touch',target});
+  h.send('stage','pointermove',{clientX:403,clientY:302});h.send('stage','pointerup',{});
+  assert.deepEqual(h.read('[...selected]'),['other']);assert.deepEqual(h.read('canvasView'),before);
+  assert.equal(h.send('stage','pointerdown',{pointerType:'touch',target}).stopped,undefined);
+  assert.equal(h.read('canvasPan'),null);
+});
+test('a blank phone tap clears the selection but a cancelled tap keeps it',()=>{
+  const h=harness({mobile:true});
+  h.send('stage','pointerdown',{pointerType:'touch'});h.send('stage','pointercancel',{});
+  assert.deepEqual(h.read('[...selected]'),['kept']);assert.equal(h.read('canvasTouches.size'),0);
+  h.send('stage','pointerdown',{pointerType:'touch'});h.send('stage','pointerup',{});
+  assert.deepEqual(h.read('[...selected]'),[]);
+});
+test('phone panning leaves selection tools, handles and text editing in control',()=>{
+  for(const setup of [
+    h=>h.run('rectangleSelectionArmed=true'),
+    h=>{h.sandbox.canvasTextTarget=()=>true;},
+  ]){
+    const h=harness({mobile:true});setup(h);
+    assert.equal(h.send('stage','pointerdown',{pointerType:'touch'}).stopped,undefined);
+  }
+  for(const handle of ['.make-item-action','.resize-handle','[data-rectangle-resize]','[data-arrow-end]','.group-grip']){
+    const h=harness({mobile:true}),target={closest:selector=>selector.split(',').includes(handle)?{}:null};
+    assert.equal(h.send('stage','pointerdown',{pointerType:'touch',target}).stopped,undefined);
+  }
+});
+test('desktop mouse and single-touch selection still reach the item tools',()=>{
+  const h=harness();
+  for(const pointerType of ['mouse','touch']){
+    assert.equal(h.send('stage','pointerdown',{pointerType}).stopped,undefined);
+    assert.equal(h.read('canvasPan'),null);
+    h.send('stage','pointerup',{});
+  }
+  delete h.sandbox.compactViewport;
+  assert.equal(h.send('stage','pointerdown',{pointerType:'touch'}).stopped,undefined);
+});
+test('a second finger changes a phone pan into a pinch without leaving a pan active',()=>{
+  const h=harness({mobile:true});
+  h.send('stage','pointerdown',{pointerType:'touch',clientX:300,clientY:250});
+  h.send('stage','pointermove',{clientX:320,clientY:250});
+  h.send('stage','pointerdown',{pointerType:'touch',pointerId:2,clientX:400,clientY:250});
+  assert.equal(h.read('canvasPan'),null);assert.equal(h.read('Boolean(canvasPinch)'),true);
+  const scale=h.read('scale');
+  h.send('stage','pointermove',{pointerType:'touch',pointerId:2,clientX:480,clientY:250});near(h.read('scale'),scale*2);
+  h.send('stage','pointerup',{});h.send('stage','pointerup',{pointerId:2});
+  assert.equal(h.read('canvasPinch'),null);assert.equal(h.read('canvasTouches.size'),0);
+  assert.deepEqual(h.read('[...selected]'),['kept']);
+});
 test('each saved editor includes the same view tools and code',()=>{
   const tools=readFileSync(join(__dirname,'canvas-view-tools.html'),'utf8').trim();
+  const mobileTools=readFileSync(join(__dirname,'mobile-tools.html'),'utf8').trim();
   for(const entry of readdirSync(join(__dirname,'../drafts'),{withFileTypes:true}).filter(entry=>entry.isDirectory()&&existsSync(join(__dirname,'../drafts',entry.name,'index.html')))){
     const html=readFileSync(join(__dirname,'../drafts',entry.name,'index.html'),'utf8');
     assert.equal(html.split('// BEGIN CANVAS VIEW\n')[1].split('// END CANVAS VIEW')[0].trimEnd(),source.split('// BEGIN CANVAS VIEW\n')[1].split('// END CANVAS VIEW')[0].trimEnd());
     assert.equal(html.split('<!-- BEGIN CANVAS VIEW TOOLS -->\n')[1].split('<!-- END CANVAS VIEW TOOLS -->')[0].trim(),tools);
     assert.equal(html.includes('id="zoom-level"'),false);
     assert.equal(html.split('id="zoom"').length-1,1);
+    if(html.includes('<nav class="quick-tools"'))assert.equal(html.match(/<nav class="quick-tools"[\s\S]*?<\/nav>/)[0],mobileTools);
   }
 });
