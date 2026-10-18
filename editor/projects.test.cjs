@@ -613,7 +613,9 @@ test('separate browser stores share a Space, keep Undo, preserve conflicts, and 
   const base='http://127.0.0.1:'+app.server.address().port;
   const browsers=[];
   t.after(async()=>{for(const h of browsers)h.run('spaceClient.close()');await app.close();});
-  const design={version:1,canvas:{width:400,height:300,background:'#fff'},items:[{id:'hello',kind:'label',x:10,y:10,w:200,h:30,text:'Local work'}]};
+  const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg==';
+  const image={id:'picture',kind:'image',x:0,y:0,w:20,h:20,src:png};
+  const design={version:1,canvas:{width:400,height:300,background:'#fff'},items:[{id:'hello',kind:'label',x:10,y:10,w:200,h:30,text:'Local work'},{...image,imageContents:{version:1,canvas:{width:20,height:20,background:'#fff'},items:[image]}}]};
   const data={version:1,active:'demo',projects:[{id:'demo',name:'Demo',layout:design}]};
   const open=async(url,stored=new Map(),database=new Map())=>{
     const h=harness({spaceUrl:url,data:structuredClone(data),stored,database});browsers.push(h);await h.ready;
@@ -628,6 +630,9 @@ test('separate browser stores share a Space, keep Undo, preserve conflicts, and 
   assert.equal(first.stored.get('ui-design-editor-last-space-v1'),spaceId);
   const second=await open(base+'/#space='+spaceId);
   assert.notEqual(first.stored,second.stored);
+  assert.equal(second.run('state.items[1].src'),png);
+  assert.equal(second.run('state.items[1].imageContents.items[0].src'),png);
+  assert.match(app.store.get(spaceId,'demo').layout.items[1].src,/^picture:/);
   await waitFor(()=>app.clients.get(spaceId)?.size===2);
   first.run("change(()=>state.items[0].text='Shared edit')");await first.run('spaceClient.saved()');
   await waitFor(()=>second.run('state.items[0].text')==='Shared edit');
@@ -647,6 +652,8 @@ test('separate browser stores share a Space, keep Undo, preserve conflicts, and 
   const copiedId=second.run('activeProject');assert.notEqual(copiedId,'demo');
   assert.equal(app.store.get(spaceId,'demo').layout.items[0].text,'Newer saved work');
   assert.equal(app.store.get(spaceId,copiedId).layout.items[0].text,'Unsaved work');
+  const pictureId=app.store.get(spaceId,copiedId).layout.items[1].src.slice(8);
+  assert.equal(app.store.getPicture(spaceId,copiedId,pictureId).src,png);
   await waitFor(()=>first.run('localProjects.length')===2);
 
   // A dirty local page survives reopening with a newer server copy.

@@ -29,9 +29,12 @@ export async function createSpaceServer({ database = ':memory:', publicDir = fil
     const spaceId = req.headers.authorization?.replace(/^Bearer /, '');
     if (!spaceId || !store.hasSpace(spaceId)) throw failure(404, 'Space not found. Check the link.');
     if (path === '/api/projects' && req.method === 'GET') return json(res, 200, { projects: store.list(spaceId) });
-    const picture = path.match(/^\/api\/pictures\/([a-f0-9]{64})$/);
-    if (picture && req.method === 'GET') return json(res, 200, store.getPicture(spaceId, picture[1]));
-    if (path === '/api/pictures' && req.method === 'POST') return json(res, 200, store.putPicture(spaceId, (await readJson(req)).src));
+    const picture = path.match(/^\/api\/projects\/([-a-zA-Z0-9]{1,200})\/pictures(?:\/([a-f0-9]{64}))?$/);
+    if (picture) {
+      if (req.method === 'GET' && picture[2]) return json(res, 200, store.getPicture(spaceId, picture[1], picture[2]));
+      if (req.method === 'POST' && !picture[2]) return json(res, 200, store.putPicture(spaceId, picture[1], (await readJson(req)).src));
+      throw failure(405, 'Use GET or POST.');
+    }
     const project = path.match(/^\/api\/projects\/([-a-zA-Z0-9]{1,200})$/);
     if (!project) throw failure(404, 'Not found.');
     if (req.method === 'GET') return json(res, 200, store.get(spaceId, project[1]));

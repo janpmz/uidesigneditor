@@ -8,14 +8,14 @@ Run `npm start`, then open [localhost:3000](http://localhost:3000/).
 
 The main editor creates a Space on the first visit and copies any existing local projects into it. It remembers the Space in this browser and reopens it when you return to the plain site address. Opening a Space link switches to that Space and remembers it after it loads. Use **Copy Space link** to open it in another browser, including Codex. Anyone with the link can read and edit its projects. Keep the link: clearing browser data removes the remembered Space, but the server keeps its saved projects. HTML exports work on their own and stay local.
 
-Space saves live in `data/spaces.sqlite`, outside the public files. `DATA_DIR`, `PUBLIC_DIR` and `PORT` set the data folder, site folder and port. Keep the data folder across builds and server restarts.
+Space saves live in `data/spaces.sqlite`, outside the public files. Pictures are PNG files at `data/pictures/<spaceId>/<projectId>/<pictureId>.png`; SQLite keeps their IDs and file names. `DATA_DIR`, `PUBLIC_DIR` and `PORT` set the data folder, site folder and port. Keep the whole data folder across builds and server restarts, and copy it when making backups.
 
 The server keeps `spaceId → clientId → connection` in memory. Each connection gets a new ID. JSON messages use `{ type, payload }`: clients send `join_space`, the server replies `connected`, then sends `project_changed` after each saved change. Pages fetch the changed project over HTTP. Pictures stay separate and each page keeps loaded pictures for later edits. A version check rejects old saves; the page offers reload or save as a copy. Reconnects check the saved project list again. Each page keeps its Undo steps.
 
 - Check: `npm test`
 - Build: `npm run build`
 - Code: [GitHub](https://github.com/janpmz/uidesigneditor).
-- Publish on the VPS: `./redeploy.sh`. [Setup](deploy/README.md).
+- Publish on the VPS: `./redeploy.sh`. Start or restart its PM2 server: `./startServer.sh`. [Setup](deploy/README.md).
 
 The editor uses [shadcn/ui](https://ui.shadcn.com/)'s dark styles, fitted to its plain HTML controls. Edit `editor/shadcn.css`, then run `npm run build`. The build keeps the styles in each page, so **Copy HTML** works on its own.
 

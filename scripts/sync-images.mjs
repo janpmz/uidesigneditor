@@ -135,7 +135,6 @@ for (const entry of await readdir(new URL('drafts/', root), { withFileTypes: tru
   if (!html.includes('cleanPictureExport(doc);')) html = html.replace('const doc=document.documentElement.cloneNode(true);', 'const doc=document.documentElement.cloneNode(true);cleanPictureExport(doc);');
   html = html.replace('function renderSelection() {', 'function renderNativeSelection() {');
   if (!html.includes("el.classList.toggle('page-image'")) html = html.replace('styleItem(el,item);', "styleItem(el,item);el.classList.toggle('page-image',isPagePicture(item));");
-  html = html.replace("$('copy-items').disabled=!editing||!selectedItems().length;", "$('copy-items').disabled=!editing||(!regionSelection&&!selectedItems().length);");
   html = html.replace("empty.textContent='Drag across", "empty.textContent=regionSelection?'Drag inside the selection to move it. Cut, copy and paste work with the usual keys or a right-click.':'Drag across");
   const selectionHelp='Draw a box to select items it touches. Drag inside to move them. Shift-click to add or remove an item.';
   for (const message of [

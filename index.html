@@ -90,7 +90,7 @@
 .stage{touch-action:none;user-select:none;outline:none}
 .marquee{position:fixed;pointer-events:none;z-index:10000;border:1px solid #c8b6ff;background:#c8b6ff22}
 .group-grip{position:absolute;right:0;top:-26px;padding:2px 7px;border-radius:4px;font:11px/18px -apple-system,BlinkMacSystemFont,sans-serif;color:#211733;background:#d0baff;pointer-events:auto;cursor:move;white-space:nowrap}
-.add-tools{display:block;flex:none}.add-tools h2{margin:14px 0 9px}.add-grid,.clipboard-tools{display:grid;grid-template-columns:1fr 1fr;gap:6px}.add-grid button{min-height:38px;text-align:left}.clipboard-tools button{padding:7px 4px}.add-tools .note{margin-top:9px}.item.kind-textbox{padding:0 12px;overflow:hidden}.item.kind-button{padding:0 10px;overflow:hidden}
+.add-tools{display:block;flex:none}.add-tools h2{margin:14px 0 9px}.add-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}.add-grid button{min-height:38px;text-align:left}.add-tools .note{margin-top:9px}.item.kind-textbox{padding:0 12px;overflow:hidden}.item.kind-button{padding:0 10px;overflow:hidden}
 .icon-picker{width:min(840px,calc(100vw - 32px));max-height:calc(100dvh - 32px);padding:0;border:1px solid #424149;border-radius:16px;background:#1c1c1f;color:#eeeef0;box-shadow:0 24px 100px #0009}.icon-picker[open]{display:flex;flex-direction:column}.icon-picker::backdrop{background:#0009;backdrop-filter:blur(4px)}.icon-picker-head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;padding:20px 20px 12px;flex:none}.icon-picker-head h2{font-size:18px;margin-bottom:4px}.icon-picker-tools{display:flex;gap:8px;padding:0 20px 12px;flex:none}.icon-picker-tools input{flex:1;width:100%;min-width:0}.icon-picker-tools select{width:126px}.icon-picker-count{padding:0 20px 12px;flex:none}.icon-picker-results{padding:0 20px 20px;overflow:auto;min-height:0;overscroll-behavior:contain}.icon-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px}.icon-tile{min-height:86px;padding:12px 6px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:#252529;border:1px solid #35353c;border-radius:10px}.icon-tile:hover{color:#dfd3ff;border-color:#9b83cb;background:#34303f}.icon-tile .ion{font-size:28px;color:#d6c6fa}.icon-tile-name{font-size:10px;line-height:1.3;text-align:center;overflow-wrap:anywhere;color:#b7b4c1}.icon-picker-more{width:100%;margin-top:14px}.icon-empty{padding:35px 0;text-align:center;color:#aaaab3}.icon-choice{display:flex;align-items:center;gap:9px;width:100%;text-align:left}.icon-choice .ion{font-size:22px;color:#c8b6ff}.icon-choice-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.remove-icon{margin-top:6px;font-size:11px}
 @media(max-width:440px){.icon-picker-tools{flex-wrap:wrap}.icon-picker-tools select{width:100%}.icon-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .top-actions{min-width:0;max-width:100%;flex-wrap:wrap;justify-content:flex-end}.export-actions{display:flex;align-items:center;gap:7px;margin-left:auto}.brand{min-width:0}@media(max-width:760px){.top-actions{width:100%}.export-actions{gap:5px}}
@@ -246,7 +246,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 .inspector-info a:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:2px}
 .inspector-credit{display:flex;flex:none;align-items:center;justify-content:center;gap:8px;padding:16px 12px;color:var(--muted-foreground,#aaaab3);font-size:11px;line-height:1.5;text-align:center}
 .inspector-credit a{color:inherit;text-underline-offset:3px}
-.inspector-credit .inspector-github{display:inline-flex;flex:none;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px}
+.inspector-credit-icons{display:inline-flex;align-items:center;gap:6px;vertical-align:middle}
+.inspector-credit-author{white-space:nowrap}
 .inspector-credit a:hover{color:var(--foreground,#eeeef0)}
 .inspector-credit a:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:2px}
 .codex-prompt{display:grid;gap:12px;margin-top:24px;padding-top:24px;border-top:1px solid var(--line)}
@@ -283,6 +284,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 .space-controls{flex:none;padding:0 0 14px;margin-bottom:14px;border-bottom:1px solid #39353e}
 .space-controls p{font-size:11px;line-height:1.5;color:#aaa3b3;margin:0 0 8px}
 .space-controls #space-status{color:#e5e1eb;font-weight:600}
+.space-status-row{display:flex;align-items:center;gap:7px;margin-bottom:8px}
+.space-controls .space-status-row p{margin:0}
+#space-connection{width:7px;height:7px;flex:none;border-radius:50%;background:#a1a1aa}
+#space-connection[data-state="connected"]{background:#22c55e}
+#space-connection[data-state="connecting"],#space-connection[data-state="disconnected"]{background:#60a5fa}
 .space-controls button{width:100%;margin-bottom:6px;text-align:center}
 .space-controls #space-help{margin-top:5px}
 #space-conflict{padding:10px 8px;margin-top:8px;border:1px solid #875f36;border-radius:7px}
@@ -462,6 +468,15 @@ OTHER DEALINGS IN THE SOFTWARE.
 .history-actions button { border-color: transparent; color: var(--muted-foreground); box-shadow: none; }
 .top-actions { gap: 8px; flex-wrap: nowrap; }
 .export-actions { gap: 6px; }
+#screenshot { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+#screenshot::before {
+  content: '';
+  width: 16px;
+  height: 16px;
+  flex: none;
+  background: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3v12m-5-5 5 5 5-5M5 16v4a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-4'/%3E%3C/svg%3E") center / contain no-repeat;
+}
 .canvas-size-tools select { width: 210px; }
 .canvas-view-tools { gap: 2px; }
 .canvas-view-tools select { width: 90px; min-width: 80px; }
@@ -728,14 +743,16 @@ SOFTWARE.
       <div class="pane-head"><h2>Items</h2><span class="badge" id="item-count"></span></div>
       <div class="layer-list" id="layers"></div>
       <div class="add-tools">
-        <div class="clipboard-tools"><button id="copy-items" title="Copy selected items · ⌘C / Ctrl+C">Copy items</button><button id="paste-items" title="Paste items · ⌘V / Ctrl+V">Paste items</button></div>
         <p class="note">Select items, then ⌘C / ⌘V to copy and paste. Ctrl works too.</p>
       </div>
     </div>
     <template id="home-pages"></template>
     <nav class="project-pages" id="editor-pages" aria-labelledby="project-pages-title">
       <section class="space-controls" aria-label="Space">
-  <p id="space-status" role="status">Opening Space…</p>
+  <div class="space-status-row">
+    <span id="space-connection" data-state="connecting" role="img" aria-label="Connecting…" title="Connecting…"></span>
+    <p id="space-status" role="status">Opening Space…</p>
+  </div>
   <button type="button" id="space-share" hidden>Copy Space link</button>
   <button type="button" id="space-retry" hidden>Retry</button>
   <p id="space-help">Your Space saves as you work. Anyone with its link can edit.</p>
@@ -804,10 +821,7 @@ Check the result with read_design and a PNG from export_design. Refresh the site
     </div>
   </section>
   <footer class="inspector-credit">
-    <span>Vibecoded with <span role="img" aria-label="love">❤️</span> by <a href="https://x.com/janxpm" target="_blank" rel="noopener noreferrer">@janxpm</a></span>
-    <a class="inspector-github" href="https://github.com/janpmz/uidesigneditor" target="_blank" rel="noopener noreferrer" aria-label="View code on GitHub" title="GitHub">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M12 .297C5.37.297 0 5.67 0 12.297c0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.043-1.61-4.043-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.083-.73.083-.73 1.205.084 1.838 1.237 1.838 1.237 1.07 1.834 2.807 1.304 3.492.997.108-.776.418-1.305.762-1.605-2.665-.304-5.467-1.334-5.467-5.93 0-1.31.47-2.38 1.236-3.22-.123-.303-.536-1.523.117-3.176 0 0 1.008-.322 3.301 1.23a11.52 11.52 0 0 1 3.004-.404c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.655 1.653.242 2.873.119 3.176.77.84 1.235 1.91 1.235 3.22 0 4.61-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222 0 1.606-.015 2.898-.015 3.293 0 .322.216.694.825.576C20.565 22.092 24 17.596 24 12.297c0-6.627-5.373-12-12-12"/></svg>
-    </a>
+    <span>Made with <span class="inspector-credit-icons"><span role="img" aria-label="love">❤️</span><span role="img" aria-label="coffee">☕</span><span role="img" aria-label="artist">🧑‍🎨</span><span role="img" aria-label="eyes">👀</span></span> <span class="inspector-credit-author">by <a href="https://x.com/janxpm" target="_blank" rel="noopener noreferrer">@janxpm</a></span></span>
   </footer>
 </aside>
 <!-- END INSPECTOR TABS -->
@@ -1294,8 +1308,6 @@ function renderNativeSelection() {
 function fit() {renderCanvasView();}
 function select(id,add=false) {showInspectorTab('edit');if(add){if(selected.has(id))selected.delete(id);else selected.add(id);}else selected=new Set([id]);render();}
 function renderLayers() {
-  $('copy-items').disabled=!editing||(!regionSelection&&!selectedItems().length);
-  $('paste-items').disabled=!editing;
   $('layers').replaceChildren();$('item-count').textContent=state.items.filter(item=>!item.hidden).length+' visible';
   [...state.items].reverse().forEach(item=>{
     const row=document.createElement('div');row.dataset.id=item.id;row.className='layer'+(selected.has(item.id)?' selected':'')+(item.hidden?' deleted':'');
@@ -1405,17 +1417,6 @@ document.addEventListener('paste',event=>{
   const entries=readCopiedItems(event.clipboardData?.getData('text/plain'));if(!entries)return;
   event.preventDefault();pasteCopiedItems(entries);
 });
-$('copy-items').onclick=async()=>{
-  const payload=copySelectedItems();if(!payload)return;
-  try{await navigator.clipboard.writeText(payload);}catch{}
-  notify('Items copied');
-};
-$('paste-items').onclick=async()=>{
-  let entries=itemClipboard;
-  try{entries=readCopiedItems(await navigator.clipboard.readText());}catch{}
-  if(!entries?.length){notify('Copy canvas items first.');return;}
-  pasteCopiedItems(entries);
-};
 $('inspector').addEventListener('focusout',event=>{if(fieldEdit?.node===event.target)fieldEdit=null;});
 $('inspector').addEventListener('input',event=>{
   const input=event.target,key=input.dataset.field;if(!key)return;const item=current();
@@ -2667,12 +2668,6 @@ document.addEventListener('keydown',event=>{
     void (async()=>{const region=regionSelection;try{const plan=await makeRegionPlan(region);if(regionSelection===region&&regionIsCurrent(region))change(()=>{applyRegionPatches(plan);regionSelection=null;});}catch(error){notify(error.message);}finally{canvasEditBusy=false;}})();
   }
 },true);
-if($('copy-items'))$('copy-items').onclick=()=>copyCanvasSelection();
-if($('paste-items'))$('paste-items').onclick=async()=>{
-  if(pasteCanvasClipboard())return;
-  try{const text=await Promise.race([navigator.clipboard.readText(),new Promise(resolve=>setTimeout(()=>resolve(''),700))]);const payload=readCanvasClipboard(text);if(payload&&pasteCanvasClipboard(payload))return;}catch{}
-  notify('Copy items or a picture selection first.');
-};
 function showCanvasMenu(event,fromList=false){
   if(!canEditCanvas(event)||pictureDropBusy)return;
   const id=event.target.closest(fromList?'.layer':'.item,.selection-overlay')?.dataset.id;
@@ -2866,7 +2861,7 @@ const projectsReady=initializeProjects();
     if(!enabled)throw new Error('The Space is not open. Retry before saving.');
     await flush();
     if(records.get(activeProject)?.conflict)throw new Error('A newer version exists. Reload or save as a copy. Your edit stays in this browser.');
-  },close(){stopped=true;clearTimeout(saveTimer);clearTimeout(reconnectTimer);ws?.close();}};
+  },close(){stopped=true;clearTimeout(saveTimer);clearTimeout(reconnectTimer);ws?.close();showStatus();}};
   $('space-share').onclick=()=>run(async()=>{await navigator.clipboard.writeText(location.href);notify('Space link copied. Anyone with this link can edit.');});
   $('space-retry').onclick=()=>spaceClient.ready=run(async()=>{problem='';if(!onlineSpaceId)await createSpace();else if(!enabled)await start();else{await refresh();await flush();}if(!ws||ws.readyState===WebSocket.CLOSED)connect();});
   $('space-reload').onclick=()=>run(async()=>{
@@ -2916,7 +2911,7 @@ const projectsReady=initializeProjects();
       const {spaceId}=await request('/api/spaces',{method:'POST'},null);
       const created=[];
       for(const project of seeds){
-        const layout=await encodePictures(project.layout,spaceId);
+        const layout=await encodePictures(project.layout,spaceId,project.id);
         const result=await request('/api/projects/'+project.id,{method:'PUT',body:{name:project.name,layout,version:0}},spaceId);
         created.push({id:project.id,version:result.version});
       }
@@ -2952,7 +2947,7 @@ const projectsReady=initializeProjects();
           const sent=record.local,project=JSON.parse(sent);
           record.saving=true;
           try{
-            const layout=await encodePictures(project.layout,onlineSpaceId);
+            const layout=await encodePictures(project.layout,onlineSpaceId,id);
             const result=await request('/api/projects/'+id,{method:'PUT',body:{version:record.version,name:project.name,layout}});
             record.version=result.version;record.saved=sent;problem='';saveMetadata();
           }catch(error){if(error.status===409){record.conflict=true;saveMetadata();break;}throw error;}
@@ -2998,7 +2993,7 @@ const projectsReady=initializeProjects();
     let remote;
     try{remote=await request('/api/projects/'+id);}
     catch(error){if(error.status===404){applyDeletion(id);return;}throw error;}
-    const layout=await decodePictures(remote.layout);
+    const layout=await decodePictures(remote.layout,id);
     // An edit may have started while the page or pictures were loading.
     record=records.get(id);
     if(record&&record.local!==before){record.conflict=true;saveMetadata();showStatus();return;}
@@ -3054,7 +3049,7 @@ const projectsReady=initializeProjects();
     if(stopped||!onlineSpaceId||ws&&[WebSocket.OPEN,WebSocket.CONNECTING].includes(ws.readyState))return;
     clearTimeout(reconnectTimer);
     ws=new WebSocket((location.protocol==='https:'?'wss:':'ws:')+'//'+location.host+'/ws');
-    ws.onopen=()=>ws.send(JSON.stringify({type:'join_space',payload:{spaceId:onlineSpaceId}}));
+    ws.onopen=()=>{ws.send(JSON.stringify({type:'join_space',payload:{spaceId:onlineSpaceId}}));showStatus();};
     ws.onmessage=event=>run(async()=>{
       const {type,payload}=JSON.parse(event.data);
       if(type==='connected'){spaceClient.clientId=payload.clientId;problem='';await refresh();await flush();}
@@ -3066,7 +3061,8 @@ const projectsReady=initializeProjects();
       else if(!stopped)reconnectTimer=setTimeout(connect,3000);
       showStatus();
     };
-    ws.onerror=()=>{problem='Connection lost. Your unsaved work stays here.';showStatus();};
+    ws.onerror=()=>{problem='Connection lost';showStatus();};
+    showStatus();
   }
 
   async function request(path,{method='GET',body}={},spaceId=onlineSpaceId){
@@ -3076,28 +3072,28 @@ const projectsReady=initializeProjects();
     return data;
   }
 
-  async function encodePictures(source,spaceId){
+  async function encodePictures(source,spaceId,projectId){
     const layout=copy(source);
     for(const item of layout.items){
       if(item.kind==='image'){
-        const key=spaceId+':'+item.src;
+        const key=spaceId+':'+projectId+':'+item.src;
         let id=pictureIds.get(key);
-        if(!id){({id}=await request('/api/pictures',{method:'POST',body:{src:item.src}},spaceId));pictureIds.set(key,id);pictures.set(spaceId+':'+id,item.src);}
+        if(!id){({id}=await request('/api/projects/'+projectId+'/pictures',{method:'POST',body:{src:item.src}},spaceId));pictureIds.set(key,id);pictures.set(spaceId+':'+projectId+':'+id,item.src);}
         item.src='picture:'+id;
       }
-      if(item.imageContents)item.imageContents=await encodePictures(item.imageContents,spaceId);
+      if(item.imageContents)item.imageContents=await encodePictures(item.imageContents,spaceId,projectId);
     }
     return layout;
   }
-  async function decodePictures(source){
+  async function decodePictures(source,projectId){
     const layout=copy(source);
     for(const item of layout.items){
       if(item.kind==='image'){
-        const id=item.src.slice(8),key=onlineSpaceId+':'+id;
-        if(!pictures.has(key)){const {src}=await request('/api/pictures/'+id);pictures.set(key,src);pictureIds.set(onlineSpaceId+':'+src,id);}
+        const id=item.src.slice(8),key=onlineSpaceId+':'+projectId+':'+id;
+        if(!pictures.has(key)){const {src}=await request('/api/projects/'+projectId+'/pictures/'+id);pictures.set(key,src);pictureIds.set(onlineSpaceId+':'+projectId+':'+src,id);}
         item.src=pictures.get(key);
       }
-      if(item.imageContents)item.imageContents=await decodePictures(item.imageContents);
+      if(item.imageContents)item.imageContents=await decodePictures(item.imageContents,projectId);
     }
     return layout;
   }
@@ -3110,6 +3106,11 @@ const projectsReady=initializeProjects();
     try{localStorage.setItem(metadataKey(),JSON.stringify(Object.fromEntries([...records].map(([id,record])=>[id,{version:record.version,dirty:dirty(record)}]))));}catch{}
   }
   function showStatus(){
+    const connection=$('space-connection');
+    const connected=!stopped&&ws?.readyState===WebSocket.OPEN;
+    connection.dataset.state=location.protocol==='file:'?'local':connected?'connected':stopped||problem&&!enabled?'disconnected':'connecting';
+    connection.title=connection.dataset.state==='local'?'Local file':connected?'Connected':connection.dataset.state==='disconnected'?'Disconnected':spaceClient.clientId?'Reconnecting…':'Connecting…';
+    connection.setAttribute('aria-label',connection.title);
     conflictId=[...records].find(([,record])=>record.conflict)?.[0]||null;
     $('space-share').hidden=!enabled;$('space-retry').hidden=!problem;
     $('space-help').hidden=Boolean(onlineSpaceId);

@@ -2,27 +2,48 @@
 
 The existing VPS setup can serve this site through Cloudflare Tunnel and Caddy.
 Static pages use Caddy. Space saves need Node.js 24 or later, the `ws` package,
-and one SQLite file. The save service listens only on `127.0.0.1:3000`.
+and a private folder for the SQLite database and pictures. The save service listens only on `127.0.0.1:3000`.
 Caddy sends `/api/*` and `/ws` to it, including WebSocket connections.
 
-## Start the save service
+## Start with PM2
 
-Keep the checkout in `/opt/uidesigneditor`, or change both paths in
-`uidesigneditor.service` to match its location. Use a folder outside `/home`
-that the service can read. Check the Node path in `ExecStart` too.
+Use Node.js 24 or later and PM2. Keep the checkout in your usual projects
+folder. Run these scripts as the same VPS user that runs your other PM2 apps.
 
-Run `npm ci` in the checkout, then install the service:
+Give that user a folder for saved work once:
 
 ```sh
-sudo install -m 644 deploy/uidesigneditor.service /etc/systemd/system/uidesigneditor.service
-sudo systemctl daemon-reload
-sudo systemctl enable --now uidesigneditor
+sudo install -d -o "$(id -un)" -g "$(id -gn)" /var/lib/uidesigneditor
 ```
 
-The service creates `/var/lib/uidesigneditor/spaces.sqlite`. Keep that folder
-across releases. Back up this database along with its SQLite write-ahead log,
-or stop the service before copying the database file. Never put it in `dist/`
-or `/srv/uidesigneditor/`.
+After the first build, `./startServer.sh` starts the PM2 app named
+`uidesigneditor`, or restarts it with the current settings if it exists.
+It saves the PM2 app list. It uses port `3000`, public files in
+`/srv/uidesigneditor`, and saved work in `/var/lib/uidesigneditor`.
+Set `PORT`, `PUBLIC_DIR` or `DATA_DIR` to change these paths and port.
+Logs go to `$HOME/projects/logs/uidesigneditor.log`; `LOG_DIR` changes the
+log folder. Keep the same settings for each start and release.
+
+If PM2 does not yet start on boot, run `pm2 startup` and follow the command it
+prints. Use `pm2 logs uidesigneditor` to read logs.
+
+If you already installed the old systemd service, stop and disable it before
+starting PM2: `sudo systemctl disable --now uidesigneditor`. Give the PM2 user
+ownership of the existing data folder and its files. Keep the same `DATA_DIR`
+so PM2 opens the saved database.
+
+The server stores work under `/var/lib/uidesigneditor`:
+
+```text
+spaces.sqlite
+pictures/<spaceId>/<projectId>/<pictureId>.png
+```
+
+SQLite keeps project data and picture file names. Pictures stay private and load
+through the saved project's picture route. Keep this whole folder across
+releases. Stop `uidesigneditor` with PM2 before copying the folder for a backup,
+then restart it. A database copy alone does not include the pictures. Never put
+this folder in `dist/` or `/srv/uidesigneditor/`.
 
 ## Prepare the files
 
@@ -35,7 +56,7 @@ Run on the VPS from this project folder:
 The script pulls the latest code, installs packages, builds the public files, runs the checks, then
 copies `dist/` to `/srv/uidesigneditor/`. It stops if the pull fails or needs a
 merge. It replaces files there to match the build. Caddy serves that folder.
-It restarts the save service when that service is running.
+It then runs `startServer.sh` to start or restart the save server with PM2.
 
 ## Add the site to Caddy
 

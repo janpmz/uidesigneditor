@@ -13,7 +13,7 @@
     if(!enabled)throw new Error('The Space is not open. Retry before saving.');
     await flush();
     if(records.get(activeProject)?.conflict)throw new Error('A newer version exists. Reload or save as a copy. Your edit stays in this browser.');
-  },close(){stopped=true;clearTimeout(saveTimer);clearTimeout(reconnectTimer);ws?.close();}};
+  },close(){stopped=true;clearTimeout(saveTimer);clearTimeout(reconnectTimer);ws?.close();showStatus();}};
   $('space-share').onclick=()=>run(async()=>{await navigator.clipboard.writeText(location.href);notify('Space link copied. Anyone with this link can edit.');});
   $('space-retry').onclick=()=>spaceClient.ready=run(async()=>{problem='';if(!onlineSpaceId)await createSpace();else if(!enabled)await start();else{await refresh();await flush();}if(!ws||ws.readyState===WebSocket.CLOSED)connect();});
   $('space-reload').onclick=()=>run(async()=>{
@@ -63,7 +63,7 @@
       const {spaceId}=await request('/api/spaces',{method:'POST'},null);
       const created=[];
       for(const project of seeds){
-        const layout=await encodePictures(project.layout,spaceId);
+        const layout=await encodePictures(project.layout,spaceId,project.id);
         const result=await request('/api/projects/'+project.id,{method:'PUT',body:{name:project.name,layout,version:0}},spaceId);
         created.push({id:project.id,version:result.version});
       }
@@ -99,7 +99,7 @@
           const sent=record.local,project=JSON.parse(sent);
           record.saving=true;
           try{
-            const layout=await encodePictures(project.layout,onlineSpaceId);
+            const layout=await encodePictures(project.layout,onlineSpaceId,id);
             const result=await request('/api/projects/'+id,{method:'PUT',body:{version:record.version,name:project.name,layout}});
             record.version=result.version;record.saved=sent;problem='';saveMetadata();
           }catch(error){if(error.status===409){record.conflict=true;saveMetadata();break;}throw error;}
@@ -145,7 +145,7 @@
     let remote;
     try{remote=await request('/api/projects/'+id);}
     catch(error){if(error.status===404){applyDeletion(id);return;}throw error;}
-    const layout=await decodePictures(remote.layout);
+    const layout=await decodePictures(remote.layout,id);
     // An edit may have started while the page or pictures were loading.
     record=records.get(id);
     if(record&&record.local!==before){record.conflict=true;saveMetadata();showStatus();return;}
@@ -201,7 +201,7 @@
     if(stopped||!onlineSpaceId||ws&&[WebSocket.OPEN,WebSocket.CONNECTING].includes(ws.readyState))return;
     clearTimeout(reconnectTimer);
     ws=new WebSocket((location.protocol==='https:'?'wss:':'ws:')+'//'+location.host+'/ws');
-    ws.onopen=()=>ws.send(JSON.stringify({type:'join_space',payload:{spaceId:onlineSpaceId}}));
+    ws.onopen=()=>{ws.send(JSON.stringify({type:'join_space',payload:{spaceId:onlineSpaceId}}));showStatus();};
     ws.onmessage=event=>run(async()=>{
       const {type,payload}=JSON.parse(event.data);
       if(type==='connected'){spaceClient.clientId=payload.clientId;problem='';await refresh();await flush();}
@@ -213,7 +213,8 @@
       else if(!stopped)reconnectTimer=setTimeout(connect,3000);
       showStatus();
     };
-    ws.onerror=()=>{problem='Connection lost. Your unsaved work stays here.';showStatus();};
+    ws.onerror=()=>{problem='Connection lost';showStatus();};
+    showStatus();
   }
 
   async function request(path,{method='GET',body}={},spaceId=onlineSpaceId){
@@ -223,28 +224,28 @@
     return data;
   }
 
-  async function encodePictures(source,spaceId){
+  async function encodePictures(source,spaceId,projectId){
     const layout=copy(source);
     for(const item of layout.items){
       if(item.kind==='image'){
-        const key=spaceId+':'+item.src;
+        const key=spaceId+':'+projectId+':'+item.src;
         let id=pictureIds.get(key);
-        if(!id){({id}=await request('/api/pictures',{method:'POST',body:{src:item.src}},spaceId));pictureIds.set(key,id);pictures.set(spaceId+':'+id,item.src);}
+        if(!id){({id}=await request('/api/projects/'+projectId+'/pictures',{method:'POST',body:{src:item.src}},spaceId));pictureIds.set(key,id);pictures.set(spaceId+':'+projectId+':'+id,item.src);}
         item.src='picture:'+id;
       }
-      if(item.imageContents)item.imageContents=await encodePictures(item.imageContents,spaceId);
+      if(item.imageContents)item.imageContents=await encodePictures(item.imageContents,spaceId,projectId);
     }
     return layout;
   }
-  async function decodePictures(source){
+  async function decodePictures(source,projectId){
     const layout=copy(source);
     for(const item of layout.items){
       if(item.kind==='image'){
-        const id=item.src.slice(8),key=onlineSpaceId+':'+id;
-        if(!pictures.has(key)){const {src}=await request('/api/pictures/'+id);pictures.set(key,src);pictureIds.set(onlineSpaceId+':'+src,id);}
+        const id=item.src.slice(8),key=onlineSpaceId+':'+projectId+':'+id;
+        if(!pictures.has(key)){const {src}=await request('/api/projects/'+projectId+'/pictures/'+id);pictures.set(key,src);pictureIds.set(onlineSpaceId+':'+projectId+':'+src,id);}
         item.src=pictures.get(key);
       }
-      if(item.imageContents)item.imageContents=await decodePictures(item.imageContents);
+      if(item.imageContents)item.imageContents=await decodePictures(item.imageContents,projectId);
     }
     return layout;
   }
@@ -257,6 +258,11 @@
     try{localStorage.setItem(metadataKey(),JSON.stringify(Object.fromEntries([...records].map(([id,record])=>[id,{version:record.version,dirty:dirty(record)}]))));}catch{}
   }
   function showStatus(){
+    const connection=$('space-connection');
+    const connected=!stopped&&ws?.readyState===WebSocket.OPEN;
+    connection.dataset.state=location.protocol==='file:'?'local':connected?'connected':stopped||problem&&!enabled?'disconnected':'connecting';
+    connection.title=connection.dataset.state==='local'?'Local file':connected?'Connected':connection.dataset.state==='disconnected'?'Disconnected':spaceClient.clientId?'Reconnecting…':'Connecting…';
+    connection.setAttribute('aria-label',connection.title);
     conflictId=[...records].find(([,record])=>record.conflict)?.[0]||null;
     $('space-share').hidden=!enabled;$('space-retry').hidden=!problem;
     $('space-help').hidden=Boolean(onlineSpaceId);

@@ -146,7 +146,8 @@
 .inspector-info a:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:2px}
 .inspector-credit{display:flex;flex:none;align-items:center;justify-content:center;gap:8px;padding:16px 12px;color:var(--muted-foreground,#aaaab3);font-size:11px;line-height:1.5;text-align:center}
 .inspector-credit a{color:inherit;text-underline-offset:3px}
-.inspector-credit .inspector-github{display:inline-flex;flex:none;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px}
+.inspector-credit-icons{display:inline-flex;align-items:center;gap:6px;vertical-align:middle}
+.inspector-credit-author{white-space:nowrap}
 .inspector-credit a:hover{color:var(--foreground,#eeeef0)}
 .inspector-credit a:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:2px}
 .codex-prompt{display:grid;gap:12px;margin-top:24px;padding-top:24px;border-top:1px solid var(--line)}
@@ -336,6 +337,15 @@
 .history-actions button { border-color: transparent; color: var(--muted-foreground); box-shadow: none; }
 .top-actions { gap: 8px; flex-wrap: nowrap; }
 .export-actions { gap: 6px; }
+#screenshot { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+#screenshot::before {
+  content: '';
+  width: 16px;
+  height: 16px;
+  flex: none;
+  background: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3v12m-5-5 5 5 5-5M5 16v4a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-4'/%3E%3C/svg%3E") center / contain no-repeat;
+}
 .canvas-size-tools select { width: 210px; }
 .canvas-view-tools { gap: 2px; }
 .canvas-view-tools select { width: 90px; min-width: 80px; }
@@ -642,10 +652,7 @@ Check the result with read_design and a PNG from export_design. Refresh the site
     </div>
   </section>
   <footer class="inspector-credit">
-    <span>Vibecoded with <span role="img" aria-label="love">❤️</span> by <a href="https://x.com/janxpm" target="_blank" rel="noopener noreferrer">@janxpm</a></span>
-    <a class="inspector-github" href="https://github.com/janpmz/uidesigneditor" target="_blank" rel="noopener noreferrer" aria-label="View code on GitHub" title="GitHub">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M12 .297C5.37.297 0 5.67 0 12.297c0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.043-1.61-4.043-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.083-.73.083-.73 1.205.084 1.838 1.237 1.838 1.237 1.07 1.834 2.807 1.304 3.492.997.108-.776.418-1.305.762-1.605-2.665-.304-5.467-1.334-5.467-5.93 0-1.31.47-2.38 1.236-3.22-.123-.303-.536-1.523.117-3.176 0 0 1.008-.322 3.301 1.23a11.52 11.52 0 0 1 3.004-.404c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.655 1.653.242 2.873.119 3.176.77.84 1.235 1.91 1.235 3.22 0 4.61-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222 0 1.606-.015 2.898-.015 3.293 0 .322.216.694.825.576C20.565 22.092 24 17.596 24 12.297c0-6.627-5.373-12-12-12"/></svg>
-    </a>
+    <span>Made with <span class="inspector-credit-icons"><span role="img" aria-label="love">❤️</span><span role="img" aria-label="coffee">☕</span><span role="img" aria-label="artist">🧑‍🎨</span><span role="img" aria-label="eyes">👀</span></span> <span class="inspector-credit-author">by <a href="https://x.com/janxpm" target="_blank" rel="noopener noreferrer">@janxpm</a></span></span>
   </footer>
 </aside>
 <!-- END INSPECTOR TABS -->
@@ -1952,12 +1959,6 @@ document.addEventListener('keydown',event=>{
     void (async()=>{const region=regionSelection;try{const plan=await makeRegionPlan(region);if(regionSelection===region&&regionIsCurrent(region))change(()=>{applyRegionPatches(plan);regionSelection=null;});}catch(error){notify(error.message);}finally{canvasEditBusy=false;}})();
   }
 },true);
-if($('copy-items'))$('copy-items').onclick=()=>copyCanvasSelection();
-if($('paste-items'))$('paste-items').onclick=async()=>{
-  if(pasteCanvasClipboard())return;
-  try{const text=await Promise.race([navigator.clipboard.readText(),new Promise(resolve=>setTimeout(()=>resolve(''),700))]);const payload=readCanvasClipboard(text);if(payload&&pasteCanvasClipboard(payload))return;}catch{}
-  notify('Copy items or a picture selection first.');
-};
 function showCanvasMenu(event,fromList=false){
   if(!canEditCanvas(event)||pictureDropBusy)return;
   const id=event.target.closest(fromList?'.layer':'.item,.selection-overlay')?.dataset.id;

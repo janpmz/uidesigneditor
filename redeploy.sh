@@ -12,8 +12,6 @@ npm test
 mkdir -p /srv/uidesigneditor
 rsync -a --delete --chmod=D755,F644 -- dist/ /srv/uidesigneditor/
 
-if systemctl is-active --quiet uidesigneditor; then
-  sudo systemctl restart uidesigneditor
-fi
+./startServer.sh
 
 printf 'Published to /srv/uidesigneditor\n'
