@@ -268,8 +268,9 @@
   }
 
   function cacheProject(id,layout){
-    try{localStorage.setItem(projectStorage(id),JSON.stringify(layout));}catch{}
-    if(pictureDB)pictureDB.transaction('drafts','readwrite').objectStore('drafts').put(copy(layout),projectStorage(id));
+    const key=projectStorage(id),saved=copy(layout);
+    try{localStorage.setItem(key,JSON.stringify(saved));}catch{}
+    usePictureStore('readwrite',store=>store.put(saved,key)).catch(()=>{});
   }
   function saveMetadata(){
     try{localStorage.setItem(metadataKey(),JSON.stringify(Object.fromEntries([...records].map(([id,record])=>[id,{version:record.version,dirty:dirty(record)}]))));}catch{}

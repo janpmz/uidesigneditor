@@ -65,11 +65,9 @@ function localProjectLayout(id){
 }
 async function readProjectLayout(id){
   let layout=localProjectLayout(id);
-  if(pictureDB)try{
-    const saved=await new Promise((resolve,reject)=>{
-      const request=pictureDB.transaction('drafts').objectStore('drafts').get(projectStorage(id));
-      request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);
-    });
+  try{
+    const key=projectStorage(id);
+    const saved=await usePictureStore('readonly',store=>store.get(key));
     if(validEditorPage(saved))layout=saved;
   }catch{}
   return inlineProjectVideos(layout);
@@ -110,7 +108,8 @@ function projectListData(projects=localProjects,active=activeProject,deleted=del
 function saveProjectList(){
   const saved=projectListData();
   try{localStorage.setItem(projectListKey,JSON.stringify(saved));localStorage.setItem(activeProjectKey,activeProject);}catch{}
-  if(pictureDB)try{pictureDB.transaction('drafts','readwrite').objectStore('drafts').put(saved,projectListKey);}catch{}
+  const key=projectListKey;
+  usePictureStore('readwrite',store=>store.put(saved,key)).catch(()=>{});
   spaceClient?.changed();
 }
 function renameProject(name){
@@ -191,17 +190,11 @@ function confirmProjectDeletion(project){
 document.addEventListener('keydown',event=>{if(projectDeleteDialog.open)event.stopImmediatePropagation();},true);
 for(const type of ['drop','paste'])document.addEventListener(type,event=>{if(projectDeleteDialog.open){event.preventDefault();event.stopImmediatePropagation();}},true);
 async function removeProjectData(id,saved){
-  if(pictureDB)await new Promise((resolve,reject)=>{
-    const transaction=pictureDB.transaction('drafts','readwrite');
-    transaction.oncomplete=resolve;transaction.onabort=transaction.onerror=()=>reject(transaction.error||new Error('Could not delete project.'));
-    try{
-      const store=transaction.objectStore('drafts');
-      store.delete(projectStorage(id));store.put(saved,projectListKey);
-    }catch(error){transaction.abort();reject(error);}
-  });
+  const db=await openPictureDatabase().catch(()=>null),key=projectStorage(id),listKey=projectListKey;
+  if(db)await usePictureStore('readwrite',store=>{store.delete(key);store.put(saved,listKey);});
   try{
     localStorage.setItem(projectListKey,JSON.stringify(saved));localStorage.removeItem(projectStorage(id));localStorage.setItem(activeProjectKey,saved.active);
-  }catch(error){if(!pictureDB)throw error;}
+  }catch(error){if(!db)throw error;}
 }
 async function deleteProject(id){
   if(projectSwitchBusy||!localProjects.some(project=>project.id===id))return;
@@ -244,11 +237,9 @@ function initializeProjects(){
     await inlineProjectVideos(state);
     for(const project of localProjects)if(project.layout)await inlineProjectVideos(project.layout);
     let saved;
-    if(pictureDB)try{
-      saved=await new Promise((resolve,reject)=>{
-        const request=pictureDB.transaction('drafts').objectStore('drafts').get(projectListKey);
-        request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);
-      });
+    try{
+      const key=projectListKey;
+      saved=await usePictureStore('readonly',store=>store.get(key));
       restoreProjectList(saved);
     }catch{}
     if(!localProjects.length)localProjects.push(blankProject());
@@ -257,7 +248,8 @@ function initializeProjects(){
       const layout=await readProjectLayout(project.id);
       projectSessions.set(project.id,{state:layout,history:[],future:[],selected:[],view:null});
       try{localStorage.setItem(projectStorage(project.id),JSON.stringify(layout));}catch{}
-      if(pictureDB)try{pictureDB.transaction('drafts','readwrite').objectStore('drafts').put(copy(layout),projectStorage(project.id));}catch{}
+      const key=projectStorage(project.id),savedLayout=copy(layout);
+      usePictureStore('readwrite',store=>store.put(savedLayout,key)).catch(()=>{});
     }
     const restoredActive=[saved?.active,savedActiveProject,activeProject,localProjects[0].id].find(id=>localProjects.some(project=>project.id===id));
     if(restoredActive!==activeProject){
@@ -267,7 +259,8 @@ function initializeProjects(){
     for(const id of deletedProjects){
       projectSessions.delete(id);
       try{localStorage.removeItem(projectStorage(id));}catch{}
-      if(pictureDB)try{pictureDB.transaction('drafts','readwrite').objectStore('drafts').delete(projectStorage(id));}catch{}
+      const key=projectStorage(id);
+      usePictureStore('readwrite',store=>store.delete(key)).catch(()=>{});
     }
     saveProjectList();renderProjects();
     if(activeProject==='landing'&&!savedActiveProject){

@@ -55,25 +55,31 @@ function harness({ stored = new Map(), database = new Map(), pathname = '/', dat
     const row = node(), button = get('project-' + id), remove = get('delete-' + id);
     row.dataset.projectRow = id;button.dataset.project = id;button.append(node('span'));remove.dataset.deleteProject = id;row.append(button);row.append(remove);list.append(row);
   }
-  const db = { transaction() {
-    const transaction = {}, writes = new Map(), removed = new Set();let queued = false, aborted = false;
-    transaction.abort = () => { aborted = true; };
-    function commit() {
-      if (queued) return;queued = true;
-      queueMicrotask(() => {
-        if (aborted || (removed.size && sandbox.failDeletes)) { transaction.error = Error('Store failed');transaction.onabort?.();return; }
-        for (const key of removed) database.delete(key);
-        for (const [key, value] of writes) database.set(key, value);
-        transaction.oncomplete?.();
+  const connections = [];
+  function openDatabase() {
+    let closed = false;
+    const db = { close() { closed = true; }, transaction() {
+      if (closed || sandbox.closeTransactions) throw Object.assign(Error("Failed to execute 'transaction' on 'IDBDatabase': The database connection is closing."), { name: 'InvalidStateError' });
+      const transaction = {}, writes = new Map(), removed = new Set();let queued = false, aborted = false;
+      transaction.abort = () => { aborted = true; };
+      function commit() {
+        if (queued) return;queued = true;
+        queueMicrotask(() => {
+          if (aborted || (removed.size && sandbox.failDeletes) || (writes.size && sandbox.failWrites)) { transaction.error = Error('Store failed');transaction.onabort?.();return; }
+          for (const key of removed) database.delete(key);
+          for (const [key, value] of writes) database.set(key, value);
+          transaction.oncomplete?.();
+        });
+      }
+      transaction.objectStore = () => ({
+        get(key) { const request = {};queueMicrotask(() => { request.result = structuredClone(database.get(key));request.onsuccess?.(); });commit();return request; },
+        put(value, key) { if (removed.size && sandbox.failDeleteList) throw Error('Could not save list');writes.set(key, structuredClone(value));commit(); },
+        delete(key) { removed.add(key);commit(); },
       });
-    }
-    transaction.objectStore = () => ({
-      get(key) { const request = {};queueMicrotask(() => { request.result = structuredClone(database.get(key));request.onsuccess(); });return request; },
-      put(value, key) { if (removed.size && sandbox.failDeleteList) throw Error('Could not save list');writes.set(key, structuredClone(value));commit(); },
-      delete(key) { removed.add(key);commit(); },
-    });
-    return transaction;
-  } };
+      return transaction;
+    } };
+    connections.push(db);return db;
+  }
   const sandbox = vm.createContext({ $, document: {
     querySelectorAll: selector => list.querySelectorAll(selector),
     querySelector: selector => selector === '#editor-pages .project-page-list' ? list : selector.startsWith('[data-') ? list.querySelector(selector) : get('canvas'),
@@ -81,7 +87,7 @@ function harness({ stored = new Map(), database = new Map(), pathname = '/', dat
   },
     location: spaceUrl?new URL(spaceUrl):{ pathname }, original: () => layout('Player'), validEditorPage: value => value?.version === 1 && value.canvas && Array.isArray(value.items),
     localStorage: { getItem(key) { if (blocked) throw Error('Blocked');return stored.get(key) || null; }, setItem(key, value) { if (blocked || full) throw Error('Full');stored.set(key, value); }, removeItem(key) { if (blocked) throw Error('Blocked');stored.delete(key); } },
-    indexedDB: { open() { const request = {};queueMicrotask(() => { if (noDatabase) { request.onerror();return; }request.result = db;request.onsuccess(); });return request; } },
+    indexedDB: { open() { const request = {};queueMicrotask(() => { if (noDatabase || sandbox.failDatabaseOpen) { request.error = Error('Store unavailable');request.onerror();return; }request.result = openDatabase();request.onsuccess(); });return request; } },
     crypto: { randomUUID: () => String(++nextId) }, round: value => Math.round(value * 10) / 10,
     choosePictureDrop: async () => 'new',
     readPicture: async file => ({ name: file.name, src: 'data:image/png;base64,AAAA', width: 903, height: 552 }),
@@ -113,7 +119,7 @@ function harness({ stored = new Map(), database = new Map(), pathname = '/', dat
   `, sandbox);
   const run = source => vm.runInContext(source, sandbox);
   const beginDelete = async id => { const done = run(`deleteProject(${JSON.stringify(id)})`);await Promise.resolve();return { done }; };
-  return { get, get buttons() { return list.querySelectorAll('[data-project]'); }, get focused() { return focused; }, stored, database, sandbox, run, listeners, beginDelete, ready: run('projectsReady'), json: source => JSON.parse(JSON.stringify(run(source))),
+  return { get, get buttons() { return list.querySelectorAll('[data-project]'); }, get focused() { return focused; }, stored, database, connections, sandbox, run, listeners, beginDelete, ready: run('projectsReady'), json: source => JSON.parse(JSON.stringify(run(source))),
     remove: async id => { const { done } = await beginDelete(id);get('project-delete-confirm').onclick();get('project-delete-confirm').onclick();await done; },
     drop: (name = 'Screenshot.png') => { sandbox.event = { dataTransfer: { files: [{ name, type: name.endsWith('.html') ? 'text/html' : 'image/png' }] }, clientX: 100, clientY: 100, preventDefault() {} };return run('handlePictureDrop(event)'); },
   };
@@ -224,6 +230,46 @@ test('projects still switch when the browser’s small text store is full', asyn
   h.run('state.items[0].text="My player";');await h.run('switchProject("library")');await h.run('switchProject("player")');
   assert.equal(h.run('state.items[0].text'), 'My player');
   assert.equal(h.database.get(playerKey).items[0].text, 'My player');
+});
+
+test('closed browser stores reopen for edits, project lists and saved pictures', async () => {
+  for (const closeEvent of ['silent', 'close', 'versionchange']) {
+    const h = harness({ blocked: true });await h.ready;
+    const first = h.run('pictureDB');
+    if (closeEvent === 'versionchange') first.onversionchange();
+    else { first.close();if (closeEvent === 'close') first.onclose(); }
+    h.run('state.items[0].text="Kept after closing";state.items.push({id:"picture",kind:"image",src:"data:image/png;base64,AAAA"});save();renameProject("Kept name");');
+    await h.run('switchProject("library")');
+    await h.run('usePictureStore("readonly",store=>store.get(STORAGE))');
+    assert.equal(h.connections.length, 2);
+    assert.equal(h.database.get(playerKey).items[0].text, 'Kept after closing');
+    assert.equal(h.database.get(listKey).projects[0].name, 'Kept name');
+    assert.equal(h.sandbox.message, undefined);
+    first.onclose();assert.equal(h.run('pictureDB'), h.connections[1]);
+    h.run('pictureDB.close()');await h.run('switchProject("player")');
+    assert.equal(h.run('state.items[0].text'), 'Kept after closing');
+    const next = harness({ blocked: true, database: h.database });await next.ready;
+    assert.equal(next.run('state.items[0].text'), 'Kept after closing');
+    assert.equal(next.run('state.items[1].src'), 'data:image/png;base64,AAAA');
+    assert.equal(next.run('localProjects[0].name'), 'Kept name');
+  }
+});
+
+test('browser store failures stop after one retry and keep failed writes open for another save', async () => {
+  const h = harness({ blocked: true });await h.ready;
+  h.sandbox.closeTransactions = true;
+  h.run('state.items[0].text="Still here";save();');
+  await assert.rejects(h.run('usePictureStore("readonly",store=>store.get(STORAGE))'), { name: 'InvalidStateError' });
+  assert.equal(h.connections.length, 2);
+  assert.equal(h.run('state.items[0].text'), 'Still here');
+  assert.match(h.sandbox.message, /Copy HTML/);
+  h.sandbox.closeTransactions = false;h.sandbox.failWrites = true;
+  h.run('save()');
+  await assert.rejects(h.run('usePictureStore("readwrite",store=>store.put(copy(state),STORAGE))'), /Store failed/);
+  assert.notEqual(h.database.get(playerKey).items[0].text, 'Still here');
+  h.sandbox.failWrites = false;h.run('save()');
+  await h.run('usePictureStore("readonly",store=>store.get(STORAGE))');
+  assert.equal(h.database.get(playerKey).items[0].text, 'Still here');
 });
 
 test('New Project opens a blank canvas and keeps the current project’s work and undo steps', async () => {
@@ -717,6 +763,38 @@ test('separate browser stores share a Space, keep Undo, preserve conflicts, and 
   assert.equal(missingStore.get('ui-design-editor-last-space-v1'),missingId);
   assert.equal(app.store.hasSpace(missingId),false);
   assert.match(missing.get('space-status').textContent,/Space not found/);
+});
+
+test('Spaces open, retry and save when the browser store closes or stays unavailable',async t=>{
+  const {createSpaceServer}=await import('../server/index.mjs');
+  const {once}=require('node:events');
+  const app=await createSpaceServer();app.server.listen(0,'127.0.0.1');await once(app.server,'listening');
+  const base='http://127.0.0.1:'+app.server.address().port,browsers=[];
+  t.after(async()=>{for(const h of browsers)h.run('spaceClient.close()');await app.close();});
+  for(const existing of [false,true])for(const unavailable of [false,true]){
+    const spaceId=existing?app.store.createSpace().spaceId:null;
+    const design={version:1,canvas:{width:393,height:852},items:[{id:'text',kind:'label',x:0,y:0,w:100,h:30,text:'Local work'}]};
+    const data={version:1,active:'demo',projects:[{id:'demo',name:'Demo',layout:design}]};
+    const h=harness({spaceUrl:base+'/'+(spaceId?'#space='+spaceId:''),data});browsers.push(h);await h.ready;
+    h.run('pictureDB.close()');h.sandbox.failDatabaseOpen=unavailable;
+    h.run(spaceCode);await h.run('spaceClient.ready');
+    assert.equal(h.get('space-share').hidden,false,h.get('space-status').textContent);
+    assert.equal(h.get('space-retry').hidden,true);
+    assert.doesNotMatch(h.get('space-status').textContent,/transaction|closing|Could not open/);
+    if(!unavailable)assert.equal(h.connections.length,2);
+    const id=h.run('activeProject'),openedSpace=h.run('onlineSpaceId');
+    h.run('change(()=>state.items[0]?state.items[0].text="Saved online":state.items.push({id:"text",kind:"label",x:0,y:0,w:100,h:30,text:"Saved online"}))');
+    await h.run('spaceClient.saved()');
+    assert.equal(app.store.get(openedSpace,id).layout.items[0].text,'Saved online');
+    const remote={version:1,canvas:{width:393,height:852},items:[{id:'text',kind:'label',x:0,y:0,w:100,h:30,text:'From the Space'}]};
+    app.store.save(openedSpace,'remote',{name:'Remote project',version:0,layout:remote});
+    if(!unavailable)h.run('pictureDB.close()');
+    await h.get('space-retry').onclick();
+    assert.equal(h.get('space-retry').hidden,true);
+    await h.run('switchProject("remote")');
+    assert.equal(h.run('state.items[0].text'),'From the Space');
+    if(!unavailable)assert.deepEqual(h.database.get(h.run('projectStorage("remote")')),remote);
+  }
 });
 
 test('project links open the chosen project across browsers and saved choices',async t=>{

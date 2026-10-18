@@ -2677,29 +2677,57 @@ document.addEventListener('dragend',()=>$('stage').classList.remove('picture-dro
 document.addEventListener('drop',handlePictureDrop);
 
 // Keep large pictures when the draft exceeds the browser's small text store.
-let pictureDB=null,pictureStoreReady=false,pictureSaved='',pictureSaveWarning=false,pictureLocalSaved=true;
+let pictureDB=null,pictureOpening=null,pictureStoreReady=false,pictureSaved='',pictureSaveWarning=false,pictureLocalSaved=true;
+function forgetPictureDatabase(db){if(pictureDB===db){pictureDB=null;pictureSaved='';}}
+function openPictureDatabase(){
+  if(pictureDB)return Promise.resolve(pictureDB);
+  if(pictureOpening)return pictureOpening;
+  pictureOpening=new Promise((resolve,reject)=>{
+    const request=indexedDB.open('ui-design-editor-pictures-v1',1);
+    request.onupgradeneeded=()=>request.result.createObjectStore('drafts');
+    request.onsuccess=()=>{
+      const db=request.result;pictureDB=db;
+      db.onclose=()=>forgetPictureDatabase(db);
+      db.onversionchange=()=>{forgetPictureDatabase(db);db.close();};
+      resolve(db);
+    };
+    request.onerror=()=>reject(request.error);
+  }).finally(()=>{pictureOpening=null;});
+  return pictureOpening;
+}
+async function usePictureStore(mode,action){
+  for(let attempt=0;attempt<2;attempt++){
+    const db=pictureDB||await openPictureDatabase();
+    try{
+      return await new Promise((resolve,reject)=>{
+        const transaction=db.transaction('drafts',mode);
+        let request;
+        transaction.oncomplete=()=>resolve(request?.result);
+        transaction.onabort=transaction.onerror=()=>reject(transaction.error||new Error('Could not save this draft here.'));
+        try{request=action(transaction.objectStore('drafts'));}
+        catch(error){transaction.abort();reject(error);}
+      });
+    }catch(error){
+      if(attempt||!(error.name==='InvalidStateError'||error.name==='AbortError'&&pictureDB!==db))throw error;
+      forgetPictureDatabase(db);db.close();
+    }
+  }
+}
 function warnPictureSave(){if(!pictureSaveWarning){pictureSaveWarning=true;notify('Could not save this draft here. Use Copy HTML to keep a copy.');}}
 function savePictureDraft(localSaved){
   pictureLocalSaved=localSaved;if(!pictureStoreReady)return;
-  if(!pictureDB){if(!localSaved)warnPictureSave();return;}
-  const value=JSON.stringify(state);if(value===pictureSaved)return;pictureSaved=value;
-  try{
-    const transaction=pictureDB.transaction('drafts','readwrite');transaction.objectStore('drafts').put(copy(state),STORAGE);
-    transaction.onabort=transaction.onerror=()=>{pictureSaved='';if(!localSaved)warnPictureSave();};
-  }catch{pictureSaved='';if(!localSaved)warnPictureSave();}
+  const key=STORAGE,value=key+':'+JSON.stringify(state);
+  if(value===pictureSaved)return;pictureSaved=value;
+  const saved=copy(state);
+  usePictureStore('readwrite',store=>store.put(saved,key)).catch(()=>{
+    if(pictureSaved===value)pictureSaved='';if(!localSaved)warnPictureSave();
+  });
 }
 const pictureStartState=JSON.stringify(state);
 const picturesReady=(async()=>{
   try{
-    pictureDB=await new Promise((resolve,reject)=>{
-      const request=indexedDB.open('ui-design-editor-pictures-v1',1);
-      request.onupgradeneeded=()=>request.result.createObjectStore('drafts');
-      request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);
-    });
-    const saved=await new Promise((resolve,reject)=>{
-      const request=pictureDB.transaction('drafts').objectStore('drafts').get(STORAGE);
-      request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);
-    });
+    const key=STORAGE;
+    const saved=await usePictureStore('readonly',store=>store.get(key));
     if(saved?.version===1&&JSON.stringify(state)===pictureStartState){state=saved;selected.clear();render();}
   }catch{}
   pictureStoreReady=true;savePictureDraft(pictureLocalSaved);
