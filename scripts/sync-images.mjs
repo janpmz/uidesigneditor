@@ -14,6 +14,8 @@ const viewTools = (await readFile(new URL('editor/canvas-view-tools.html', root)
 const reader = await readFile(new URL('editor/vendor/heic-to-1.6.6.js', root), 'utf8');
 const license = await readFile(new URL('editor/vendor/heic-to.LICENSE.txt', root), 'utf8');
 const pictureStyles = '<style data-picture-drop>\n' + styles + '\n</style>\n';
+const shadcnStyles = '<style data-shadcn-ui>\n' + (await readFile(new URL('editor/shadcn.css', root), 'utf8')).trimEnd() + '\n</style>\n';
+const shadcnLicense = '<script type="text/plain" data-license="shadcn-ui">\n' + (await readFile(new URL('editor/vendor/shadcn-ui.LICENSE.txt', root), 'utf8')).trimEnd() + '\n</script>\n';
 const support = '<!-- BEGIN HEIC READER -->\n' +
   '<script data-vendor="heic-to" data-version="1.6.6">\n' + reader.replace(/<\/script/gi, '<\\/script') + '\n</script>\n' +
   '<script type="text/plain" data-license="heic-to">\nSource: https://registry.npmjs.org/heic-to/-/heic-to-1.6.6.tgz\n' + license + '\n</script>\n' +
@@ -86,6 +88,10 @@ for (const entry of await readdir(new URL('drafts/', root), { withFileTypes: tru
   html = html.replace(/<!-- BEGIN HEIC READER -->[\s\S]*?<!-- END HEIC READER -->\n?/, '');
   if (html.includes('<style data-picture-drop>')) html = html.replace(/<style data-picture-drop>[\s\S]*?<\/style>\n?/, pictureStyles);
   else html = html.replace('</head>', pictureStyles + '</head>');
+  // Embed the shared styles so Copy HTML also works without a server.
+  html = html.replace(/<style data-shadcn-ui>[\s\S]*?<\/style>\n?/g, '');
+  html = html.replace(/<script type="text\/plain" data-license="shadcn-ui">[\s\S]*?<\/script>\n?/g, '');
+  html = html.replace('</head>', () => shadcnStyles + shadcnLicense + '</head>');
   // Keep dollar signs in the reader unchanged when adding it after the editor.
   html = html.replace('</body>', () => support + '\n</body>');
   const begin = html.indexOf('// BEGIN PICTURE DROP\n'), end = html.indexOf('// END PICTURE DROP', begin);
