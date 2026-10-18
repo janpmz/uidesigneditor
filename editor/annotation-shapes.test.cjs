@@ -41,10 +41,10 @@ test('filled boxes, buttons, text boxes and saved rectangles share the move and 
   for(const kind of ['shape','button','textbox'])assert.equal(run(`isRectangleShape({kind:${JSON.stringify(kind)},background:"#242424",borderWidth:0})`),true);
   for(const kind of ['image','icon','label','reading','tab'])assert.equal(run(`isRectangleShape({kind:${JSON.stringify(kind)}})`),false);
 });
-test('text, icons, buttons, boxes and rectangles have four side grips and only one corner grip for scaling',()=>{
+test('text, tabs, icons, images, buttons, boxes and rectangles have four side grips and only one corner grip for scaling',()=>{
   const node=()=>({classList:{add(){}},style:{width:'180px',height:'100px',setProperty(){}},dataset:{},children:[],attributes:{},setAttribute(key,value){this.attributes[key]=value;},append(child){this.children.push(child);}});
   const sandbox=vm.createContext({document:{createElement:node},scale:1});vm.runInContext(helpers,sandbox);
-  for(const entry of [{kind:'label'},{kind:'reading'},{kind:'icon'},{kind:'shape'},{kind:'shape',shape:'rectangle'},{kind:'button'},{kind:'textbox'}]){
+  for(const entry of [{kind:'label'},{kind:'reading'},{kind:'tab'},{kind:'icon'},{kind:'image'},{kind:'shape'},{kind:'shape',shape:'rectangle'},{kind:'button'},{kind:'textbox'}]){
     sandbox.overlay=node();sandbox.entry={...entry,name:'Long text'};
     assert.equal(vm.runInContext('hasSideResizeHandles(entry)',sandbox),true);
     vm.runInContext('renderRectangleHandles(overlay,entry)',sandbox);
@@ -57,7 +57,7 @@ test('text, icons, buttons, boxes and rectangles have four side grips and only o
   }
   for(const kind of ['label','reading'])assert.equal(vm.runInContext(`isTextBox({kind:${JSON.stringify(kind)}})`,sandbox),true);
   for(const kind of ['image','icon','shape','tab','button','textbox'])assert.equal(vm.runInContext(`isTextBox({kind:${JSON.stringify(kind)}})`,sandbox),false);
-  for(const entry of [{kind:'image'},{kind:'tab'},{kind:'shape',shape:'arrow'}])assert.equal(vm.runInContext(`hasSideResizeHandles(${JSON.stringify(entry)})`,sandbox),false);
+  assert.equal(vm.runInContext('hasSideResizeHandles({kind:"shape",shape:"arrow"})',sandbox),false);
 });
 
 test('dragging either end keeps the other end in place in every direction',()=>{

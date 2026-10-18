@@ -1960,7 +1960,7 @@ function isRectangleShape(entry){
   return ['shape','button','textbox'].includes(entry?.kind)&&!isArrowShape(entry);
 }
 function isTextBox(entry){return ['label','reading'].includes(entry?.kind);}
-function hasSideResizeHandles(entry){return isRectangleShape(entry)||isTextBox(entry)||entry?.kind==='icon';}
+function hasSideResizeHandles(entry){return isRectangleShape(entry)||isTextBox(entry)||['icon','image','tab'].includes(entry?.kind);}
 function renderRectangleHandles(overlay,entry){
   overlay.classList.add('rectangle-selection');
   sizeRectangleHandles(overlay);
