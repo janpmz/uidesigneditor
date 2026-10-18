@@ -9,6 +9,8 @@ const imageEditBar = await readFile(new URL('editor/image-edit-bar.html', root),
 const selectTools = (await readFile(new URL('editor/select-tools.html', root), 'utf8')).trimEnd();
 const inspectorMarkup = (await readFile(new URL('editor/inspector-tabs.html', root), 'utf8')).trimEnd();
 const inspectorCode = (await readFile(new URL('editor/inspector-tabs.js', root), 'utf8')).trimEnd();
+const webmcpCode = (await readFile(new URL('editor/webmcp.js', root), 'utf8')).trimEnd();
+const webmcp = '<!-- BEGIN WEBMCP -->\n<script data-editor-webmcp>\n' + webmcpCode.replace(/<\/script/gi, '<\\/script') + '\n</script>\n<!-- END WEBMCP -->';
 const styles = (await Promise.all(['image-drop.css', 'canvas-view.css', 'sidebar-tabs.css', 'inspector-tabs.css', 'annotation-shapes.css'].map(name => readFile(new URL(`editor/${name}`, root), 'utf8')))).join('\n');
 const view = await readFile(new URL('editor/canvas-view.js', root), 'utf8');
 const viewTools = (await readFile(new URL('editor/canvas-view-tools.html', root), 'utf8')).trimEnd();
@@ -91,6 +93,7 @@ for (const entry of await readdir(new URL('drafts/', root), { withFileTypes: tru
   if (!html.includes('renderOrderActions(actions);')) html = html.replace("actions.className='action-grid';actions.style.marginTop='12px';", "actions.className='action-grid';actions.style.marginTop='12px';renderOrderActions(actions);");
   html = html.replace("note.textContent='Changes save in this browser.", "note.textContent=imageEditSession?'Choose Done to save the image and return to the page. Cancel discards these edits.':'Changes save in this browser.");
   html = html.replace(/<!-- BEGIN HEIC READER -->[\s\S]*?<!-- END HEIC READER -->\n?/, '');
+  html = html.replace(/<!-- BEGIN WEBMCP -->[\s\S]*?<!-- END WEBMCP -->\n?/g, '');
   if (html.includes('<style data-picture-drop>')) html = html.replace(/<style data-picture-drop>[\s\S]*?<\/style>\n?/, pictureStyles);
   else html = html.replace('</head>', pictureStyles + '</head>');
   // Embed the shared styles so Copy HTML also works without a server.
@@ -98,7 +101,7 @@ for (const entry of await readdir(new URL('drafts/', root), { withFileTypes: tru
   html = html.replace(/<script type="text\/plain" data-license="shadcn-ui">[\s\S]*?<\/script>\n?/g, '');
   html = html.replace('</head>', () => shadcnStyles + shadcnLicense + '</head>');
   // Keep dollar signs in the reader unchanged when adding it after the editor.
-  html = html.replace('</body>', () => support + '\n</body>');
+  html = html.replace('</body>', () => webmcp + '\n' + support + '\n</body>');
   const begin = html.indexOf('// BEGIN PICTURE DROP\n'), end = html.indexOf('// END PICTURE DROP', begin);
   if (begin < 0 || end < 0) throw new Error('Missing picture drop marks.');
   html = html.slice(0, begin) + '// BEGIN PICTURE DROP\n' + code.trimEnd() + '\n' + html.slice(end);
