@@ -1,8 +1,8 @@
-UI Design Editor: instructions for Codex
+UI Design Editor: instructions for AI assistants
 
 Read this guide before you edit. Follow the user's design request.
 
-Open the link from "My Space URL" in Codex's built-in browser, or reuse that page if it is already open. Keep the full #space part of the URL. Keep the tab visible and open when you finish so the user can use the result.
+Open the link from "My Space URL" in a browser you can control, or reuse that page if it is already open. Keep the full #space part of the URL. Keep the tab visible and open when you finish so the user can use the result.
 
 Use this page's WebMCP site tools to make edits. Find the tools in this tab, then start with read_design. Read each tool's description and input fields for the required values. read_design also returns a short usage guide. If site tools are unavailable, explain that a supported browser with site tools enabled is required.
 
