@@ -2,6 +2,7 @@ import { readFile, writeFile, mkdir, rm } from 'node:fs/promises';
 import { runInNewContext } from 'node:vm';
 
 const root = new URL('../', import.meta.url);
+const aiInstructions = (await readFile(new URL('instructions.txt', root), 'utf8')).trim().replace(/^UI Design Editor: instructions for AI assistants\s*\n+/, '');
 export const origin = 'https://uidesigneditor.com';
 export const pages = [
   { path: '/', file: 'index.html', source: 'editor/inspector-tabs.html', title: 'UI Design Editor | Free screen editor', description: 'A simple and free ui design tool. Select, cut, move and resize. Work together with your AI. No signup.' },
@@ -27,6 +28,7 @@ export function metadata(page, { index = true, schema = true } = {}) {
 <meta name="robots" content="${index ? 'index,follow,max-image-preview:large' : 'noindex,follow'}">
 <link rel="canonical" href="${origin + page.path}">
 <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+<link rel="describedby" href="${origin}/instructions.txt" type="text/plain" title="AI guide: WebMCP site tools; start with read_design">
 <link rel="describedby" href="/llms.txt" type="text/plain">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="UI Design Editor">
@@ -80,14 +82,15 @@ function markdown(body) {
 const textPages = [];
 for (const page of pages) {
   let body = await readFile(new URL(page.source, root), 'utf8');
-  if (page.path === '/') body = body.match(/<section class="inspector-info"[^>]*>([\s\S]*?)<\/section>/)[1];
+  if (page.path === '/') body = [...body.matchAll(/<section class="(?:inspector-info|codex-prompt)"[^>]*>([\s\S]*?)<\/section>/g)].map(([, content]) => content).join('\n');
   await mkdir(new URL('./', new URL(page.file, root)), { recursive: true });
   if (page.path !== '/') await writeFile(new URL(page.file, root), document(page, body));
   const text = markdown(body);textPages.push(text);
 }
 await writeFile(new URL('robots.txt', root), `User-agent: *\nAllow: /\n\nSitemap: ${origin}/sitemap.xml\n`);
 await writeFile(new URL('sitemap.xml', root), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${pages.map(page => `  <url><loc>${origin + page.path}</loc></url>`).join('\n')}\n</urlset>\n`);
-await writeFile(new URL('llms.txt', root), `# UI Design Editor\n\nSource: ${origin}/\n\n${textPages.join('\n---\n\n')}`);
+const llmSections = [textPages[0], `## For AI assistants\n\n${aiInstructions}\n`, ...textPages.slice(1)];
+await writeFile(new URL('llms.txt', root), `# UI Design Editor\n\nSource: ${origin}/\n\n${llmSections.join('\n---\n\n')}`);
 for (const file of ['llms-full.txt', 'index.md', 'guide/index.md']) await rm(new URL(file, root), { force: true });
 const errorPage = { path: '/404.html', title: 'Page not found | UI Design Editor', description: 'This page does not exist. Open UI Design Editor.' };
 await writeFile(new URL('404.html', root), document(errorPage, '<main id="main" class="error"><p class="eyebrow">404</p><h1>Page not found.</h1><a class="button primary" href="/">Open editor</a></main>', { index: false, schema: false }));

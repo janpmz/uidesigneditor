@@ -1,8 +1,10 @@
 UI Design Editor: instructions for AI assistants
 
+This is a shared design canvas. People and AI assistants can read and edit text, shapes, icons and pictures in the same project. If the user sends only a project or Space link, read the project, then ask what they want to do before making changes.
+
 Read this guide before you edit. Follow the user's design request.
 
-Open the link from "My Space URL" in a browser you can control, or reuse that page if it is already open. Keep the full #space part of the URL. Keep the tab visible and open when you finish so the user can use the result.
+Open the user's project or Space link in a browser you can control, or reuse that page if it is already open. The Connect AI prompt calls this "My Space URL". Keep the full #space and &project values in the URL so the same Space and project open. Keep the tab visible and open when you finish so the user can use the result.
 
 Use this page's WebMCP site tools to make edits. Find the tools in this tab, then start with read_design. Read each tool's description and input fields for the required values. read_design also returns a short usage guide. If site tools are unavailable, explain that a supported browser with site tools enabled is required.
 

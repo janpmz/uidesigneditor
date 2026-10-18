@@ -12,7 +12,7 @@ Source: https://uidesigneditor.com/
 
 - [Open source on GitHub](https://github.com/janpmz/uidesigneditor)
 
-### Connect your AI
+### Connect AI
 
 Copy prompt
 
@@ -27,6 +27,30 @@ The user can view and edit designs. So can the AI.
 My Space URL: https://uidesigneditor.com/
 
 Read the instructions: https://uidesigneditor.com/instructions.txt
+
+---
+
+## For AI assistants
+
+This is a shared design canvas. People and AI assistants can read and edit text, shapes, icons and pictures in the same project. If the user sends only a project or Space link, read the project, then ask what they want to do before making changes.
+
+Read this guide before you edit. Follow the user's design request.
+
+Open the user's project or Space link in a browser you can control, or reuse that page if it is already open. The Connect AI prompt calls this "My Space URL". Keep the full #space and &project values in the URL so the same Space and project open. Keep the tab visible and open when you finish so the user can use the result.
+
+Use this page's WebMCP site tools to make edits. Find the tools in this tab, then start with read_design. Read each tool's description and input fields for the required values. read_design also returns a short usage guide. If site tools are unavailable, explain that a supported browser with site tools enabled is required.
+
+Create the work as a new named project unless the user asks you to edit an existing project. For every change, use the latest projectId and revision returned by the tools. If the design changes while you work, read it again before retrying. Keep the user's edits and the normal Undo history.
+
+The main editor opens a Space and remembers it in each browser. To share projects across browsers, open the same Space link in each browser. Anyone with the link can read and edit. Space edits save to the server and other open pages fetch the changed project. If a newer saved version exists, keep unsaved work and let the user reload or save it as a copy. HTML exports keep their own copy. If a requested project is missing, ask the user for its Space link, saved HTML or screenshot.
+
+Use edit_design to add, move, resize, restyle, hide or remove items. Use create_design for a full design in a new project. Keep text, shapes, icons and buttons as separate items the user can edit. Use select_project to open a project listed by read_design. Use rename_project to rename the open project. Use arrange_items with itemIds and direction "forward" or "backward" to move items one step in the item order. Use fit_items_to_content to fit boxes to their text or icons. Copy items by adding their fields with a new or omitted id; no clipboard step is needed.
+
+For an attached screenshot, call import_image with its bytes as a base64 image data URL. Use mode "new" to open it at its own size, or "add" to place it in the current design. Use move_image_region to move part of a screenshot, and edit_design to add or change items over it. Use erase_image_region to erase a box in canvas pixels: it fills page backgrounds from nearby colors and clears added pictures to transparent. Use merge_image_items with moved picture piece ids to make those pieces part of the page background again. Both actions support Undo.
+
+For HTML saved by this editor, extract its initial-layout JSON and send import_html a small HTML document containing only that application/json script. For other HTML, rebuild its visible design as items with create_design or edit_design.
+
+Check the result with read_design and a PNG from export_design. Refresh the site's tool list if the browser reports a stale tool. Use export_design to save the editable HTML. Tell the user what changed.
 
 ---
 

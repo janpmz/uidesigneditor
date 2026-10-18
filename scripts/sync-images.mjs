@@ -1,6 +1,10 @@
 import { readFile, writeFile, readdir } from 'node:fs/promises';
 
 const root = new URL('../', import.meta.url);
+const aiInstructions = (await readFile(new URL('instructions.txt', root), 'utf8')).trim().split(/\n\s*\n/);
+const escapeText = value => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+const aiInstructionsHtml = '<!-- BEGIN AI INSTRUCTIONS -->\n<section id="ai-instructions" hidden style="display:none!important">\n<h2>' + escapeText(aiInstructions[0]) + '</h2>\n'
+  + aiInstructions.slice(1).map(paragraph => '<p>' + escapeText(paragraph) + '</p>').join('\n') + '\n</section>\n<!-- END AI INSTRUCTIONS -->';
 const code = await readFile(new URL('editor/image-drop.js', root), 'utf8');
 const selection = (await Promise.all(['annotation-shapes.js', 'pixel-tools.js', 'fit-content.js', 'canvas-selection.js', 'image-edit.js'].map(name => readFile(new URL(`editor/${name}`, root), 'utf8')))).join('\n');
 const dialog = await readFile(new URL('editor/image-drop-dialog.html', root), 'utf8');
@@ -30,6 +34,8 @@ for (const file of editorFiles) {
   const path = new URL(file, root);
   let html = await readFile(path, 'utf8');
   if (!html.includes('// BEGIN PICTURE DROP\n')) continue;
+  html = html.replace(/<!-- BEGIN AI INSTRUCTIONS -->[\s\S]*?<!-- END AI INSTRUCTIONS -->\n?/g, '');
+  html = html.replace(/<body\b[^>]*>/, body => body + '\n' + aiInstructionsHtml);
   html = html.replace('<h1>uidesigneditor.com</h1>', '<h1><a href="/" style="color:inherit;text-decoration:none">uidesigneditor.com</a></h1>');
   if (!html.includes('id="add-rectangle"')) html = html.replace(/(<button id="add-box">[^<]*<\/button>)/, '$1\n          <button id="add-rectangle">Rectangle</button><button id="add-arrow">Arrow</button>');
   const selectToolsBlock = '<!-- BEGIN SELECT TOOLS -->\n' + selectTools + '\n<!-- END SELECT TOOLS -->';

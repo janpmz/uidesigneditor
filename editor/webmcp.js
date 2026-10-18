@@ -171,13 +171,15 @@
   const definitions = [
     {
       name: 'read_design',
-      description: 'Start here when you first connect to this design editor. Read the open design, project list, selected item ids, revision and a short usage guide. Item positions and sizes use canvas pixels. Use the latest returned projectId and revision for each edit. Image data is omitted by default. This reads saved design data, not a screenshot; use export_design with PNG to check the look.',
+      description: 'Start here when you first connect to UI Design Editor. Full AI instructions: https://uidesigneditor.com/instructions.txt. Read the open design, project list, selected item ids, revision and a short usage guide. Item positions and sizes use canvas pixels. Use the latest returned projectId and revision for each edit. Image data is omitted by default. This reads saved design data, not a screenshot; use export_design with PNG to check the look.',
       inputSchema: object({ includeImages: described({ type: 'boolean' }, 'Default false. Set true to include full PNG data URLs and saved inner image contents; results can be large.'), iconSearch: described(text(100), 'Find up to 80 icon names containing this text, such as play. An empty string lists the first 80 names.') }),
       readOnly: true,
       async run(args) {
         const result = await snapshot(args.includeImages);
         result.help = {
+          instructionsUrl: 'https://uidesigneditor.com/instructions.txt',
           workflow: [
+            'If the user sends only a project or Space link, read the project, then ask what they want to do before making changes. Keep the full #space and &project values when opening the link.',
             'Start with read_design. Create a new named project with create_design unless the user asks to edit an existing one. Use select_project to open an id from projects.',
             'Use the projectId and revision from the latest tool result for each edit or export. If the design changed, call read_design before retrying.',
             'Changes save as you work. Canvas edits use the normal Undo history. Project names sit outside that history; rename again to change a name back.',

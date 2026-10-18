@@ -9,6 +9,7 @@
 <meta name="robots" content="index,follow,max-image-preview:large">
 <link rel="canonical" href="https://uidesigneditor.com/">
 <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+<link rel="describedby" href="https://uidesigneditor.com/instructions.txt" type="text/plain" title="AI guide: WebMCP site tools; start with read_design">
 <link rel="describedby" href="/llms.txt" type="text/plain">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="UI Design Editor">
@@ -689,6 +690,21 @@ SOFTWARE.
 </script>
 </head>
 <body>
+<!-- BEGIN AI INSTRUCTIONS -->
+<section id="ai-instructions" hidden style="display:none!important">
+<h2>UI Design Editor: instructions for AI assistants</h2>
+<p>This is a shared design canvas. People and AI assistants can read and edit text, shapes, icons and pictures in the same project. If the user sends only a project or Space link, read the project, then ask what they want to do before making changes.</p>
+<p>Read this guide before you edit. Follow the user's design request.</p>
+<p>Open the user's project or Space link in a browser you can control, or reuse that page if it is already open. The Connect AI prompt calls this "My Space URL". Keep the full #space and &amp;project values in the URL so the same Space and project open. Keep the tab visible and open when you finish so the user can use the result.</p>
+<p>Use this page's WebMCP site tools to make edits. Find the tools in this tab, then start with read_design. Read each tool's description and input fields for the required values. read_design also returns a short usage guide. If site tools are unavailable, explain that a supported browser with site tools enabled is required.</p>
+<p>Create the work as a new named project unless the user asks you to edit an existing project. For every change, use the latest projectId and revision returned by the tools. If the design changes while you work, read it again before retrying. Keep the user's edits and the normal Undo history.</p>
+<p>The main editor opens a Space and remembers it in each browser. To share projects across browsers, open the same Space link in each browser. Anyone with the link can read and edit. Space edits save to the server and other open pages fetch the changed project. If a newer saved version exists, keep unsaved work and let the user reload or save it as a copy. HTML exports keep their own copy. If a requested project is missing, ask the user for its Space link, saved HTML or screenshot.</p>
+<p>Use edit_design to add, move, resize, restyle, hide or remove items. Use create_design for a full design in a new project. Keep text, shapes, icons and buttons as separate items the user can edit. Use select_project to open a project listed by read_design. Use rename_project to rename the open project. Use arrange_items with itemIds and direction "forward" or "backward" to move items one step in the item order. Use fit_items_to_content to fit boxes to their text or icons. Copy items by adding their fields with a new or omitted id; no clipboard step is needed.</p>
+<p>For an attached screenshot, call import_image with its bytes as a base64 image data URL. Use mode "new" to open it at its own size, or "add" to place it in the current design. Use move_image_region to move part of a screenshot, and edit_design to add or change items over it. Use erase_image_region to erase a box in canvas pixels: it fills page backgrounds from nearby colors and clears added pictures to transparent. Use merge_image_items with moved picture piece ids to make those pieces part of the page background again. Both actions support Undo.</p>
+<p>For HTML saved by this editor, extract its initial-layout JSON and send import_html a small HTML document containing only that application/json script. For other HTML, rebuild its visible design as items with create_design or edit_design.</p>
+<p>Check the result with read_design and a PNG from export_design. Refresh the site's tool list if the browser reports a stale tool. Use export_design to save the editable HTML. Tell the user what changed.</p>
+</section>
+<!-- END AI INSTRUCTIONS -->
 <template id="home-topbar"></template>
 <header class="topbar" id="editor-topbar">
   <div class="topbar-start">
@@ -799,7 +815,7 @@ SOFTWARE.
     </ul>
     <div class="codex-prompt">
       <div class="codex-prompt-heading">
-        <h3 id="codex-prompt-title">Connect your AI</h3>
+        <h3 id="codex-prompt-title">Connect AI</h3>
         <button type="button" id="copy-codex-prompt">Copy prompt</button>
       </div>
       <p id="codex-tools-status" role="status">Paste this into Codex, Claude, etc:</p>
@@ -3329,13 +3345,15 @@ const projectsReady=initializeProjects();
   const definitions = [
     {
       name: 'read_design',
-      description: 'Start here when you first connect to this design editor. Read the open design, project list, selected item ids, revision and a short usage guide. Item positions and sizes use canvas pixels. Use the latest returned projectId and revision for each edit. Image data is omitted by default. This reads saved design data, not a screenshot; use export_design with PNG to check the look.',
+      description: 'Start here when you first connect to UI Design Editor. Full AI instructions: https://uidesigneditor.com/instructions.txt. Read the open design, project list, selected item ids, revision and a short usage guide. Item positions and sizes use canvas pixels. Use the latest returned projectId and revision for each edit. Image data is omitted by default. This reads saved design data, not a screenshot; use export_design with PNG to check the look.',
       inputSchema: object({ includeImages: described({ type: 'boolean' }, 'Default false. Set true to include full PNG data URLs and saved inner image contents; results can be large.'), iconSearch: described(text(100), 'Find up to 80 icon names containing this text, such as play. An empty string lists the first 80 names.') }),
       readOnly: true,
       async run(args) {
         const result = await snapshot(args.includeImages);
         result.help = {
+          instructionsUrl: 'https://uidesigneditor.com/instructions.txt',
           workflow: [
+            'If the user sends only a project or Space link, read the project, then ask what they want to do before making changes. Keep the full #space and &project values when opening the link.',
             'Start with read_design. Create a new named project with create_design unless the user asks to edit an existing one. Use select_project to open an id from projects.',
             'Use the projectId and revision from the latest tool result for each edit or export. If the design changed, call read_design before retrying.',
             'Changes save as you work. Canvas edits use the normal Undo history. Project names sit outside that history; rename again to change a name back.',
