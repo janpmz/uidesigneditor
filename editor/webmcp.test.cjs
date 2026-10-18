@@ -508,7 +508,7 @@ test('built pages and editable exports include the same tools and the new prompt
     assert.equal(html.split('<script data-editor-webmcp>').length - 1, 1);
     const prompt = html.match(/<textarea id="codex-prompt"[^>]*>([\s\S]*?)<\/textarea>/)[1];
     assert.match(prompt, /Read the instructions: https:\/\/uidesigneditor\.com\/instructions\.txt/);
-    assert.match(prompt, /My Space URL: https:\/\/uidesigneditor\.com\/$/);
+    assert.match(prompt, /My Space URL: https:\/\/uidesigneditor\.com\/$/m);
     assert.equal(prompt, readFileSync(join(__dirname, 'inspector-tabs.html'), 'utf8').match(/<textarea id="codex-prompt"[^>]*>([\s\S]*?)<\/textarea>/)[1]);
     assert.doesNotMatch(prompt, /DataTransfer|file drop|localhost/);
   }

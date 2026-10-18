@@ -38,14 +38,14 @@ test('Info opens first, and selecting an item opens Edit', () => {
   assert.equal(h.get('quick-edit').textContent, 'Edit');
 });
 
-test('the copied prompt stays short, links to the guide and ends with the current site', async () => {
+test('the copied prompt stays short, includes the current site and ends with the guide', async () => {
   const h = harness('http://127.0.0.1:3000/drafts/dark-player-layout/?key=private#selection');
   let copied;
   h.sandbox.navigator = { clipboard: { writeText: async text => { copied = text; } } };
   await h.get('copy-codex-prompt').onclick();
-  assert.match(copied, /^Help me design in my Space\./);
-  assert.match(copied, /Read the instructions: https:\/\/uidesigneditor\.com\/instructions\.txt/);
-  assert.match(copied, /\n\nMy Space URL: http:\/\/127\.0\.0\.1:3000\/drafts\/dark-player-layout\/$/);
+  assert.match(copied, /^Help me design this project\./);
+  assert.match(copied, /Read the instructions: https:\/\/uidesigneditor\.com\/instructions\.txt$/);
+  assert.match(copied, /\n\nMy Space URL: http:\/\/127\.0\.0\.1:3000\/drafts\/dark-player-layout\/\n\nRead the instructions:/);
   assert.doesNotMatch(copied, /key=private|#selection|read_design|projectId|revision/);
   assert.ok(copied.trim().split(/\s+/).length < 40);
 });
@@ -55,18 +55,18 @@ test('copied prompts keep the Space link when it changes after the page opens',a
   h.sandbox.location.hash='space='+'a'.repeat(64);
   h.sandbox.navigator={clipboard:{writeText:async text=>{copied=text;}}};
   await h.get('copy-codex-prompt').onclick();
-  assert.ok(copied.endsWith('My Space URL: https://uidesigneditor.com/#space='+'a'.repeat(64)));
+  assert.ok(copied.split('\n').includes('My Space URL: https://uidesigneditor.com/#space='+'a'.repeat(64)));
   assert.doesNotMatch(copied,/private=value/);
   h.sandbox.location.hash='space='+'b'.repeat(64);
   await h.get('copy-codex-prompt').onclick();
-  assert.ok(copied.endsWith('My Space URL: https://uidesigneditor.com/#space='+'b'.repeat(64)));
+  assert.ok(copied.split('\n').includes('My Space URL: https://uidesigneditor.com/#space='+'b'.repeat(64)));
   assert.match(copied,/Read the instructions: https:\/\/uidesigneditor\.com\/instructions\.txt/);
   assert.equal(copied.split('My Space URL:').length-1,1);
 });
 
 test('saved files keep the public site address in their prompt', () => {
   const h = harness('file:///tmp/design.html');
-  assert.match(h.get('codex-prompt').value, /My Space URL: https:\/\/uidesigneditor\.com\/$/);
+  assert.match(h.get('codex-prompt').value, /My Space URL: https:\/\/uidesigneditor\.com\/$/m);
 });
 
 test('Info stays open during redraws until the user changes their selection', () => {

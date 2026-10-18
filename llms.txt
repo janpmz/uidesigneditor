@@ -18,11 +18,15 @@ Copy prompt
 
 Paste this into Codex, Claude, etc:
 
-Help me design in my Space.
+Help me design this project.
 
-Read the instructions: https://uidesigneditor.com/instructions.txt
+Add HTML designs or screenshots to this project.
+
+The user can view and edit designs. So can the AI.
 
 My Space URL: https://uidesigneditor.com/
+
+Read the instructions: https://uidesigneditor.com/instructions.txt
 
 ---
 
