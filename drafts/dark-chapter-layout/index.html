@@ -566,12 +566,60 @@ dialog.project-delete-dialog p { color: var(--muted-foreground); }
 }
 @media (max-width: 900px) {
   .workspace { height: var(--preview-height, 100dvh); display: block; }
-  .compact-tools .topbar { height: auto; padding: 16px; }
+  .compact-tools { overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; font-size: 12px; line-height: 1.4; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  .compact-tools[open] { display: block; }
+  .compact-tools .tools-head { position: sticky; top: 0; z-index: 3; height: 48px; padding: 8px 10px; gap: 6px; flex-wrap: nowrap; background: var(--popover); }
+  .compact-tools .tools-head h2 { min-width: 0; font-size: 14px; }
+  .compact-tools .tools-head button { flex: none; white-space: nowrap; }
+  .compact-tools .tools-tabs { position: sticky; top: 48px; z-index: 2; min-height: 34px; margin: 0 8px 8px; padding: 3px; gap: 2px; }
+  .compact-tools :is(button, input, select, textarea) { font-size: 12px; line-height: 18px; }
+  .compact-tools button { min-height: 30px; padding: 5px 8px; }
+  .compact-tools :is(.tools-tabs, .inspector-tabs) button { min-height: 28px; padding: 3px 6px; font-size: 11px; }
+  .compact-tools .tools-panel { height: auto; overflow: visible; }
+  .compact-tools .inspector-pane { height: auto; overflow: visible; }
+  .compact-tools .inspector-pane > :is(.inspector, .inspector-info) { flex: none; height: auto; overflow: visible; }
+  .compact-tools .inspector-tabs { min-height: 34px; margin: 0 8px 8px; padding: 3px; }
+  .compact-tools .inspector-info { padding: 10px 12px 14px; }
+  .compact-tools .inspector-info h2 { margin-bottom: 10px; font-size: 14px; }
+  .compact-tools .inspector-info ul { gap: 7px; font-size: 12px; line-height: 1.4; }
+  .compact-tools .codex-prompt { margin-top: 0; padding: 10px 12px; gap: 8px; }
+  .compact-tools .codex-prompt h3 { font-size: 12px; }
+  .compact-tools .codex-prompt button { min-height: 28px; }
+  .compact-tools .codex-prompt-details { max-height: none; overflow: visible; gap: 6px; }
+  .compact-tools .codex-prompt p { font-size: 11px; line-height: 1.4; }
+  .compact-tools .codex-prompt textarea { height: 132px; min-height: 96px; padding: 7px 8px; font-size: 12px; line-height: 1.4; }
+  .compact-tools .inspector-credit { padding: 8px 10px; font-size: 10px; }
+  .compact-tools .inspector .section { padding: 10px 12px; }
+  .compact-tools .inspector .section h2 { margin-bottom: 7px; font-size: 11px; }
+  .compact-tools .inspector .fields { gap: 7px 8px; }
+  .compact-tools .inspector .field { gap: 3px; font-size: 10px; }
+  .compact-tools .inspector .field :is(input, select, textarea) { min-height: 30px; padding: 4px 7px; }
+  .compact-tools .inspector .text-content textarea { min-height: 60px; }
+  .compact-tools .inspector :is(.color-control, .align-buttons, .fill-row .check-line) { min-height: 30px; }
+  .compact-tools .inspector .color-control input[type=color] { min-height: 0; padding: 0; }
+  .compact-tools :is(.sidebar-panel, .sidebar-items) { height: auto; overflow: visible; }
+  .compact-tools .layer-list { flex: none; min-height: 0; overflow: visible; padding: 0 8px 8px; }
+  .compact-tools .layer { min-height: 30px; margin-bottom: 2px; }
+  .compact-tools .layer-name { padding: 4px 7px; font-size: 11px; }
+  .compact-tools .project-pages { max-height: none; margin-top: 0; padding: 10px 12px; }
+  .compact-tools .project-pages h2 { padding: 0 4px 6px; font-size: 10px; }
+  .compact-tools .project-page-list { flex: none; max-height: none; overflow: visible; gap: 2px; }
+  .compact-tools .project-pages .project-page { min-height: 30px; padding: 5px 6px; gap: 7px; font-size: 11px; }
+  .compact-tools .project-pages .project-delete { min-height: 30px; padding: 5px; }
+  .compact-tools .space-controls { padding-bottom: 8px; margin-bottom: 8px; }
+  .compact-tools .space-status-row { margin-bottom: 6px; }
+  .compact-tools .space-controls p { font-size: 11px; line-height: 1.4; overflow-wrap: anywhere; }
+  .compact-tools .space-controls button { margin-bottom: 4px; }
+  .compact-tools .add-catalog { padding: 10px 12px; }
+  .compact-tools .add-catalog h2 { margin-bottom: 8px; }
+  .compact-tools .add-grid { gap: 6px; }
+  .compact-tools .add-grid button { min-height: 34px; padding: 6px 8px; gap: 7px; font-size: 11px; }
+  .compact-tools .topbar { height: auto; padding: 10px 12px; }
   .compact-tools .history-actions { border: 0; padding-left: 0; }
-  .compact-tools .top-actions { flex-wrap: wrap; gap: 8px; }
-  .compact-tools .export-actions { flex-wrap: wrap; gap: 8px; }
-  .compact-tools .topbar-start { gap: 12px; }
-  .compact-tools .sidebar-panel > .add-catalog { padding: 16px; }
+  .compact-tools .top-actions { flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .compact-tools .export-actions { flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .compact-tools .topbar-start { gap: 8px; }
+  .compact-tools .sidebar-panel > .add-catalog { padding: 10px 12px; }
   .image-edit-bar { padding-right: 100px; }
 }
 @media (prefers-reduced-motion: reduce) {

@@ -41,6 +41,7 @@ for (const file of editorFiles) {
   if (!html.includes('// BEGIN PICTURE DROP\n')) continue;
   html = html.replace(/<nav class="quick-tools"[\s\S]*?<\/nav>/, () => mobileTools);
   html = html.replace("toolTrigger=trigger||$('quick-'+name)||$('quick-edit');", "toolTrigger=trigger||$('mobile-tools-toggle');");
+  if (!html.includes("if(compactViewport.matches)$('editor-tools').scrollTop=0;")) html = html.replace('function showToolPanel(name,focus=false){', "function showToolPanel(name,focus=false){\n  if(compactViewport.matches)$('editor-tools').scrollTop=0;");
   const viewportBlock = '// BEGIN MOBILE VIEWPORT\n' + mobileViewport + '\n// END MOBILE VIEWPORT';
   if (html.includes('// BEGIN MOBILE VIEWPORT\n')) html = html.replace(/\/\/ BEGIN MOBILE VIEWPORT\n[\s\S]*?\/\/ END MOBILE VIEWPORT/, () => viewportBlock);
   else html = html.replace(/function sizePreview\(\)\{[\s\S]*?\n\}(?=\nfunction syncToolLayout)/, () => viewportBlock);
