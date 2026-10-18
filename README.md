@@ -6,7 +6,7 @@ Needs Node.js 24 or later. Run `npm ci` once.
 
 Run `npm start`, then open [localhost:3000](http://localhost:3000/).
 
-Choose **Create Space** to copy your local projects to the server. Use **Copy Space link** and open that link in each browser, including Codex. Anyone with the link can read and edit its projects. Local projects stay separate. Opening the plain site address keeps local mode.
+The main editor creates a Space on the first visit and copies any existing local projects into it. It remembers the Space in this browser and reopens it when you return to the plain site address. Opening a Space link switches to that Space and remembers it after it loads. Use **Copy Space link** to open it in another browser, including Codex. Anyone with the link can read and edit its projects. Keep the link: clearing browser data removes the remembered Space, but the server keeps its saved projects. HTML exports work on their own and stay local.
 
 Space saves live in `data/spaces.sqlite`, outside the public files. `DATA_DIR`, `PUBLIC_DIR` and `PORT` set the data folder, site folder and port. Keep the data folder across builds and server restarts.
 

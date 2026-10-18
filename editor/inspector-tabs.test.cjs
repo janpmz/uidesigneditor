@@ -85,7 +85,7 @@ test('clicking a selected canvas item opens Edit, and tab keys update focus and 
 });
 
 test('the root is the working editor and each sidebar keeps the Info text', () => {
-  const info = ['Local projects or a shared Space', 'Local projects stay in your browser', 'Create a Space to share projects across browsers', 'No signup', 'Free to use', 'Open source on GitHub'];
+  const info = ['Your projects and Space', 'Projects save as you work', 'Open the same Space link in each browser to share work', 'No signup', 'Free to use', 'Open source on GitHub'];
   for (const file of ['index.html', ...['dark-player-layout', 'dark-library-layout', 'dark-chapter-layout', 'dark-add-layout'].map(name => `drafts/${name}/index.html`)]) {
     const html = readFileSync(join(root, file), 'utf8');
     new vm.Script(html.match(/<script>\s*([\s\S]*?)<\/script>/)[1]);

@@ -99,8 +99,9 @@ projects. It helps tools read the site; it does not guarantee search rank.
 
 ## User work
 
-Local drafts and pictures stay in each browser. Creating a Space copies those
-projects to the save service. Open the same secret Space link in each browser
+The main editor creates a Space on the first visit, copies existing local
+projects to it, and remembers it in that browser for later visits. HTML exports
+keep their own local copy. Open the same secret Space link in each browser
 to share work. Anyone with that link can read and edit every project in it.
 Keep these links out of public logs and shared screenshots.
 

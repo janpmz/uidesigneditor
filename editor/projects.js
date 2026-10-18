@@ -3,7 +3,12 @@ const projectData=JSON.parse($('initial-projects').textContent);
 const localProjects=projectData.projects;
 const projectHome=['/','/index.html','/drafts/dark-player-layout/','/drafts/dark-player-layout/index.html'].includes(location.pathname);
 let spaceClient=null;
+const lastSpaceKey='ui-design-editor-last-space-v1';
 let onlineSpaceId=location.protocol==='file:'?null:(location.hash||'').match(/^#space=([a-f0-9]{64})$/)?.[1]||null;
+if(['http:','https:'].includes(location.protocol)&&!onlineSpaceId){
+  try{const saved=localStorage.getItem(lastSpaceKey);if(/^[a-f0-9]{64}$/.test(saved||''))onlineSpaceId=saved;}catch{}
+  if(onlineSpaceId)window.history.replaceState(null,'','#space='+onlineSpaceId);
+}
 function projectScope(){return onlineSpaceId?'space:'+onlineSpaceId:(projectHome?'/':location.pathname);}
 let activeProjectKey='ui-design-editor-active-project-v1:'+projectScope();
 let projectListKey='ui-design-editor-projects-v1:'+projectScope();

@@ -624,7 +624,8 @@ test('separate browser stores share a Space, keep Undo, preserve conflicts, and 
     while(!fn()){if(Date.now()>deadline)assert.fail('Space did not update');await new Promise(resolve=>setTimeout(resolve,10));}
   };
   const first=await open(base+'/');
-  await first.get('space-create').onclick();const spaceId=first.run('onlineSpaceId');assert.match(spaceId,/^[a-f0-9]{64}$/);
+  const spaceId=first.run('onlineSpaceId');assert.match(spaceId,/^[a-f0-9]{64}$/);
+  assert.equal(first.stored.get('ui-design-editor-last-space-v1'),spaceId);
   const second=await open(base+'/#space='+spaceId);
   assert.notEqual(first.stored,second.stored);
   await waitFor(()=>app.clients.get(spaceId)?.size===2);
@@ -652,7 +653,9 @@ test('separate browser stores share a Space, keep Undo, preserve conflicts, and 
   second.run("fieldEdit={};change(()=>state.items[0].text='Kept through reload');spaceClient.close()");
   const newer=app.store.get(spaceId,copiedId);
   app.store.save(spaceId,copiedId,{...newer,layout:{...newer.layout,items:[{...newer.layout.items[0],text:'Changed while away'}]}});
-  const reopening=await open(base+'/#space='+spaceId,second.stored,second.database);
+  const reopening=await open(base+'/',second.stored,second.database);
+  assert.equal(reopening.run('onlineSpaceId'),spaceId);
+  assert.equal(reopening.sandbox.location.hash,'#space='+spaceId);
   assert.equal(reopening.run('state.items[0].text'),'Kept through reload');
   assert.equal(reopening.get('space-conflict').hidden,false);
   assert.equal(app.store.get(spaceId,copiedId).layout.items[0].text,'Changed while away');
@@ -662,4 +665,27 @@ test('separate browser stores share a Space, keep Undo, preserve conflicts, and 
   await waitFor(()=>first.run('localProjects.length')===1);
   assert.equal(reopening.run('activeProject'),'demo');
   assert.throws(()=>app.store.get(spaceId,copiedId),/not found/);
+
+  const {spaceId:anotherSpace}=app.store.createSpace();
+  const switched=await open(base+'/#space='+anotherSpace,first.stored,first.database);
+  assert.equal(switched.run('onlineSpaceId'),anotherSpace);
+  assert.equal(switched.stored.get('ui-design-editor-last-space-v1'),anotherSpace);
+  assert.equal(app.store.hasSpace(spaceId),true);
+
+  const missingId='e'.repeat(64),missingStore=new Map([['ui-design-editor-last-space-v1',missingId]]);
+  const missing=await open(base+'/',missingStore);
+  assert.equal(missing.run('onlineSpaceId'),missingId);
+  assert.equal(missingStore.get('ui-design-editor-last-space-v1'),missingId);
+  assert.equal(app.store.hasSpace(missingId),false);
+  assert.match(missing.get('space-status').textContent,/Space not found/);
+});
+
+test('saved HTML files stay local even when the browser remembers a Space',async()=>{
+  const stored=new Map([['ui-design-editor-last-space-v1','a'.repeat(64)]]);
+  const h=harness({spaceUrl:'file:///tmp/saved-design.html',stored});await h.ready;
+  let requests=0;h.sandbox.fetch=()=>{requests++;throw Error('A file must stay local');};
+  h.run(spaceCode);await h.run('spaceClient.ready');h.run('spaceClient.close()');
+  assert.equal(h.run('onlineSpaceId'),null);
+  assert.equal(requests,0);
+  assert.equal(h.get('space-status').textContent,'Local projects');
 });

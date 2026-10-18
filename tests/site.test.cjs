@@ -26,8 +26,8 @@ test('public pages have readable content and one matching title, canonical and s
     assert.equal(meta(html, 'description'), meta(html, 'og:description'));
     assert.equal(meta(html, 'description'), meta(html, 'twitter:description'));
     assert.equal(meta(html, 'description'), path === '/'
-      ? 'A free UI design tool. Move and resize text, shapes and pictures. Keep projects in your browser or share them through a Space. No signup.'
-      : 'Free UI design tool. Keep projects in your browser or share them through a Space. No signup.');
+      ? 'A free UI design tool. Move and resize text, shapes and pictures. Projects save in your Space. Share its link across browsers. No signup.'
+      : 'Free UI design tool. Projects save in your Space. Share its link across browsers. No signup.');
     assert.equal(meta(html, 'og:title'), title);
     assert.equal(meta(html, 'twitter:title'), title);
     assert.equal(meta(html, 'og:url'), origin + path);
@@ -37,8 +37,8 @@ test('public pages have readable content and one matching title, canonical and s
     assert.equal(meta(html, 'og:image:type'), 'image/jpeg');
     assert.ok(meta(html, 'og:image:alt'));
     assert.doesNotMatch(html, /http-equiv="refresh"/);
-    if (path === '/') assert.match(html, /Local projects stay in your browser/);
-    else assert.match(html, /save projects and pictures on the server/);
+    if (path === '/') assert.match(html, /Projects save as you work/);
+    else assert.match(html, /saves projects and pictures on the server/);
     const image = readFileSync(join(root, new URL(meta(html, 'og:image')).pathname));
     assert.equal(image.readUInt16BE(0), 0xffd8);
   }
@@ -64,7 +64,7 @@ test('JSON-LD describes the app and page without made-up ratings or prices', () 
 test('the first 2 MB include the editor text and complete editor script', () => {
   for (const file of ['index.html', 'drafts/dark-library-layout/index.html']) {
     const html = read(file), prefix = Buffer.from(html).subarray(0, 2_000_000).toString('utf8');
-    assert.match(prefix, /<section class="inspector-info"[^>]*>[\s\S]*?Local projects stay in your browser[\s\S]*?<\/section>/);
+    assert.match(prefix, /<section class="inspector-info"[^>]*>[\s\S]*?Projects save as you work[\s\S]*?<\/section>/);
     assert.match(prefix, /<script>\s*[\s\S]*?syncToolLayout\(\);render\(\);\s*(?:const projectsReady=initializeProjects\(\);\s*)?<\/script>/);
     assert.equal((html.match(/<style data-picture-drop>/g) || []).length, 1);
     assert.equal((html.match(/<script data-vendor="heic-to"/g) || []).length, 1);
@@ -104,10 +104,10 @@ test('robots and sitemap allow the public pages and omit the noindex editors', (
 test('one LLM file holds the text from Info and About without extra copies', () => {
   const text = read('llms.txt');
   assert.match(text, /^# UI Design Editor\n\nSource: https:\/\/uidesigneditor.com\//);
-  assert.match(text, /Local projects or a shared Space/);
-  assert.match(text, /save projects and pictures on the server/);
+  assert.match(text, /Your projects and Space/);
+  assert.match(text, /saves projects and pictures on the server/);
   assert.match(text, /Copy HTML/);
-  assert.match(text, /Clearing browser data removes saved drafts/);
+  assert.match(text, /Clearing browser data removes the remembered Space and local drafts/);
   assert.doesNotMatch(text, /<script|<style|<main|<div|\)\[|llms-full\.txt|index\.md/);
   for (const file of ['llms-full.txt', 'index.md', 'guide/index.md']) assert.equal(existsSync(join(root, file)), false);
 });

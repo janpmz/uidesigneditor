@@ -14,7 +14,6 @@
     await flush();
     if(records.get(activeProject)?.conflict)throw new Error('A newer version exists. Reload or save as a copy. Your edit stays in this browser.');
   },close(){stopped=true;clearTimeout(saveTimer);clearTimeout(reconnectTimer);ws?.close();}};
-  $('space-create').onclick=()=>spaceClient.ready=run(createSpace);
   $('space-share').onclick=()=>run(async()=>{await navigator.clipboard.writeText(location.href);notify('Space link copied. Anyone with this link can edit.');});
   $('space-retry').onclick=()=>spaceClient.ready=run(async()=>{problem='';if(!onlineSpaceId)await createSpace();else if(!enabled)await start();else{await refresh();await flush();}if(!ws||ws.readyState===WebSocket.CLOSED)connect();});
   $('space-reload').onclick=()=>run(async()=>{
@@ -35,8 +34,8 @@
   window.addEventListener('beforeunload',event=>{
     if(enabled&&[...records.values()].some(dirty)){event.preventDefault();event.returnValue='';}
   });
-  if(location.protocol==='file:'){showStatus();$('space-create').hidden=true;$('space-help').textContent='This HTML file keeps its own projects. Open the site to create a Space.';return;}
-  if(onlineSpaceId)spaceClient.ready=run(start);
+  if(location.protocol==='file:'){showStatus();$('space-help').textContent='This HTML file keeps its own projects. Open the site to share work through a Space.';return;}
+  spaceClient.ready=run(onlineSpaceId?start:createSpace);
 
   async function start(){
     await projectsReady;
@@ -50,7 +49,7 @@
         const local=snapshot(project.id);
         records.set(project.id,{version:saved.version,local,saved:saved.dirty?null:local,conflict:false});
       }
-      await refresh();enabled=true;problem='';
+      await refresh();enabled=true;problem='';rememberSpace();
       changed();connect();
     }finally{setLoading(false);}
   }
@@ -72,10 +71,10 @@
       activeProjectKey='ui-design-editor-active-project-v1:'+projectScope();
       projectListKey='ui-design-editor-projects-v1:'+projectScope();STORAGE=projectStorage(activeProject);
       window.history.replaceState(null,'','#space='+spaceId);
+      rememberSpace();
       if(typeof updateCodexPromptUrl==='function')updateCodexPromptUrl();
       for(const project of created){const local=snapshot(project.id),seed=seeds.find(seed=>seed.id===project.id);records.set(project.id,{version:project.version,local,saved:JSON.stringify({name:seed.name,layout:seed.layout}),conflict:false});cacheProject(project.id,JSON.parse(local).layout);}
       enabled=true;saveMetadata();saveProjectList();problem='';connect();
-      notify('Space created. Copy its link to open it in another browser.');
     }finally{setLoading(false);}
   }
 
@@ -259,7 +258,6 @@
   }
   function showStatus(){
     conflictId=[...records].find(([,record])=>record.conflict)?.[0]||null;
-    $('space-create').hidden=Boolean(onlineSpaceId);$('space-create').disabled=starting;
     $('space-share').hidden=!enabled;$('space-retry').hidden=!problem;
     $('space-help').hidden=Boolean(onlineSpaceId);
     $('space-conflict').hidden=!conflictId;
@@ -271,6 +269,7 @@
     for(const id of ['editor-topbar','editor-layers','editor-inspector'])if($(id))$(id).inert=value;
     showStatus();
   }
+  function rememberSpace(){try{localStorage.setItem(lastSpaceKey,onlineSpaceId);}catch{}}
   async function run(fn){
     try{await fn();}catch(error){problem=error.message;showStatus();notify(error.message);}
   }

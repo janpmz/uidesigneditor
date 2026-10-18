@@ -4,13 +4,13 @@ import { runInNewContext } from 'node:vm';
 const root = new URL('../', import.meta.url);
 export const origin = 'https://uidesigneditor.com';
 export const pages = [
-  { path: '/', file: 'index.html', source: 'editor/inspector-tabs.html', title: 'UI Design Editor | Free screen editor', description: 'A free UI design tool. Move and resize text, shapes and pictures. Keep projects in your browser or share them through a Space. No signup.' },
-  { path: '/guide/', file: 'guide/index.html', source: 'site/guide.html', title: 'About UI Design Editor', description: 'Free UI design tool. Keep projects in your browser or share them through a Space. No signup.' },
+  { path: '/', file: 'index.html', source: 'editor/inspector-tabs.html', title: 'UI Design Editor | Free screen editor', description: 'A free UI design tool. Move and resize text, shapes and pictures. Projects save in your Space. Share its link across browsers. No signup.' },
+  { path: '/guide/', file: 'guide/index.html', source: 'site/guide.html', title: 'About UI Design Editor', description: 'Free UI design tool. Projects save in your Space. Share its link across browsers. No signup.' },
 ];
 const escape = value => value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 const header = `<a class="skip-link" href="#main">Skip to content</a>
 <header class="site-header"><a class="brand" href="/"><img src="/assets/icon.svg" alt="" width="25" height="25">uidesigneditor.com</a><nav class="site-nav" aria-label="Main"><a href="/guide/">About</a><a class="nav-editor" href="/">Open editor</a></nav></header>`;
-const footer = `<footer class="site-footer"><span>UI Design Editor · Local projects or a shared Space.</span><nav aria-label="More"><a href="https://github.com/janpmz/uidesigneditor" target="_blank" rel="noopener noreferrer">GitHub</a><a href="/guide/#save">Saving &amp; privacy</a><a href="/llms.txt">LLMs.txt</a><a href="/sitemap.xml">Sitemap</a></nav></footer>`;
+const footer = `<footer class="site-footer"><span>UI Design Editor · Projects save in your Space.</span><nav aria-label="More"><a href="https://github.com/janpmz/uidesigneditor" target="_blank" rel="noopener noreferrer">GitHub</a><a href="/guide/#save">Saving &amp; privacy</a><a href="/llms.txt">LLMs.txt</a><a href="/sitemap.xml">Sitemap</a></nav></footer>`;
 function structuredData(page) {
   return {
     '@context': 'https://schema.org',
