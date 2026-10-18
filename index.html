@@ -172,14 +172,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 <style data-picture-drop>
 .picture-choice{width:min(440px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow:auto;padding:22px;border:1px solid #46414e;border-radius:14px;background:#1c1c1f;color:#eeeef0;box-shadow:0 20px 80px #0008}
 .picture-choice::backdrop{background:#0009}
-.picture-choice h2{font-size:18px;margin:0 0 6px}
-.picture-choice-files{margin:0 0 18px;font-size:12px;color:#aaaab3;overflow-wrap:anywhere}
+.picture-choice h2{margin:0 0 16px;font-size:18px;font-weight:600;letter-spacing:-.4px}
 .picture-choice-options{display:grid;gap:10px}
-.picture-choice-option{display:flex;flex-direction:column;gap:6px;padding:15px;text-align:left;border-color:#46414e}
-.picture-choice-option strong{font-size:14px;font-weight:600}
-.picture-choice-option span{font-size:12px;color:#aaaab3;line-height:1.5}
+.picture-choice-option{padding:15px;text-align:left;border-color:#46414e;font-size:14px;font-weight:600}
 .picture-choice-option:hover{border-color:#b5a2df}
-.picture-choice-actions{display:flex;justify-content:flex-end;margin-top:18px}
 .phone.picture-page{border-radius:0;box-shadow:0 0 0 1px #434348,0 15px 40px #0005}
 .phone.editing .item,.phone.editing .item.selected{cursor:default}
 .phone.editing .item.page-image:hover,.phone.editing .item.page-image.selected{outline:none}
@@ -520,6 +516,14 @@ OTHER DEALINGS IN THE SOFTWARE.
 #add-textbox { --tool-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='16' rx='2'/%3E%3Cpath d='M7 9h10M7 13h10M7 17h5'/%3E%3C/svg%3E"); }
 #add-divider { --tool-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'%3E%3Cpath d='M3 12h18'/%3E%3C/svg%3E"); }
 
+.select-tools { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
+.add-catalog .select-tools h2 { display: block; margin: 0 0 12px; }
+.select-tools .add-grid { grid-template-columns: minmax(0, 1fr); }
+#select-rectangle { --tool-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'%3E%3Crect x='3' y='5' width='18' height='14' stroke-dasharray='3 3'/%3E%3C/svg%3E"); }
+#select-rectangle[aria-pressed=true] { background: var(--sidebar-accent); border-color: var(--ring); color: var(--foreground); }
+#select-rectangle[aria-pressed=true]::before { background: currentColor; }
+.stage[data-select-tool=rectangle], .stage[data-select-tool=rectangle] * { cursor: crosshair !important; }
+
 /* Sidebar rows, Badge, Separator. */
 .pane-head { padding: 8px 16px 12px; }
 .layer-list { padding: 0 10px 12px; }
@@ -567,19 +571,17 @@ dialog.project-delete-dialog { padding: 24px; }
 dialog.project-delete-dialog h2 { color: var(--foreground); font-size: 18px; font-weight: 600; letter-spacing: -.4px; }
 dialog.project-delete-dialog p { color: var(--muted-foreground); }
 .icon-picker-head { padding: 24px 24px 16px; }
-.icon-picker-head h2, .picture-choice h2 { color: var(--foreground); font-size: 18px; letter-spacing: -.4px; font-weight: 600; }
+.icon-picker-head h2 { color: var(--foreground); font-size: 18px; letter-spacing: -.4px; font-weight: 600; }
 .icon-picker-tools { padding: 0 24px 16px; }
 .icon-picker-count { padding: 0 24px 16px; }
 .icon-picker-results { padding: 0 24px 24px; }
 .icon-picker .icon-tile { min-height: 88px; background: #ffffff03; border-color: var(--border); border-radius: var(--radius); }
 .icon-picker .icon-tile:hover { background: var(--ui-accent); border-color: var(--input); }
 .icon-tile .ion, .sidebar .icon-choice .ion { color: var(--foreground); }
-.icon-tile-name, .icon-empty, .picture-choice-files, .picture-choice-option span { color: var(--muted-foreground); }
+.icon-tile-name, .icon-empty { color: var(--muted-foreground); }
 .picture-choice { padding: 24px; }
-.picture-choice h2 { margin-bottom: 8px; }
-.picture-choice .picture-choice-option { min-height: 86px; padding: 16px; border-color: var(--border); border-radius: var(--radius); background: #ffffff03; }
+.picture-choice .picture-choice-option { min-height: 48px; padding: 16px; border-color: var(--border); border-radius: var(--radius); background: #ffffff03; font-size: 13px; font-weight: 500; }
 .picture-choice .picture-choice-option:hover { border-color: var(--ring); }
-.picture-choice-option strong { font-size: 13px; font-weight: 500; }
 :is(.item-menu, .canvas-edit-menu) { padding: 4px; border: 1px solid var(--input); border-radius: var(--radius); background: var(--popover); color: var(--popover-foreground); box-shadow: 0 4px 16px #0006; }
 :is(.item-menu, .canvas-edit-menu) button { min-height: 30px; padding: 5px 8px; border: 0; background: transparent; border-radius: 4px; font-size: 12px; font-weight: 400; box-shadow: none; }
 :is(.item-menu, .canvas-edit-menu) button:hover,
@@ -692,6 +694,14 @@ SOFTWARE.
           <button id="add-rectangle">Rectangle</button><button id="add-arrow">Arrow</button>
           <button id="add-textbox">Text box</button><button id="add-divider">Divider</button>
         </div>
+<!-- BEGIN SELECT TOOLS -->
+        <section class="select-tools" aria-labelledby="select-tools-title">
+          <h2 id="select-tools-title">Select tools</h2>
+          <div class="add-grid">
+            <button id="select-rectangle" type="button" aria-pressed="false" title="Drag to select an area. Press Escape to cancel.">Selection rectangle</button>
+          </div>
+        </section>
+<!-- END SELECT TOOLS -->
       </div>
     </div>
     <template id="home-items"></template>
@@ -790,18 +800,12 @@ Check the result in the editor, then use "Copy HTML" to keep an editable copy. G
   <div class="icon-picker-results" id="icon-picker-results"><div class="icon-grid" id="icon-grid"></div><button class="icon-picker-more" id="icon-picker-more">Show more icons</button></div>
 </dialog>
 <!-- BEGIN PICTURE CHOICE -->
-<dialog id="picture-drop-choice" class="picture-choice" aria-labelledby="picture-choice-title" aria-describedby="picture-choice-files">
-  <h2 id="picture-choice-title">Open picture</h2>
-  <p id="picture-choice-files" class="picture-choice-files"></p>
+<dialog id="picture-drop-choice" class="picture-choice" aria-labelledby="picture-choice-title">
+  <h2 id="picture-choice-title">Open file</h2>
   <div class="picture-choice-options">
-    <button id="picture-choice-add" class="picture-choice-option" aria-label="Add to page?">
-      <strong>Add to page?</strong><span>Place the picture in the current design.</span>
-    </button>
-    <button id="picture-choice-new" class="picture-choice-option" aria-label="Open as new page?">
-      <strong>Open as new page?</strong><span>Start a fresh page at the picture’s size.</span>
-    </button>
+    <button id="picture-choice-new" class="picture-choice-option">New project</button>
+    <button id="picture-choice-add" class="picture-choice-option">Add to project</button>
   </div>
-  <div class="picture-choice-actions"><button id="picture-choice-cancel">Cancel</button></div>
 </dialog>
 <div id="canvas-edit-menu" class="canvas-edit-menu" role="menu" aria-label="Selection actions" hidden>
   <button id="canvas-menu-edit-image" role="menuitem" hidden>Edit image</button>
@@ -1236,7 +1240,7 @@ function renderInspector() {
     const actions=document.createElement('div');actions.className='action-grid';actions.style.marginTop='12px';renderOrderActions(actions);
     [['Duplicate selected',duplicate],['Delete selected',deleteSelected]].forEach(([name,fn])=>{const button=document.createElement('button');button.textContent=name;button.onclick=fn;if(name==='Delete selected')button.className='danger';actions.append(button);});group.append(actions);pane.append(group);
   }
-  else if(!item){const empty=document.createElement('div');empty.className='empty-state';empty.textContent=regionSelection?'Drag inside the selection to move it. Cut, copy and paste work with the usual keys or a right-click.':state.canvas.picturePage?'Draw a box to select part of the image. Drag inside the box to move it.':'Draw a box to select items it touches. Drag inside to move them. Shift-click to add or remove an item.';pane.append(empty);}
+  else if(!item){const empty=document.createElement('div');empty.className='empty-state';empty.textContent=regionSelection?'Drag inside the selection to move it. Cut, copy and paste work with the usual keys or a right-click.':state.canvas.picturePage?'Click the main image to resize it. Drag to select part of the image.':'Draw a box to select items it touches. Drag inside to move them. Shift-click to add or remove an item.';pane.append(empty);}
   else {
     const heading=section('Selected item');heading.append(field('Name','name',item.name,'text',true));renderImageEditAction(heading,item);if(item.hidden){const note=document.createElement('p');note.className='note';note.style.marginTop='8px';note.textContent='This item is removed from the phone. Use Restore below to bring it back.';heading.append(note);}pane.append(heading);
     const position=section('Position & size');const fields=document.createElement('div');fields.className='fields';[['X','x',item.x],['Y','y',item.y],['Width','w',item.w],['Height','h',item.h]].forEach(args=>fields.append(field(...args)));position.append(fields);pane.append(position);
@@ -1701,22 +1705,23 @@ function renderPageSizePicker(preset){
 }
 
 const pictureChoice=$('picture-drop-choice');
-function choosePictureDrop(files){
-  $('picture-choice-title').textContent=files.some(editorPageFile)?'Open page':files.length===1?'Open picture':'Open pictures';
-  $('picture-choice-files').textContent=files.length===1?files[0].name:files.length+' pictures';
+function choosePictureDrop(){
   pictureChoice.returnValue='';
   return new Promise(resolve=>{
     pictureChoice.addEventListener('close',()=>resolve(['add','new'].includes(pictureChoice.returnValue)?pictureChoice.returnValue:null),{once:true});
-    pictureChoice.showModal();$('picture-choice-add').focus();
+    pictureChoice.showModal();$('picture-choice-new').focus();
   });
 }
 $('picture-choice-add').onclick=()=>pictureChoice.close('add');
 $('picture-choice-new').onclick=()=>pictureChoice.close('new');
-$('picture-choice-cancel').onclick=()=>pictureChoice.close('cancel');
+pictureChoice.onclick=event=>{
+  if(event.target!==pictureChoice)return;
+  const rect=pictureChoice.getBoundingClientRect();
+  if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)pictureChoice.close('cancel');
+};
 document.addEventListener('keydown',event=>{if(pictureChoice.open)event.stopImmediatePropagation();},true);
 function cleanPictureExport(doc){
   doc.querySelector('#picture-drop-choice')?.removeAttribute('open');
-  const files=doc.querySelector('#picture-choice-files');if(files)files.textContent='';
   const menu=doc.querySelector('#canvas-edit-menu');if(menu)menu.hidden=true;
   const bar=doc.querySelector('#image-edit-bar');if(bar)bar.hidden=true;
   doc.querySelectorAll('.pixel-selection,.marquee').forEach(node=>node.remove());
@@ -2224,7 +2229,20 @@ async function fitCanvasSelection(){
 // END FIT CONTENT
 
 let regionSelection=null,canvasGesture=null,canvasClipboard=null,canvasPasteCount=0,canvasEditBusy=false;
+let rectangleSelectionArmed=false;
 const canvasMenu=$('canvas-edit-menu');
+function setRectangleSelectionTool(active){
+  rectangleSelectionArmed=active;
+  $('select-rectangle').setAttribute('aria-pressed',String(active));
+  stage.dataset.selectTool=active?'rectangle':'';
+}
+$('select-rectangle').onclick=()=>{
+  if(!editing||canvasGesture||canvasEditBusy||pictureDropBusy||pictureChoice.open)return;
+  setRectangleSelectionTool(!rectangleSelectionArmed);closeCanvasMenu();
+  if($('editor-tools')?.open)$('editor-tools').close();
+  stage.focus({preventScroll:true});
+};
+setRectangleSelectionTool(false);
 function isPagePicture(entry){
   if(entry.kind!=='image'||entry.pictureFragment)return false;
   if(entry.imageBase)return true;
@@ -2235,8 +2253,10 @@ function regionIsCurrent(region){
   const current=regionSources(region.box);
   return region.state===state&&region.sources.length===current.length&&region.sources.every((source,index)=>['id','src','x','y','w','h','opacity'].every(key=>current[index][key]===source[key]));
 }
-function clearCanvasRegion(){regionSelection=null;}
+function clearCanvasRegion(){regionSelection=null;setRectangleSelectionTool(false);}
 function renderSelection(){
+  $('select-rectangle').disabled=!editing;
+  if(!editing)setRectangleSelectionTool(false);
   const phone=$('phone');phone.querySelectorAll('.selection-overlay,.pixel-selection').forEach(node=>node.remove());
   if(regionSelection&&(selected.size||!regionIsCurrent(regionSelection)))regionSelection=null;
   if(regionSelection&&editing){
@@ -2244,7 +2264,6 @@ function renderSelection(){
     outline.setAttribute('aria-label','Selected picture area');
     Object.assign(outline.style,{left:box.x+'px',top:box.y+'px',width:box.w+'px',height:box.h+'px'});phone.append(outline);return;
   }
-  if(selectedItems().length&&selectedItems().every(isPagePicture))return;
   renderNativeSelection();
 }
 function rememberRegion(box){
@@ -2288,7 +2307,6 @@ async function makeRegionPlan(region){
   return region.pending;
 }
 function applyRegionPatches(plan){for(const patch of plan.patches){const entry=state.items.find(item=>item.id===patch.id);if(entry){Object.assign(entry,patch);delete entry.imageContents;}}}
-function prepareRegion(region){makeRegionPlan(region).catch(error=>{if(regionSelection===region)notify(error.message);});}
 function closeCanvasMenu(){canvasMenu.hidden=true;}
 function selectionOrder(position){
   if(regionSelection)return null;
@@ -2351,6 +2369,7 @@ async function mergeSelectionIntoBackground(){
 function endCanvasGesture(cancel=false){
   const gesture=canvasGesture;if(!gesture)return;
   canvasGesture=null;gesture.cancelled=cancel;gesture.box?.remove();
+  if(gesture.rectangleTool)setRectangleSelectionTool(false);
   if(stage.hasPointerCapture(gesture.pointer))stage.releasePointerCapture(gesture.pointer);
   if(cancel){if(gesture.changed)state=JSON.parse(gesture.before);selected=new Set(gesture.selectionBefore);regionSelection=gesture.regionBefore?rememberRegion(gesture.regionBefore.box):null;}
   else if(gesture.changed){remember(gesture.before);regionSelection=null;}
@@ -2360,10 +2379,12 @@ function moveGestureItems(gesture,point,event){
   let dx=point.x-gesture.start.x,dy=point.y-gesture.start.y;
   if(event?.shiftKey&&gesture.type!=='rectangle-resize'){if(Math.abs(dx)>Math.abs(dy))dy=0;else dx=0;}
   gesture.items.forEach((entry,index)=>Object.assign(entry,gesture.starts[index]));
+  const resizingPagePicture=['rectangle-resize','resize'].includes(gesture.type)&&isPagePicture(gesture.items[0]);
   if(gesture.type==='rectangle-resize')resizeRectangleFromHandle(gesture.items[0],gesture.starts[0],gesture.side,dx,dy);
   else if(gesture.type==='arrow-end')moveArrowEnd(gesture.items[0],gesture.starts[0],gesture.end,{x:gesture.start.x+dx,y:gesture.start.y+dy});
   else if(gesture.type==='resize')scaleItemFromCorner(gesture.items[0],gesture.starts[0],dx,dy,state.canvas);
   else moveWithin(gesture.items,dx,dy,state.canvas);
+  if(resizingPagePicture)gesture.items[0].imageBase=true;
   gesture.changed=gesture.before!==JSON.stringify(state);
   for(const entry of gesture.items){const node=[...$('phone').querySelectorAll('.item')].find(node=>node.dataset.id===entry.id);if(node)styleItem(node,entry);}
   renderSelection();
@@ -2377,19 +2398,26 @@ function applyPixelGesture(gesture){
   }
   moveGestureItems(gesture,gesture.latest,gesture.event);
 }
+function beginCanvasBox(common,event,point,entry,id){
+  regionSelection=null;
+  canvasGesture={...common,type:'box',pixels:Boolean(state.canvas.picturePage&&pointInArea(point,{x:0,y:0,w:state.canvas.width,h:state.canvas.height})&&(!entry||entry.kind==='image')),hitId:entry?id:null,base:event.shiftKey?[...selected]:[],startX:event.clientX,startY:event.clientY};
+  if(canvasGesture.pixels||!event.shiftKey)selected.clear();drawBox(canvasGesture,event);refreshSelection();
+}
 stage.addEventListener('pointerdown',event=>{
   if(!editing||event.button!==0)return;
   event.preventDefault();event.stopImmediatePropagation();
   if(canvasGesture||canvasEditBusy||pictureDropBusy||pictureChoice.open)return;
   closeCanvasMenu();stage.focus({preventScroll:true});
   const point=phonePoint(event),hit=event.target.closest('.item,.selection-overlay'),id=hit?.dataset.id;
-  const entry=state.items.find(item=>item.id===id),items=selectedItems().filter(item=>!isPagePicture(item));
-  const common={pointer:event.pointerId,start:point,latest:point,selectionBefore:[...selected],regionBefore:regionSelection,before:JSON.stringify(state),changed:false,moved:false};
+  const entry=state.items.find(item=>item.id===id),resizeItems=selectedItems(),items=resizeItems.filter(item=>!isPagePicture(item));
+  const common={pointer:event.pointerId,start:point,latest:point,selectionBefore:[...selected],regionBefore:regionSelection,before:JSON.stringify(state),changed:false,moved:false,rectangleTool:rectangleSelectionArmed};
   const rectangleHandle=event.target.closest('[data-rectangle-resize]');
-  if(items.length===1&&hasSideResizeHandles(items[0])&&rectangleHandle){
-    regionSelection=null;canvasGesture={...common,type:'rectangle-resize',side:rectangleHandle.dataset.rectangleResize,items,starts:items.map(copy)};
-  }else if(!event.shiftKey&&items.length===1&&event.target.closest('.resize-handle')){
-    regionSelection=null;canvasGesture={...common,type:'resize',items,starts:items.map(copy)};
+  if(rectangleSelectionArmed){
+    beginCanvasBox(common,event,point,entry,id);
+  }else if(resizeItems.length===1&&hasSideResizeHandles(resizeItems[0])&&rectangleHandle){
+    regionSelection=null;canvasGesture={...common,type:'rectangle-resize',side:rectangleHandle.dataset.rectangleResize,items:resizeItems,starts:resizeItems.map(copy)};
+  }else if(!event.shiftKey&&resizeItems.length===1&&event.target.closest('.resize-handle')){
+    regionSelection=null;canvasGesture={...common,type:'resize',items:resizeItems,starts:resizeItems.map(copy)};
   }else if(!event.shiftKey&&isRectangleShape(entry)){
     regionSelection=null;const moving=selected.has(entry.id)?items:[entry];
     selected=new Set(moving.map(item=>item.id));refreshSelection();
@@ -2402,14 +2430,12 @@ stage.addEventListener('pointerdown',event=>{
   }else if(!event.shiftKey&&items.length&&(pointInArea(point,boundsOf(items))||event.target.closest('.group-grip,.resize-handle'))){
     regionSelection=null;canvasGesture={...common,type:event.target.closest('.resize-handle')?'resize':'move',items,starts:items.map(copy)};
   }else{
-    regionSelection=null;
-    canvasGesture={...common,type:'box',pixels:Boolean(state.canvas.picturePage&&pointInArea(point,{x:0,y:0,w:state.canvas.width,h:state.canvas.height})&&(!entry||entry.kind==='image')),hitId:entry&&!isPagePicture(entry)?id:null,base:event.shiftKey?[...selected]:[],startX:event.clientX,startY:event.clientY};
-    if(canvasGesture.pixels||!event.shiftKey)selected.clear();drawBox(canvasGesture,event);refreshSelection();
+    beginCanvasBox(common,event,point,entry,id);
   }
   stage.setPointerCapture(event.pointerId);
 },true);
 stage.addEventListener('pointermove',event=>{
-  const gesture=canvasGesture;if(!gesture||event.pointerId!==gesture.pointer)return;
+  const gesture=canvasGesture;if(!gesture||gesture.finishing||event.pointerId!==gesture.pointer)return;
   event.preventDefault();event.stopImmediatePropagation();gesture.latest=phonePoint(event);gesture.event={shiftKey:event.shiftKey,altKey:event.altKey};
   const distance=Math.hypot(gesture.latest.x-gesture.start.x,gesture.latest.y-gesture.start.y);
   if(distance>.1)gesture.moved=true;
@@ -2428,7 +2454,18 @@ stage.addEventListener('pointerup',async event=>{
   if(gesture.type==='pixels'&&gesture.moved){gesture.finishing=true;await gesture.ready;if(canvasGesture!==gesture)return;applyPixelGesture(gesture);}
   if(gesture.type==='box'){
     if(!gesture.moved&&gesture.hitId){selected=new Set(event.shiftKey?gesture.base.includes(gesture.hitId)?gesture.base.filter(id=>id!==gesture.hitId):[...gesture.base,gesture.hitId]:[gesture.hitId]);regionSelection=null;}
-    else if(gesture.pixels&&regionSelection)prepareRegion(regionSelection);
+    else if(gesture.pixels&&regionSelection){
+      const region=regionSelection;gesture.finishing=true;
+      try{
+        const plan=await makeRegionPlan(region);if(canvasGesture!==gesture)return;
+        if(regionSelection!==region||!regionIsCurrent(region)){endCanvasGesture(true);return;}
+        applyRegionPatches(plan);const entry=copy(plan.entry);state.items.push(entry);
+        selected=new Set([entry.id]);regionSelection=null;gesture.changed=true;
+      }catch(error){
+        if(canvasGesture!==gesture)return;
+        notify(error.message);endCanvasGesture(true);return;
+      }
+    }
   }
   endCanvasGesture();
 },true);
@@ -2496,6 +2533,7 @@ document.addEventListener('keydown',event=>{
   if(canvasTextTarget(event.target)||pictureChoice.open||$('icon-picker')?.open)return;
   if(event.key==='Escape'&&!canvasMenu.hidden){event.preventDefault();event.stopImmediatePropagation();closeCanvasMenu();return;}
   if(canvasGesture){event.preventDefault();event.stopImmediatePropagation();if(event.key==='Escape')endCanvasGesture(true);return;}
+  if(event.key==='Escape'&&rectangleSelectionArmed){event.preventDefault();event.stopImmediatePropagation();setRectangleSelectionTool(false);return;}
   if(!editing||canvasEditBusy||$('editor-tools')?.open)return;
   const command=event.metaKey||event.ctrlKey,key=event.key.toLowerCase();
   if(command&&(key==='c'||key==='x')&&(regionSelection||selectedItems().length)){event.preventDefault();event.stopImmediatePropagation();void copyCanvasSelection(key==='x');return;}

@@ -199,8 +199,8 @@ for (const page of readdirSync(join(__dirname, '../drafts'), { withFileTypes: tr
     assert.ok(html.includes('<script data-vendor="heic-to"'));
     assert.ok(html.includes('data-license="heic-to"'));
     assert.equal(html.split('id="picture-drop-choice"').length - 1, 1);
-    assert.ok(html.includes('aria-label="Add to page?"'));
-    assert.ok(html.includes('aria-label="Open as new page?"'));
+    const choice = html.match(/<dialog id="picture-drop-choice"[\s\S]*?<\/dialog>/)[0];
+    assert.deepEqual(choice.replace(/<[^>]*>/g, ' ').trim().split(/\s{2,}/), ['Open file', 'New project', 'Add to project']);
     assert.ok(html.includes("renderPageSizePicker($('page-size'));"));
     assert.equal(html.includes('preset.onchange=()=>{const [w,h]=preset.value.split'),false);
     new vm.Script(html.match(/<script>\s*([\s\S]*?)<\/script>/)[1]);

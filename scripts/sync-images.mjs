@@ -6,6 +6,7 @@ const selection = (await Promise.all(['annotation-shapes.js', 'pixel-tools.js', 
 const dialog = await readFile(new URL('editor/image-drop-dialog.html', root), 'utf8');
 const menu = await readFile(new URL('editor/canvas-edit-menu.html', root), 'utf8');
 const imageEditBar = await readFile(new URL('editor/image-edit-bar.html', root), 'utf8');
+const selectTools = (await readFile(new URL('editor/select-tools.html', root), 'utf8')).trimEnd();
 const inspectorMarkup = (await readFile(new URL('editor/inspector-tabs.html', root), 'utf8')).trimEnd();
 const inspectorCode = (await readFile(new URL('editor/inspector-tabs.js', root), 'utf8')).trimEnd();
 const styles = (await Promise.all(['image-drop.css', 'canvas-view.css', 'sidebar-tabs.css', 'inspector-tabs.css', 'annotation-shapes.css'].map(name => readFile(new URL(`editor/${name}`, root), 'utf8')))).join('\n');
@@ -28,6 +29,9 @@ for (const entry of await readdir(new URL('drafts/', root), { withFileTypes: tru
   if (!html.includes('// BEGIN PICTURE DROP\n')) continue;
   html = html.replace('<h1>uidesigneditor.com</h1>', '<h1><a href="/" style="color:inherit;text-decoration:none">uidesigneditor.com</a></h1>');
   if (!html.includes('id="add-rectangle"')) html = html.replace(/(<button id="add-box">[^<]*<\/button>)/, '$1\n          <button id="add-rectangle">Rectangle</button><button id="add-arrow">Arrow</button>');
+  const selectToolsBlock = '<!-- BEGIN SELECT TOOLS -->\n' + selectTools + '\n<!-- END SELECT TOOLS -->';
+  if (html.includes('<!-- BEGIN SELECT TOOLS -->')) html = html.replace(/<!-- BEGIN SELECT TOOLS -->[\s\S]*?<!-- END SELECT TOOLS -->/, () => selectToolsBlock);
+  else html = html.replace(/(<div class="add-catalog" id="editor-add">[\s\S]*?<div class="add-grid">[\s\S]*?<\/div>)/, (_, catalog) => catalog + '\n' + selectToolsBlock);
   html = html.replace("['fontSize','iconSize','radius','borderWidth','iconOffsetX']", "['fontSize','iconSize','radius','borderWidth','iconOffsetX','strokeWidth']");
   if (!html.includes('styleArrowShape(el,item);')) html = html.replace("  if(item.kind==='reading'){el.style.fontFamily=", "  styleArrowShape(el,item);\n  if(item.kind==='reading'){el.style.fontFamily=");
   if (!html.includes('renderArrowShape(content,item);')) html = html.replace("if(item.kind==='image'){renderPicture(content,item);}", "if(isArrowShape(item)){renderArrowShape(content,item);} else if(item.kind==='image'){renderPicture(content,item);}");
@@ -130,7 +134,9 @@ for (const entry of await readdir(new URL('drafts/', root), { withFileTypes: tru
     'Drag across empty space to select items. Drag any selected item to move them together. Shift-click to add or remove items.',
     'Draw a box around items, then drag inside it to move them. Shift-click to add or remove an item.',
   ]) html = html.replaceAll(message, selectionHelp);
-  if (!html.includes("state.canvas.picturePage?'Draw a box to select part of the image.")) html = html.replace("':'" + selectionHelp + "'", "':state.canvas.picturePage?'Draw a box to select part of the image. Drag inside the box to move it.':'" + selectionHelp + "'");
+  const pictureHelp='Click the main image to resize it. Drag to select part of the image.';
+  html = html.replaceAll('Draw a box to select part of the image. Drag inside the box to move it.', pictureHelp);
+  if (!html.includes("state.canvas.picturePage?'" + pictureHelp + "'")) html = html.replace("':'" + selectionHelp + "'", "':state.canvas.picturePage?'" + pictureHelp + "':'" + selectionHelp + "'");
   html = html.replaceAll('Drag any selected item or the count above the box to move them together.', 'Drag inside the box to move the selected items.');
   html = html.replaceAll('Drag empty space to select · drag items to move · Shift-click to add · Delete to remove', 'Drag to select · drag the selection to move · ⌘X / ⌘V to cut and paste');
   html = html.replaceAll('Drag empty space: select a box.', 'Drag: draw a box. Drag inside: move.');

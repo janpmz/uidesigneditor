@@ -82,22 +82,23 @@ function renderPageSizePicker(preset){
 }
 
 const pictureChoice=$('picture-drop-choice');
-function choosePictureDrop(files){
-  $('picture-choice-title').textContent=files.some(editorPageFile)?'Open page':files.length===1?'Open picture':'Open pictures';
-  $('picture-choice-files').textContent=files.length===1?files[0].name:files.length+' pictures';
+function choosePictureDrop(){
   pictureChoice.returnValue='';
   return new Promise(resolve=>{
     pictureChoice.addEventListener('close',()=>resolve(['add','new'].includes(pictureChoice.returnValue)?pictureChoice.returnValue:null),{once:true});
-    pictureChoice.showModal();$('picture-choice-add').focus();
+    pictureChoice.showModal();$('picture-choice-new').focus();
   });
 }
 $('picture-choice-add').onclick=()=>pictureChoice.close('add');
 $('picture-choice-new').onclick=()=>pictureChoice.close('new');
-$('picture-choice-cancel').onclick=()=>pictureChoice.close('cancel');
+pictureChoice.onclick=event=>{
+  if(event.target!==pictureChoice)return;
+  const rect=pictureChoice.getBoundingClientRect();
+  if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)pictureChoice.close('cancel');
+};
 document.addEventListener('keydown',event=>{if(pictureChoice.open)event.stopImmediatePropagation();},true);
 function cleanPictureExport(doc){
   doc.querySelector('#picture-drop-choice')?.removeAttribute('open');
-  const files=doc.querySelector('#picture-choice-files');if(files)files.textContent='';
   const menu=doc.querySelector('#canvas-edit-menu');if(menu)menu.hidden=true;
   const bar=doc.querySelector('#image-edit-bar');if(bar)bar.hidden=true;
   doc.querySelectorAll('.pixel-selection,.marquee').forEach(node=>node.remove());
