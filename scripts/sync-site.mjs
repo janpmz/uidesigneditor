@@ -8,6 +8,7 @@ export const origin = 'https://uidesigneditor.com';
 export const pages = [
   { path: '/', file: 'index.html', source: 'editor/inspector-tabs.html', title: 'UI Design Editor | Free screen editor', description: 'A simple and free ui design tool. Select, cut, move and resize. Work together with your AI. No signup.' },
   { path: '/guide/', file: 'guide/index.html', source: 'site/guide.html', title: 'About UI Design Editor', description: 'Free UI design tool. No signup. A canvas for your AI. Share your work.' },
+  { path: '/privacy-policy/', file: 'privacy-policy/index.html', source: 'site/privacy-policy.html', title: 'Privacy policy | UI Design Editor', description: 'How UI Design Editor saves your work, shares it through links and handles your data.' },
 ];
 const escape = value => value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 const header = `<a class="skip-link" href="#main">Skip to content</a>

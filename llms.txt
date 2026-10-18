@@ -12,6 +12,10 @@ Source: https://uidesigneditor.com/
 
 - [Open source on GitHub](https://github.com/janpmz/uidesigneditor)
 
+- [About](https://uidesigneditor.com/guide/)
+
+- [Privacy policy](https://uidesigneditor.com/privacy-policy/)
+
 ### Connect AI
 
 Copy prompt
@@ -78,4 +82,24 @@ You can also share the link to a specific project with your AI or other people a
 
 This editor is open source. If you find something you want to improve, don't hesitate to fork the [repository](https://github.com/janpmz/uidesigneditor) and make the changes. You can then make a pull request, and I will merge it if I like it.
 
+Made by Jan Metz. Find me on [X](https://x.com/janxpm) or [Bluesky](https://bsky.app/profile/janxpm.bsky.social).
+
+[Privacy policy](https://uidesigneditor.com/privacy-policy/)
+
 [Open editor](https://uidesigneditor.com/)
+
+---
+
+# Privacy policy
+
+We save your projects, pictures and videos on our server so you can reopen and share them. Your browser also keeps drafts and your Space link.
+
+Anyone with a Space or project link can view and edit every project in that Space. If you connect an AI, its provider can process your designs under its own privacy policy.
+
+Our hosts, including Cloudflare, process connection details such as your IP address to run and protect the site.
+
+You can delete projects.
+
+For questions email [jan at pdftomp3.com](mailto:jan@pdftomp3.com).
+
+Last updated: October 18, 2026.

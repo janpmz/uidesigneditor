@@ -112,10 +112,10 @@ editor and About. Check the JSON-LD with Google's Rich Results Test or the
 Schema.org validator. The app data has no made-up ratings or reviews; it does
 not promise a rich result. Check a shared link for its title, text and picture.
 
-The main editor and About can appear in search. The Library sample uses
-`noindex,follow`. The sitemap lists only the main editor and About.
+The main editor, About and privacy policy can appear in search. The Library sample uses
+`noindex,follow`. The sitemap lists these three public pages.
 
-`llms.txt` holds the text from Info and About in one file. It contains no user
+`llms.txt` holds the text from Info, About and the privacy policy in one file. It contains no user
 projects. It helps tools read the site; it does not guarantee search rank.
 
 ## User work

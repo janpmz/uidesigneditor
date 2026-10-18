@@ -12,7 +12,7 @@ const { gunzipSync } = require('node:zlib');
 const root = join(__dirname, '..');
 const origin = 'https://uidesigneditor.com';
 const read = name => readFileSync(join(root, name), 'utf8');
-const publicPages = [['/', 'index.html'], ['/guide/', 'guide/index.html']];
+const publicPages = [['/', 'index.html'], ['/guide/', 'guide/index.html'], ['/privacy-policy/', 'privacy-policy/index.html']];
 const tags = (html, name) => [...html.matchAll(new RegExp(`<${name}\\b[^>]*>`, 'g'))].map(([tag]) => Object.fromEntries([...tag.matchAll(/([\w:-]+)="([^"]*)"/g)].map(([, key, value]) => [key, value])));
 const meta = (html, key) => tags(html, 'meta').find(tag => tag.name === key || tag.property === key)?.content;
 
@@ -27,7 +27,8 @@ test('public pages have readable content and one matching title, canonical and s
     assert.equal(meta(html, 'description'), meta(html, 'twitter:description'));
     assert.equal(meta(html, 'description'), path === '/'
       ? 'A simple and free ui design tool. Select, cut, move and resize. Work together with your AI. No signup.'
-      : 'Free UI design tool. No signup. A canvas for your AI. Share your work.');
+      : path === '/guide/' ? 'Free UI design tool. No signup. A canvas for your AI. Share your work.'
+      : 'How UI Design Editor saves your work, shares it through links and handles your data.');
     assert.equal(meta(html, 'og:title'), title);
     assert.equal(meta(html, 'twitter:title'), title);
     assert.equal(meta(html, 'og:url'), origin + path);
@@ -38,7 +39,8 @@ test('public pages have readable content and one matching title, canonical and s
     assert.ok(meta(html, 'og:image:alt'));
     assert.doesNotMatch(html, /http-equiv="refresh"/);
     if (path === '/') assert.match(html, /Free design editor/);
-    else assert.match(html, /This is a free design tool/);
+    else if (path === '/guide/') assert.match(html, /This is a free design tool/);
+    else assert.match(html, /We save your projects/);
     const image = readFileSync(join(root, new URL(meta(html, 'og:image')).pathname));
     assert.equal(image.readUInt16BE(0), 0xffd8);
   }

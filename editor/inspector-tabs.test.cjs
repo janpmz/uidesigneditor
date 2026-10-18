@@ -137,7 +137,7 @@ test('clicking a selected canvas item opens Edit, and tab keys update focus and 
 });
 
 test('the root is the working editor and each sidebar keeps the Info text', () => {
-  const info = ['Free design editor', 'No signup', 'Connect your AI', 'Share your space', 'Open source on GitHub'];
+  const info = ['Free design editor', 'No signup', 'Connect your AI', 'Share your space', 'Open source on GitHub', 'About', 'Privacy policy'];
   for (const file of ['index.html', ...['dark-library-layout', 'dark-chapter-layout', 'dark-add-layout'].map(name => `drafts/${name}/index.html`)]) {
     const html = readFileSync(join(root, file), 'utf8');
     new vm.Script(html.match(/<script>\s*([\s\S]*?)<\/script>/)[1]);
