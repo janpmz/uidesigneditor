@@ -270,5 +270,8 @@ function initializeProjects(){
       if(pictureDB)try{pictureDB.transaction('drafts','readwrite').objectStore('drafts').delete(projectStorage(id));}catch{}
     }
     saveProjectList();renderProjects();
+    if(activeProject==='landing'&&!savedActiveProject){
+      resetCanvasView();$('zoom').value='all';render();
+    }
   })();
 }

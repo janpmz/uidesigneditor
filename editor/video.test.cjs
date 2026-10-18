@@ -61,18 +61,17 @@ test('video redraws reuse the playing clip and keep sound off',()=>{
   for(const field of ['autoplay','muted','defaultMuted','playsInline','loop'])assert.equal(video[field],true);
 });
 
-test('new visitors start with just four clips on the dotted canvas',()=>{
+test('new visitors see the saved landing page with its clips, words and icons',()=>{
   const html=readFileSync(join(__dirname,'../index.html'),'utf8');
   const data=JSON.parse(html.match(/id="initial-projects">([\s\S]*?)<\/script>/)[1]);
   assert.equal(data.active,'landing');assert.equal(data.projects[0].id,'landing');
   const {canvas,items}=data.projects[0].layout;
-  assert.equal(canvas.background,'transparent');assert.equal(items.length,4);
-  for(const item of items){
-    assert.equal(item.kind,'video');assert.equal(item.borderWidth,0);
+  assert.equal(canvas.background,'transparent');
+  const clips=items.filter(item=>item.kind==='video');assert.equal(clips.length,4);
+  for(const item of clips){
+    assert.equal(item.borderWidth,0);
     assert.ok(readFileSync(join(__dirname,'..'+item.src)).length>100000);
   }
-  const centers=items.map(item=>({x:item.x+item.w/2,y:item.y+item.h/2}));
-  assert.equal(centers[0].x,centers[2].x);assert.equal(centers[1].x,centers[3].x);
-  assert.equal(centers[0].y,centers[1].y);assert.equal(centers[2].y,centers[3].y);
-  assert.ok(items[2].y-(items[0].y+items[0].h)>=96);
+  assert.deepEqual(items.filter(item=>item.kind==='label'&&!item.hidden).map(item=>item.text),['Try it out!','Its Free','Open Source','Connect AI']);
+  assert.deepEqual(items.filter(item=>item.kind==='icon'&&!item.hidden).map(item=>item.icon),['basketball','cloud-done','heart-half','flask-outline']);
 });
