@@ -164,6 +164,23 @@ test('reload opens the last project and keeps edits from the old library page', 
   assert.equal(next.run('state.items[0].text'), 'Old library edits');
 });
 
+test('renaming keeps the design and Undo steps and survives reload in both browser stores', async () => {
+  const h = harness();await h.ready;
+  const before=h.json('state');h.run('history.push("canvas edit");renameProject("  My player  ")');
+  assert.equal(h.run('localProjects[0].name'),'My player');
+  assert.equal(h.get('project-player').children[0].textContent,'My player');
+  assert.equal(h.get('delete-player').attributes['aria-label'],'Delete My player');
+  assert.deepEqual(h.json('state'),before);
+  assert.deepEqual(h.json('history'),['canvas edit']);
+  const next=harness({stored:h.stored});await next.ready;
+  assert.equal(next.run('localProjects[0].name'),'My player');
+  const databaseOnly=harness({database:h.database});await databaseOnly.ready;
+  assert.equal(databaseOnly.run('localProjects[0].name'),'My player');
+  assert.throws(()=>h.run('renameProject(" ")'),/project name/);
+  assert.throws(()=>h.run('renameProject("a".repeat(201))'),/project name/);
+  assert.equal(h.run('localProjects[0].name'),'My player');
+});
+
 test('large pictures saved by the old library page survive the move to Projects', async () => {
   const picture = layout('Library with a picture');picture.items.push({ id: 'image', kind: 'image', src: 'data:image/png;base64,AAAA' });
   const h = harness({ database: new Map([[libraryKey, picture]]) });await h.ready;
@@ -634,6 +651,11 @@ test('separate browser stores share a Space, keep Undo, preserve conflicts, and 
   assert.equal(second.run('state.items[1].imageContents.items[0].src'),png);
   assert.match(app.store.get(spaceId,'demo').layout.items[1].src,/^picture:/);
   await waitFor(()=>app.clients.get(spaceId)?.size===2);
+  first.run('renameProject("Shared name")');await first.run('spaceClient.saved()');
+  await waitFor(()=>second.run('localProjects[0].name')==='Shared name');
+  assert.equal(app.store.get(spaceId,'demo').name,'Shared name');
+  assert.equal(first.run('history.length'),0);
+  assert.equal(second.run('history.length'),0);
   first.run("change(()=>state.items[0].text='Shared edit')");await first.run('spaceClient.saved()');
   await waitFor(()=>second.run('state.items[0].text')==='Shared edit');
   assert.ok(second.run('history.length')>0);

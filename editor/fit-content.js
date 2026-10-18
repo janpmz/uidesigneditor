@@ -41,6 +41,16 @@ function measureContentBox(entry,node){
     };
   }finally{probe.remove();}
 }
+function contentFitPlans(entries){
+  const nodes=[...$('phone').querySelectorAll('.item')],plans=[];
+  for(const entry of entries){
+    if(entry.hidden||!canFitContent(entry))continue;
+    const node=nodes.find(node=>node.dataset.id===entry.id);if(!node)continue;
+    const box=measureContentBox(entry,node);
+    if(box&&['x','y','w','h'].every(key=>Number.isFinite(box[key]))&&box.w>0&&box.h>0&&['x','y','w','h'].some(key=>Math.abs(box[key]-entry[key])>.02))plans.push({entry,box});
+  }
+  return plans;
+}
 async function fitCanvasSelection(){
   if(!editing||canvasGesture||canvasEditBusy||regionSelection)return;
   const entries=selectedItems().filter(canFitContent);if(!entries.length)return;
@@ -48,12 +58,7 @@ async function fitCanvasSelection(){
   try{
     await document.fonts?.ready;
     if(before!==JSON.stringify(state)||ids!==[...selected].join(',')||!editing||regionSelection)return;
-    const nodes=[...$('phone').querySelectorAll('.item')],plans=[];
-    for(const entry of entries){
-      const node=nodes.find(node=>node.dataset.id===entry.id);if(!node)continue;
-      const box=measureContentBox(entry,node);
-      if(box&&['x','y','w','h'].every(key=>Number.isFinite(box[key]))&&box.w>0&&box.h>0&&['x','y','w','h'].some(key=>Math.abs(box[key]-entry[key])>.02))plans.push({entry,box});
-    }
+    const plans=contentFitPlans(entries);
     if(plans.length)change(()=>{for(const {entry,box} of plans)Object.assign(entry,box);});
     notify(plans.length?'Box fitted to content':'Box already fits content');
   }catch{notify('Could not fit this box.');}finally{canvasEditBusy=false;}

@@ -790,33 +790,24 @@ SOFTWARE.
   </div>
   <aside class="inspector" id="inspector" role="tabpanel" aria-labelledby="inspector-tab-edit" hidden></aside>
   <section class="inspector-info" id="inspector-info" role="tabpanel" aria-labelledby="inspector-tab-info">
-    <h2>Your projects and Space</h2>
+    <h2>Free design editor</h2>
     <ul>
-      <li>Projects save as you work</li>
-      <li>Open the same Space link in each browser to share work</li>
       <li>No signup</li>
-      <li>Free to use</li>
+      <li>Connect your AI</li>
+      <li>Share your space</li>
       <li><a href="https://github.com/janpmz/uidesigneditor" target="_blank" rel="noopener noreferrer">Open source on GitHub</a></li>
     </ul>
     <div class="codex-prompt">
       <div class="codex-prompt-heading">
-        <h3 id="codex-prompt-title">Use with Codex</h3>
+        <h3 id="codex-prompt-title">Connect your AI</h3>
         <button type="button" id="copy-codex-prompt">Copy prompt</button>
       </div>
-      <p id="codex-tools-status" role="status">Site tools need a supported Codex browser.</p>
-      <textarea id="codex-prompt" rows="8" readonly spellcheck="false" aria-labelledby="codex-prompt-title">Open https://uidesigneditor.com/ in Codex's built-in browser as my design canvas, or reuse that page if it is already open. Use this page's WebMCP site tools to make edits. Keep the tab visible and open when you finish so I can use the result.
+      <p id="codex-tools-status" role="status">Paste this into Codex, Claude, etc:</p>
+      <textarea id="codex-prompt" rows="12" readonly spellcheck="false" aria-labelledby="codex-prompt-title">Help me design in my Space.
 
-Find the tools in this tab, then start with read_design. Create my work as a new named project unless I ask you to edit an existing project. For every change, use the latest projectId and revision returned by the tools. If the design changes while you work, read it again before retrying. Keep my edits and the normal Undo history.
+Read the instructions: https://uidesigneditor.com/instructions.txt
 
-The main editor opens a Space for me and remembers it in this browser. To share projects across browsers, open the same Space link in each browser. Anyone with the link can edit. Keep the #space part of the URL when opening it in Codex. Space edits save to the server and other open pages fetch the changed project. If a newer saved version exists, keep my unsaved work and let me reload or save it as a copy. HTML exports keep their own copy. If I ask for a project that is missing here, ask me for its Space link, saved HTML or screenshot.
-
-Use edit_design to add, move, resize, restyle or remove items. Use create_design for a full design in a new project. Keep text, shapes, icons and buttons as separate items I can edit. Use select_project to open a project listed by read_design.
-
-For an attached screenshot, call import_image with its bytes as a base64 image data URL. Use mode "new" to open it at its own size, or "add" to place it in the current design. Use move_image_region to move part of a screenshot, and edit_design to add or change items over it.
-
-For HTML saved by this editor, extract its initial-layout JSON and send import_html a small HTML document containing only that application/json script. For other HTML, rebuild its visible design as items with create_design or edit_design. Read the tools' input fields for the required values.
-
-Check the result with read_design and a PNG from export_design. Refresh the site's tool list if the browser reports a stale tool. Use export_design to save the editable HTML. Tell me what changed. If site tools are unavailable, explain that a supported browser with site tools enabled is required.</textarea>
+My Space URL: https://uidesigneditor.com/</textarea>
       <p id="codex-prompt-status" class="codex-prompt-status" role="status"></p>
     </div>
   </section>
@@ -984,8 +975,10 @@ function restoreProjectList(saved){
   for(const id of Array.isArray(saved.deleted)?saved.deleted:[])if(typeof id==='string'&&/^[-a-z0-9]+$/.test(id))deletedProjects.add(id);
   for(let index=localProjects.length-1;index>=0;index--)if(deletedProjects.has(localProjects[index].id))localProjects.splice(index,1);
   for(const project of saved.projects){
-    if(!project||typeof project.id!=='string'||!/^[-a-z0-9]+$/.test(project.id)||typeof project.name!=='string'||!project.name.trim()||deletedProjects.has(project.id)||localProjects.some(entry=>entry.id===project.id))continue;
-    localProjects.push({id:project.id,name:project.name,layout:null});
+    if(!project||typeof project.id!=='string'||!/^[-a-z0-9]+$/.test(project.id)||typeof project.name!=='string'||!project.name.trim()||deletedProjects.has(project.id))continue;
+    const existing=localProjects.find(entry=>entry.id===project.id);
+    if(existing)existing.name=project.name;
+    else localProjects.push({id:project.id,name:project.name,layout:null});
   }
 }
 function blankProjectLayout(){return {version:1,canvas:{width:393,height:852,background:'#000000'},items:[]};}
@@ -1056,6 +1049,13 @@ function saveProjectList(){
   try{localStorage.setItem(projectListKey,JSON.stringify(saved));localStorage.setItem(activeProjectKey,activeProject);}catch{}
   if(pictureDB)try{pictureDB.transaction('drafts','readwrite').objectStore('drafts').put(saved,projectListKey);}catch{}
   spaceClient?.changed();
+}
+function renameProject(name){
+  if(typeof name!=='string'||!name.trim()||name.length>200)throw new Error('Use a project name from 1 to 200 characters.');
+  const project=localProjects.find(project=>project.id===activeProject);
+  if(!project)throw new Error('Unknown project id.');
+  if(project.name===name.trim())return;
+  project.name=name.trim();renderProjects();saveProjectList();
 }
 function openProject(id,layout,session){
   activeProject=id;STORAGE=projectStorage(id);state=layout;
@@ -2333,6 +2333,16 @@ function measureContentBox(entry,node){
     };
   }finally{probe.remove();}
 }
+function contentFitPlans(entries){
+  const nodes=[...$('phone').querySelectorAll('.item')],plans=[];
+  for(const entry of entries){
+    if(entry.hidden||!canFitContent(entry))continue;
+    const node=nodes.find(node=>node.dataset.id===entry.id);if(!node)continue;
+    const box=measureContentBox(entry,node);
+    if(box&&['x','y','w','h'].every(key=>Number.isFinite(box[key]))&&box.w>0&&box.h>0&&['x','y','w','h'].some(key=>Math.abs(box[key]-entry[key])>.02))plans.push({entry,box});
+  }
+  return plans;
+}
 async function fitCanvasSelection(){
   if(!editing||canvasGesture||canvasEditBusy||regionSelection)return;
   const entries=selectedItems().filter(canFitContent);if(!entries.length)return;
@@ -2340,12 +2350,7 @@ async function fitCanvasSelection(){
   try{
     await document.fonts?.ready;
     if(before!==JSON.stringify(state)||ids!==[...selected].join(',')||!editing||regionSelection)return;
-    const nodes=[...$('phone').querySelectorAll('.item')],plans=[];
-    for(const entry of entries){
-      const node=nodes.find(node=>node.dataset.id===entry.id);if(!node)continue;
-      const box=measureContentBox(entry,node);
-      if(box&&['x','y','w','h'].every(key=>Number.isFinite(box[key]))&&box.w>0&&box.h>0&&['x','y','w','h'].some(key=>Math.abs(box[key]-entry[key])>.02))plans.push({entry,box});
-    }
+    const plans=contentFitPlans(entries);
     if(plans.length)change(()=>{for(const {entry,box} of plans)Object.assign(entry,box);});
     notify(plans.length?'Box fitted to content':'Box already fits content');
   }catch{notify('Could not fit this box.');}finally{canvasEditBusy=false;}
@@ -2436,7 +2441,10 @@ function prepareRegion(region){makeRegionPlan(region).catch(error=>{if(regionSel
 function closeCanvasMenu(){canvasMenu.hidden=true;}
 function selectionOrder(position){
   if(regionSelection)return null;
-  const entries=selectedItems().filter(entry=>!isPagePicture(entry));if(!entries.length)return null;
+  return orderedCanvasItems(selectedItems(),position);
+}
+function orderedCanvasItems(items,position){
+  const entries=items.filter(entry=>!entry.hidden&&!isPagePicture(entry));if(!entries.length)return null;
   const ids=new Set(entries.map(entry=>entry.id)),ordered=[...state.items],direction=position==='front'?1:-1;
   for(let index=direction===1?ordered.length-2:1;index>=0&&index<ordered.length;index-=direction){
     const next=index+direction;if(next<0||next>=ordered.length)continue;
@@ -2458,34 +2466,46 @@ function renderOrderActions(parent){
   }
 }
 function backgroundMergeSelection(){
-  const entries=selectedItems(),bases=state.items.filter(entry=>!entry.hidden&&isPagePicture(entry));
-  if(regionSelection||!entries.length||!bases.length||entries.some(entry=>entry.kind!=='image'||!entry.pictureFragment))return null;
+  return regionSelection?null:backgroundMergeForItems(selectedItems());
+}
+function backgroundMergeForItems(entries){
+  const bases=state.items.filter(entry=>!entry.hidden&&isPagePicture(entry));
+  if(!entries.length||!bases.length||entries.some(entry=>entry.hidden||entry.kind!=='image'||!entry.pictureFragment))return null;
   return {entries,bases};
+}
+async function makeBackgroundMergePlan(selection){
+  const before=JSON.stringify(state),{entries,bases}=selection,ids=new Set([...bases,...entries].map(entry=>entry.id));
+  const sources=state.items.filter(entry=>ids.has(entry.id)),width=state.canvas.width,height=state.canvas.height;
+  const images=await Promise.all(sources.map(source=>selectionImage(source.src)));
+  if(JSON.stringify(state)!==before)throw new Error('The page changed. Read the design or select the items again.');
+  const ratio=Math.min(4,Math.sqrt(24000000/(width*height)),Math.max(1,...images.map((image,index)=>Math.max(image.naturalWidth/sources[index].w,image.naturalHeight/sources[index].h))));
+  const canvas=await html2canvas($('phone'),{
+    width,height,scale:ratio,scrollX:0,scrollY:0,logging:false,backgroundColor:state.canvas.background,
+    windowWidth:Math.max(document.documentElement.clientWidth,width),windowHeight:Math.max(document.documentElement.clientHeight,height),
+    ignoreElements:element=>['selection-overlay','pixel-selection','guide','marquee'].some(name=>element.classList?.contains(name))||(element.classList?.contains('item')&&!ids.has(element.dataset.id)),
+    onclone:cloned=>{
+      const phone=cloned.getElementById('phone');phone.classList.remove('editing');
+      Object.assign(phone.style,{position:'fixed',left:'0',top:'0',width:width+'px',height:height+'px',transform:'none',boxShadow:'none',borderRadius:'0'});
+      cloned.querySelectorAll('dialog').forEach(dialog=>dialog.removeAttribute('open'));
+    },
+  });
+  try{
+    if(JSON.stringify(state)!==before)throw new Error('The page changed. Read the design or select the items again.');
+    const background=item(bases[0].id,bases.length===1?bases[0].name:'Page background','image',0,0,width,height,{src:canvas.toDataURL('image/png'),imageBase:true});
+    return {background,ids};
+  }finally{canvas.width=canvas.height=1;}
+}
+function applyBackgroundMerge(plan){
+  state.items=state.items.flatMap(entry=>entry.id===plan.background.id?[plan.background]:plan.ids.has(entry.id)?[]:[entry]);
 }
 async function mergeSelectionIntoBackground(){
   if(!editing||canvasGesture||canvasEditBusy||pictureDropBusy||pictureChoice.open)return;
   const selection=backgroundMergeSelection();if(!selection)return;
   canvasEditBusy=true;
-  const before=JSON.stringify(state),{entries,bases}=selection,ids=new Set([...bases,...entries].map(entry=>entry.id));
-  const sources=state.items.filter(entry=>ids.has(entry.id)),width=state.canvas.width,height=state.canvas.height;
   try{
-    const images=await Promise.all(sources.map(source=>selectionImage(source.src)));
-    if(JSON.stringify(state)!==before)throw new Error('The page changed. Choose No item again.');
-    const ratio=Math.min(4,Math.sqrt(24000000/(width*height)),Math.max(1,...images.map((image,index)=>Math.max(image.naturalWidth/sources[index].w,image.naturalHeight/sources[index].h))));
-    const canvas=await html2canvas($('phone'),{
-      width,height,scale:ratio,scrollX:0,scrollY:0,logging:false,backgroundColor:state.canvas.background,
-      windowWidth:Math.max(document.documentElement.clientWidth,width),windowHeight:Math.max(document.documentElement.clientHeight,height),
-      ignoreElements:element=>['selection-overlay','pixel-selection','guide','marquee'].some(name=>element.classList?.contains(name))||(element.classList?.contains('item')&&!ids.has(element.dataset.id)),
-      onclone:cloned=>{
-        const phone=cloned.getElementById('phone');phone.classList.remove('editing');
-        Object.assign(phone.style,{position:'fixed',left:'0',top:'0',width:width+'px',height:height+'px',transform:'none',boxShadow:'none',borderRadius:'0'});
-        cloned.querySelectorAll('dialog').forEach(dialog=>dialog.removeAttribute('open'));
-      },
-    });
-    if(JSON.stringify(state)!==before)throw new Error('The page changed. Choose No item again.');
-    const background=item(bases[0].id,bases.length===1?bases[0].name:'Page background','image',0,0,width,height,{src:canvas.toDataURL('image/png'),imageBase:true});
+    const plan=await makeBackgroundMergePlan(selection);
     change(()=>{
-      state.items=state.items.flatMap(entry=>entry.id===background.id?[background]:ids.has(entry.id)?[]:[entry]);
+      applyBackgroundMerge(plan);
       regionSelection=null;selected.clear();
     });
     stage.focus({preventScroll:true});notify('Merged into background');
@@ -2826,14 +2846,14 @@ document.addEventListener('pointerdown',event=>{
 },true);
 const codexPrompt=$('codex-prompt');
 function codexCanvasUrl(){return location.origin+location.pathname+(/^#space=[a-f0-9]{64}$/.test(location.hash||'')?location.hash:'');}
-function updateCodexPromptUrl(){if(['http:','https:'].includes(location.protocol))codexPrompt.value=codexPrompt.value.replace(/Open https?:\/\/\S+ in Codex/,'Open '+codexCanvasUrl()+' in Codex');}
+function updateCodexPromptUrl(){if(['http:','https:'].includes(location.protocol))codexPrompt.value=codexPrompt.value.replace(/^My Space URL: https?:\/\/\S+$/m,'My Space URL: '+codexCanvasUrl());}
 updateCodexPromptUrl();
 $('copy-codex-prompt').onclick=async()=>{
   const prompt=$('codex-prompt'),status=$('codex-prompt-status');
   try{
     updateCodexPromptUrl();
     await navigator.clipboard.writeText(prompt.value);
-    status.textContent='Prompt copied. Paste it into Codex with your request.';
+    status.textContent='Prompt copied.';
   }catch{
     prompt.focus();prompt.select();
     status.textContent='Press Ctrl+C or ⌘C to copy the selected prompt.';
@@ -3140,7 +3160,7 @@ const projectsReady=initializeProjects();
     : typeof navigator.modelContext?.registerTool === 'function' ? navigator.modelContext : null;
   const status = document.getElementById('codex-tools-status');
   if (!context) {
-    if (status) status.textContent = 'Site tools need a supported Codex browser.';
+    if (status) status.textContent = 'Paste this into Codex, Claude, etc:';
     return;
   }
 
@@ -3148,8 +3168,9 @@ const projectsReady=initializeProjects();
   const text = maxLength => ({ type: 'string', maxLength });
   const object = (properties, required = []) => ({ type: 'object', properties, required, additionalProperties: false });
   const array = (items, minItems = 0) => ({ type: 'array', items, minItems, maxItems: 5000 });
+  const described = (schema, description) => ({ ...schema, description });
   const kinds = ['label', 'icon', 'shape', 'reading', 'tab', 'button', 'textbox', 'image'];
-  const point = object({ x: number(0, 1), y: number(0, 1) }, ['x', 'y']);
+  const point = object({ x: described(number(0, 1), 'Horizontal position within the item, from 0 at the left to 1 at the right.'), y: described(number(0, 1), 'Vertical position within the item, from 0 at the top to 1 at the bottom.') }, ['x', 'y']);
   const look = {
     name: text(200), x: number(), y: number(), w: number(.1), h: number(.1),
     text: text(100000), fontSize: number(1, 1024), iconSize: number(1, 2048), icon: text(100),
@@ -3162,9 +3183,30 @@ const projectsReady=initializeProjects();
     src: { ...text(40000000), pattern: '^data:image/png;base64,[A-Za-z0-9+/=]+$' },
     imageBase: { type: 'boolean' }, pictureFragment: { type: 'boolean' },
   };
-  const entrySchema = object({ ...look, id: { ...text(200), minLength: 1 }, kind: { enum: kinds } }, ['kind', 'x', 'y', 'w', 'h']);
-  const canvasSchema = object({ width: number(1), height: number(1), background: text(128) }, ['width', 'height', 'background']);
-  const target = { projectId: { ...text(200), minLength: 1 }, revision: { ...text(100), minLength: 1 } };
+  const lookHelp = {
+    name: 'Name shown in the item list.', x: 'Left edge in canvas pixels; 0 is the left edge of the page.', y: 'Top edge in canvas pixels; 0 is the top of the page.',
+    w: 'Box width in canvas pixels.', h: 'Box height in canvas pixels.', text: 'Text shown by this item.',
+    fontSize: 'Text size in pixels.', iconSize: 'Icon size in pixels.', icon: 'Icon name from read_design with iconSearch; use an empty string to clear it.',
+    color: 'Text or icon color, such as #ffffff.', background: 'Fill color, such as #000000 or transparent.', borderColor: 'Border color.', borderWidth: 'Border width in pixels; 0 hides it.',
+    radius: 'Corner radius in pixels.', opacity: 'Opacity from 0 (clear) to 1 (solid).', align: 'Text alignment within the box.',
+    fontWeight: 'Text weight from 100 to 900; 400 is normal and 700 is bold.', lineHeight: 'Line height as a multiple of text size.', fontFamily: 'Text face: sans or serif.',
+    wrap: 'Whether text may wrap onto more than one line.', hidden: 'Hide this item without removing it.', iconOffsetX: 'Horizontal icon offset in pixels.',
+    highlightWord: 'Word or text to highlight in a reading item.', highlightColor: 'Fill color behind the highlighted text.', contentScale: 'Scale the contents inside the box; 1 keeps their size.',
+    shape: 'Shape type for a shape item; omit for a plain box.', strokeWidth: 'Arrow line width in pixels.', arrowStart: 'Arrow start within the item box, with each value from 0 to 1.', arrowEnd: 'Arrow end within the item box, with each value from 0 to 1.',
+    src: 'Full PNG data URL, starting data:image/png;base64,. Required for image items. Use import_image for other picture types. Replacing src clears saved inner image edits.',
+    imageBase: 'Marks a picture as the page background; keep the value returned by read_design.', pictureFragment: 'Marks a piece moved from a picture; keep the value returned by read_design.',
+  };
+  for (const [key, description] of Object.entries(lookHelp)) look[key] = described(look[key], description);
+  const itemId = described({ ...text(200), minLength: 1 }, 'Existing item id from read_design.');
+  const itemIds = described(array(itemId, 1), 'One or more distinct item ids from read_design. The current canvas selection does not affect which items this tool changes.');
+  const entrySchema = object({ ...look, id: described({ ...text(200), minLength: 1 }, 'Unique item id. Omit when adding an item to let the editor assign one.'), kind: described({ enum: kinds }, 'Item type. Use shape with shape rectangle or arrow for shapes, and label for plain text.') }, ['kind', 'x', 'y', 'w', 'h']);
+  const canvasSchema = described(object({ width: described(number(1), 'Page width in pixels, up to 16,000.'), height: described(number(1), 'Page height in pixels, up to 16,000.'), background: described(text(128), 'Page fill color, such as #ffffff or transparent.') }, ['width', 'height', 'background']), 'Page size and color. Supply all three fields. Width times height must be at most 24 million pixels.');
+  const target = {
+    projectId: described({ ...text(200), minLength: 1 }, 'Open project id from the latest tool result. Use select_project first to edit another project.'),
+    revision: described({ ...text(100), minLength: 1 }, 'Revision from the latest tool result. Call read_design again if the page changed; never reuse an old revision after an edit.'),
+  };
+  const projectName = described({ ...text(200), minLength: 1 }, 'Project name from 1 to 200 characters; must contain some text.');
+  const imageRegionBox = described(object({ x: described(number(0), 'Source left edge in canvas pixels.'), y: described(number(0), 'Source top edge in canvas pixels.'), w: described(number(1), 'Source width in canvas pixels.'), h: described(number(1), 'Source height in canvas pixels.') }, ['x', 'y', 'w', 'h']), 'Picture area to change. Keep all four edges inside the canvas.');
   let busy = false;
 
   function validate(value, schema, path = 'Input') {
@@ -3225,21 +3267,25 @@ const projectsReady=initializeProjects();
     }
   }
   function projectId() { return typeof activeProject === 'string' ? activeProject : 'current'; }
+  function serializedProject() {
+    const name = typeof localProjects !== 'undefined' ? localProjects.find(project => project.id === projectId())?.name : 'Current page';
+    return JSON.stringify({ name, design: state });
+  }
   async function revision(serialized) {
     const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(serialized));
     return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
   }
   async function checkTarget(args) {
     idle();
-    const current = state, id = projectId(), serialized = JSON.stringify(state);
+    const current = state, id = projectId(), serialized = serializedProject();
     const currentRevision = await revision(serialized);
     idle();
-    if (state !== current || projectId() !== id || JSON.stringify(state) !== serialized || args.projectId !== id || args.revision !== currentRevision) {
+    if (state !== current || projectId() !== id || serializedProject() !== serialized || args.projectId !== id || args.revision !== currentRevision) {
       throw new Error('The design changed. Call read_design and use its projectId and revision before trying again.');
     }
   }
   async function snapshot(includeImages = false) {
-    const id = projectId(), serialized = JSON.stringify(state), design = JSON.parse(serialized);
+    const id = projectId(), serialized = serializedProject(), design = JSON.parse(serialized).design;
     const projects = typeof localProjects !== 'undefined' ? localProjects.map(({ id, name }) => ({ id, name })) : [{ id, name: 'Current page' }];
     if (!includeImages) for (const entry of design.items) if (entry.kind === 'image') {
       delete entry.src; delete entry.imageContents; entry.imageDataOmitted = true;
@@ -3248,6 +3294,22 @@ const projectsReady=initializeProjects();
   }
   function commit(layout, ids = []) {
     change(() => { state = layout; selected = new Set(ids); clearCanvasRegion(); closeCanvasMenu(); closeItemMenu(); });
+  }
+  function requestedItems(ids) {
+    if (new Set(ids).size !== ids.length) throw new Error('Use each item id once.');
+    return ids.map(id => {
+      const entry = state.items.find(entry => entry.id === id);
+      if (!entry) throw new Error('No item has id ' + id + '.');
+      return entry;
+    });
+  }
+  async function imageRegionPlan(args) {
+    if (args.box.x + args.box.w > state.canvas.width || args.box.y + args.box.h > state.canvas.height) throw new Error('Keep the selected box inside the page.');
+    const region = rememberRegion(args.box);
+    if (!region?.sources.length) throw new Error('The selected box contains no picture.');
+    const plan = await makeRegionPlan(region);
+    await checkTarget(args);
+    return plan;
   }
   function openLayout(layout, name) {
     if (typeof createProject === 'function') createProject(layout, name);
@@ -3263,19 +3325,38 @@ const projectsReady=initializeProjects();
   const definitions = [
     {
       name: 'read_design',
-      description: 'Read the open design, project list, selected items and revision. Image bytes are omitted unless includeImages is true. Use the returned projectId and revision for every edit. iconSearch finds up to 80 icon names.',
-      inputSchema: object({ includeImages: { type: 'boolean' }, iconSearch: text(100) }),
+      description: 'Start here when you first connect to this design editor. Read the open design, project list, selected item ids, revision and a short usage guide. Item positions and sizes use canvas pixels. Use the latest returned projectId and revision for each edit. Image data is omitted by default. This reads saved design data, not a screenshot; use export_design with PNG to check the look.',
+      inputSchema: object({ includeImages: described({ type: 'boolean' }, 'Default false. Set true to include full PNG data URLs and saved inner image contents; results can be large.'), iconSearch: described(text(100), 'Find up to 80 icon names containing this text, such as play. An empty string lists the first 80 names.') }),
       readOnly: true,
       async run(args) {
         const result = await snapshot(args.includeImages);
+        result.help = {
+          workflow: [
+            'Start with read_design. Create a new named project with create_design unless the user asks to edit an existing one. Use select_project to open an id from projects.',
+            'Use the projectId and revision from the latest tool result for each edit or export. If the design changed, call read_design before retrying.',
+            'Changes save as you work. Canvas edits use the normal Undo history. Project names sit outside that history; rename again to change a name back.',
+            'Check design data with read_design and the look with export_design using format png and delivery inline. Export HTML to keep an editable file.',
+          ],
+          coordinates: 'Use canvas pixels from the page top-left. x and y are the left and top edges; w and h are box sizes. Zoom does not change these values. Arrow endpoints use values from 0 to 1 within their box.',
+          itemKinds: kinds,
+          itemOrder: 'Items run from back to front. New items go on top. Use arrange_items to move existing items forward or backward one step.',
+          itemActions: 'Use edit_design to add, move, resize, restyle, hide or remove items. To copy an item, add its fields with a new or omitted id. Use fit_items_to_content for boxes with text or icons. These tools use explicit item ids, so no selection or clipboard step is needed.',
+          images: 'Pass picture data to import_image as a full image data URL; it does not fetch links or file paths. move_image_region and erase_image_region use a source box in canvas pixels. Moving also needs a destination top-left. Erasing fills page background pictures from nearby colors and clears added pictures. Use merge_image_items with moved picture piece ids to make them part of the page background again. Each action supports Undo. Finish any open Edit image session before using site tools.',
+          sharing: 'To share projects across browsers, open the same Space link, keeping its #space part. Saved HTML files hold their own copy.',
+          limits: { maxItems: 5000, maxCanvasSide: 16000, maxCanvasPixels: 24000000 },
+        };
         if (args.iconSearch !== undefined) result.icons = Object.keys(ICONS).filter(name => name.includes(args.iconSearch.toLowerCase())).slice(0, 80);
         return result;
       },
     },
     {
       name: 'edit_design',
-      description: 'Add, update or remove items, or set the page size and color, in one Undo step. Coordinates and sizes use design pixels. Updates keep fields that are not supplied. Item order is back to front. Read the latest projectId and revision first.',
-      inputSchema: object({ ...target, addItems: array(entrySchema), updates: array(object({ id: { ...text(200), minLength: 1 }, changes: object(look) }, ['id', 'changes'])), removeIds: array(text(200)), canvas: canvasSchema }, ['projectId', 'revision']),
+      description: 'Add, move, resize, restyle, hide or remove items, or set the page size and color, in one Undo step. Supply only the changes you need; other fields stay as they are. New items go on top in the order supplied. To copy an item, add its fields with a new or omitted id. Canvas size changes do not scale items unless you also update their boxes. Use arrange_items for item order and fit_items_to_content for a tight box. Read the latest projectId and revision first. Returns the design, latest revision and addedIds.',
+      inputSchema: object({ ...target,
+        addItems: described(array(entrySchema), 'New items to add on top. Each needs kind, x, y, w and h; the editor fills omitted style fields.'),
+        updates: described(array(object({ id: itemId, changes: described(object(look), 'Only the fields to change on this item. Item id and kind stay fixed.') }, ['id', 'changes'])), 'Changes to existing items; use each id once.'),
+        removeIds: described(array(itemId), 'Existing items to remove. Do not also update these ids in the same call.'), canvas: canvasSchema,
+      }, ['projectId', 'revision']),
       async run(args) {
         await checkTarget(args);
         const layout = copy(state), remove = new Set(args.removeIds || []), updates = args.updates || [];
@@ -3304,9 +3385,10 @@ const projectsReady=initializeProjects();
     },
     {
       name: 'create_design',
-      description: 'Create and open a full design as a new project, keeping the existing projects. Standalone drafts without Projects replace their page in one Undo step. Items remain separate and editable. Read the current projectId and revision first.',
-      inputSchema: object({ ...target, name: { ...text(200), minLength: 1 }, canvas: canvasSchema, items: array(entrySchema) }, ['projectId', 'revision', 'name', 'canvas', 'items']),
+      description: 'Create and open a full design as a new named project, keeping existing projects. Prefer this for new work unless the user asks to edit an existing project. Supply the whole canvas and items ordered from back to front; an empty items list creates a blank page. Items stay separate and editable. Standalone drafts without Projects replace their page in one Undo step. Read the current projectId and revision first. Returns the new open project, design and revision.',
+      inputSchema: object({ ...target, name: projectName, canvas: canvasSchema, items: described(array(entrySchema), 'Whole design, ordered from back to front. Use an empty list for a blank page.') }, ['projectId', 'revision', 'name', 'canvas', 'items']),
       async run(args) {
+        if (!args.name.trim()) throw new Error('Use a project name with some text.');
         const layout = normalizeLayout(args.canvas, args.items);
         await checkTarget(args);
         openLayout(layout, args.name);
@@ -3315,8 +3397,8 @@ const projectsReady=initializeProjects();
     },
     {
       name: 'select_project',
-      description: 'Open an existing project by an id from read_design. Keeps each project and its Undo steps. Does not delete projects.',
-      inputSchema: object({ projectId: { ...text(200), minLength: 1 } }, ['projectId']),
+      description: 'Open an existing project using an id from the projects list returned by read_design. Each project keeps its work and Undo history. This tool needs only the destination projectId, not a revision. Returns the newly open design and its revision for later edits. Available only on pages with Projects.',
+      inputSchema: object({ projectId: described({ ...text(200), minLength: 1 }, 'Destination project id from the projects list returned by read_design.') }, ['projectId']),
       async run(args) {
         if (typeof switchProject !== 'function') throw new Error('This standalone page has no other projects.');
         if (!localProjects.some(project => project.id === args.projectId)) throw new Error('Unknown project id.');
@@ -3325,9 +3407,54 @@ const projectsReady=initializeProjects();
       },
     },
     {
+      name: 'arrange_items',
+      description: 'Move the given visible items forward or backward one step in the canvas item order, in one Undo step. Forward puts them above the next item; backward puts them below the previous item. The chosen items keep their order within the set, and page background pictures stay fixed. Uses itemIds, not the current selection. Read the latest projectId and revision first. Returns the design, revision and changed (false if already at the edge).',
+      inputSchema: object({ ...target, itemIds, direction: described({ enum: ['forward', 'backward'] }, 'Move one step toward the front or back. Repeat with the returned revision for more steps.') }, ['projectId', 'revision', 'itemIds', 'direction']),
+      async run(args) {
+        await checkTarget(args);
+        const entries = requestedItems(args.itemIds), ordered = orderedCanvasItems(entries, args.direction === 'forward' ? 'front' : 'back');
+        if (ordered) { const layout = copy(state); layout.items = copy(ordered); commit(layout, [...selected]); }
+        return { ...await snapshot(), changed: Boolean(ordered) };
+      },
+    },
+    {
+      name: 'fit_items_to_content',
+      description: 'Fit the given boxes to their text or icons using the same measurements as the canvas Fit box to content action, in one Undo step. Keeps text, styles, text position and existing line breaks. Supports label, icon, reading, tab, button and textbox items. Hidden items, shapes, pictures and empty boxes stay as they are. Uses itemIds, not the current selection. Read the latest projectId and revision first. Returns fittedIds for changed boxes and unchangedIds for all other requested items.',
+      inputSchema: object({ ...target, itemIds }, ['projectId', 'revision', 'itemIds']),
+      async run(args) {
+        await checkTarget(args);
+        requestedItems(args.itemIds);
+        await document.fonts?.ready;
+        await checkTarget(args);
+        const plans = contentFitPlans(requestedItems(args.itemIds)), fittedIds = plans.map(({ entry }) => entry.id);
+        if (plans.length) {
+          const layout = copy(state);
+          for (const { entry, box } of plans) Object.assign(layout.items.find(item => item.id === entry.id), box);
+          commit(layout, [...selected]);
+        }
+        return { ...await snapshot(), fittedIds, unchangedIds: args.itemIds.filter(id => !fittedIds.includes(id)) };
+      },
+    },
+    {
+      name: 'rename_project',
+      description: 'Rename the open project and save its name. To rename another project, call select_project first. Keeps its design, id and Undo history. The name sits outside canvas Undo; call rename_project again to change it back. Available only on pages with Projects. Read the latest projectId and revision first. Returns the project list and latest revision. There is no project deletion tool.',
+      inputSchema: object({ ...target, name: projectName }, ['projectId', 'revision', 'name']),
+      async run(args) {
+        await checkTarget(args);
+        if (typeof renameProject !== 'function') throw new Error('This standalone page has no Projects list to rename.');
+        renameProject(args.name);
+        return snapshot();
+      },
+    },
+    {
       name: 'import_image',
-      description: 'Open a screenshot or picture from embedded base64 image data. mode new opens a project at the picture size; mode add places it on the current page. Supports PNG, JPG, WebP, GIF, AVIF, BMP and HEIC. No URLs or local file paths are fetched. Read the latest projectId and revision first.',
-      inputSchema: object({ ...target, name: { ...text(200), minLength: 1 }, dataUrl: { ...text(40000000), pattern: '^data:image/(png|jpeg|webp|gif|avif|bmp|heic|heif);base64,[A-Za-z0-9+/=]+$' }, mode: { enum: ['add', 'new'] }, x: number(), y: number() }, ['projectId', 'revision', 'name', 'dataUrl', 'mode']),
+      description: 'Open a screenshot or picture from full base64 image data. mode new opens a project at the picture size; mode add fits it inside the current page, centered at x/y or the view center. Supports PNG, JPG, WebP, GIF, AVIF, BMP and HEIC. This keeps the picture as an image item; it does not turn its text into editable text. Use edit_design to add separate items over it, or move_image_region to move part of it. No links or file paths are fetched. Read the latest projectId and revision first. Returns the design, revision and addedIds.',
+      inputSchema: object({ ...target, name: described({ ...text(200), minLength: 1 }, 'Picture file name; also names the new project in mode new.'),
+        dataUrl: described({ ...text(40000000), pattern: '^data:image/(png|jpeg|webp|gif|avif|bmp|heic|heif);base64,[A-Za-z0-9+/=]+$' }, 'Full image data URL including its type and base64 bytes. Example start: data:image/png;base64,. Maximum 40 million characters.'),
+        mode: described({ enum: ['add', 'new'] }, 'add places the picture on this page; new opens it in a new project at its own size.'),
+        x: described(number(), 'Desired picture center x in canvas pixels for mode add; defaults to the view center.'),
+        y: described(number(), 'Desired picture center y in canvas pixels for mode add; defaults to the view center.'),
+      }, ['projectId', 'revision', 'name', 'dataUrl', 'mode']),
       async run(args) {
         await checkTarget(args);
         const [header, base64] = args.dataUrl.split(','), bytes = Uint8Array.from(atob(base64), char => char.charCodeAt(0));
@@ -3343,8 +3470,11 @@ const projectsReady=initializeProjects();
     },
     {
       name: 'import_html',
-      description: 'Read saved editor HTML without running its scripts. Send a small HTML document containing only its application/json script with id initial-layout; other markup is ignored. mode new opens a project; mode add adds its items. Rebuild other HTML as items first. Read the latest projectId and revision first.',
-      inputSchema: object({ ...target, name: { ...text(200), minLength: 1 }, html: text(60000000), mode: { enum: ['add', 'new'] } }, ['projectId', 'revision', 'name', 'html', 'mode']),
+      description: 'Import a design saved as HTML by this editor, without running its scripts. Extract its initial-layout JSON and send a small HTML document containing only that application/json script; other markup is ignored. Imports that one design, not the whole saved project list. mode new opens a project; mode add adds its items at the view center. Other HTML needs rebuilding as items with create_design or edit_design. Read the latest projectId and revision first. Returns the design and latest revision.',
+      inputSchema: object({ ...target, name: described({ ...text(200), minLength: 1 }, 'Saved HTML file name; also names the new project in mode new.'),
+        html: described(text(60000000), 'HTML text containing a script with type application/json and id initial-layout whose text is the saved design JSON. Include only that script to keep the call small.'),
+        mode: described({ enum: ['add', 'new'] }, 'new opens the saved design in a new project; add places its items in the current project.'),
+      }, ['projectId', 'revision', 'name', 'html', 'mode']),
       async run(args) {
         await checkTarget(args);
         const layout = savedLayout(await readEditorPage(new File([args.html], args.name, { type: 'text/html' })));
@@ -3360,25 +3490,57 @@ const projectsReady=initializeProjects();
     },
     {
       name: 'move_image_region',
-      description: 'Move a rectangular part of a screenshot or picture. Fills its old spot using the editor image tools, then adds the moved part as an image item in one Undo step. The box must stay inside the page. Read the latest projectId and revision first.',
-      inputSchema: object({ ...target, box: object({ x: number(0), y: number(0), w: number(1), h: number(1) }, ['x', 'y', 'w', 'h']), x: number(), y: number() }, ['projectId', 'revision', 'box', 'x', 'y']),
+      description: 'Move a rectangular part of the visible pictures on the canvas in one Undo step. Fills the old spot from nearby picture colors, then adds the moved part as a separate image item. This can change several pictures under the source box; text and other item types stay as they are. Both the source box and destination use canvas pixels, even for a scaled picture. The source box must stay inside the page and contain a visible picture. Read the latest projectId and revision first. Returns the design, revision and addedIds.',
+      inputSchema: object({ ...target,
+        box: imageRegionBox,
+        x: described(number(), 'Destination left edge in canvas pixels, not an offset or picture center.'), y: described(number(), 'Destination top edge in canvas pixels, not an offset or picture center.'),
+      }, ['projectId', 'revision', 'box', 'x', 'y']),
       async run(args) {
         await checkTarget(args);
         if (state.items.length >= 5000) throw new Error('Use at most 5,000 items.');
-        if (args.box.x + args.box.w > state.canvas.width || args.box.y + args.box.h > state.canvas.height) throw new Error('Keep the selected box inside the page.');
-        const region = rememberRegion(args.box);
-        if (!region?.sources.length) throw new Error('The selected box contains no picture.');
-        const plan = await makeRegionPlan(region);
-        await checkTarget(args);
+        const plan = await imageRegionPlan(args);
         const entry = { ...copy(plan.entry), x: args.x, y: args.y };
         change(() => { applyRegionPatches(plan); state.items.push(entry); selected = new Set([entry.id]); clearCanvasRegion(); });
         return { ...await snapshot(), addedIds: [entry.id] };
       },
     },
     {
+      name: 'erase_image_region',
+      description: 'Erase a rectangular area of the visible pictures on the canvas in one Undo step, using the same action as Delete on a picture area. Fills page background pictures from nearby colors; clears the area to transparent on added pictures and hides an added picture if the whole picture fits inside the box. All visible pictures under the box can change. Text, shapes and other item types stay as they are. Uses a box in canvas pixels and requires a visible picture inside it. Read the latest projectId and revision first. Returns the design, revision and erasedIds for changed picture items. Creates no new image item.',
+      inputSchema: object({ ...target, box: imageRegionBox }, ['projectId', 'revision', 'box']),
+      async run(args) {
+        await checkTarget(args);
+        const plan = await imageRegionPlan(args);
+        change(() => {
+          applyRegionPatches(plan);
+          selected = new Set([...selected].filter(id => state.items.some(entry => entry.id === id && !entry.hidden)));
+          clearCanvasRegion(); closeCanvasMenu(); closeItemMenu();
+        });
+        return { ...await snapshot(), erasedIds: plan.patches.map(patch => patch.id) };
+      },
+    },
+    {
+      name: 'merge_image_items',
+      description: 'Merge chosen moved picture pieces into the page background in one Undo step, using the canvas No item action. Use itemIds of visible image items marked pictureFragment by move_image_region or the canvas picture tools. Requires at least one visible page background picture. Combines all page background pictures and the chosen pieces into one picture, and removes the chosen pieces as separate items. Other items stay separate above the background. Clips pieces at the page edges. Uses itemIds, regardless of the current selection. Read the latest projectId and revision first. Returns the design, revision, mergedIds and backgroundId. Undo restores the separate pieces and backgrounds.',
+      inputSchema: object({ ...target, itemIds }, ['projectId', 'revision', 'itemIds']),
+      async run(args) {
+        await checkTarget(args);
+        const selection = backgroundMergeForItems(requestedItems(args.itemIds));
+        if (!selection) throw new Error('Choose visible moved picture pieces and keep a visible page background picture.');
+        const plan = await makeBackgroundMergePlan(selection);
+        await checkTarget(args);
+        change(() => {
+          applyBackgroundMerge(plan);
+          selected = new Set([...selected].filter(id => state.items.some(entry => entry.id === id && !entry.hidden)));
+          clearCanvasRegion(); closeCanvasMenu(); closeItemMenu();
+        });
+        return { ...await snapshot(), mergedIds: args.itemIds, backgroundId: plan.background.id };
+      },
+    },
+    {
       name: 'undo_design',
-      description: 'Undo or redo one edit in the open project using its normal Undo history. Read the latest projectId and revision first.',
-      inputSchema: object({ ...target, direction: { enum: ['undo', 'redo'] } }, ['projectId', 'revision', 'direction']),
+      description: 'Undo or redo one canvas edit in the open project using the same history as the user. A tool edit with several changes counts as one step. This can also undo a user edit, so read the design first. Project names sit outside this history. Returns an error when no step exists. Read the latest projectId and revision first. Returns the restored design and latest revision.',
+      inputSchema: object({ ...target, direction: described({ enum: ['undo', 'redo'] }, 'undo restores the previous canvas state; redo reapplies the last undone step.') }, ['projectId', 'revision', 'direction']),
       async run(args) {
         await checkTarget(args);
         if (!(args.direction === 'undo' ? history : future).length) throw new Error('There is no edit to ' + args.direction + '.');
@@ -3388,8 +3550,11 @@ const projectsReady=initializeProjects();
     },
     {
       name: 'export_design',
-      description: 'Export the current design as JSON, editable HTML, or a PNG picture. delivery download saves a browser download; inline returns the contents (PNG as a data URL). HTML includes the editor and its projects and can be large. Does not use the clipboard.',
-      inputSchema: object({ ...target, format: { enum: ['json', 'html', 'png'] }, delivery: { enum: ['download', 'inline'] } }, ['projectId', 'revision', 'format', 'delivery']),
+      description: 'Read or save the current design as JSON, editable HTML, or a PNG picture without changing it. Use format png and delivery inline to check how the design looks. JSON holds the open design, including pictures; HTML includes the editor and its projects and can be large. delivery download starts a browser download; inline returns content as text (PNG as a data URL). Returns filename and mimeType, plus content for inline or bytes and downloaded for a download. Uses no clipboard. Read the latest projectId and revision first.',
+      inputSchema: object({ ...target,
+        format: described({ enum: ['json', 'html', 'png'] }, 'json for design data, html for a file the user can edit later, png for a picture of the canvas.'),
+        delivery: described({ enum: ['download', 'inline'] }, 'inline returns the file contents to Codex; download saves a file through the browser.'),
+      }, ['projectId', 'revision', 'format', 'delivery']),
       readOnly: true,
       async run(args) {
         await checkTarget(args);
@@ -3447,7 +3612,7 @@ const projectsReady=initializeProjects();
         });
         registered.push(definition.name);
       }
-      if (status) status.textContent = 'Codex tools ready';
+      if (status) status.textContent = 'Paste this into Codex, Claude, etc:';
     } catch {
       for (const name of registered) try { await context.unregisterTool?.(name); } catch {}
       if (status) status.textContent = 'Site tools could not start. Reload this page to try again.';

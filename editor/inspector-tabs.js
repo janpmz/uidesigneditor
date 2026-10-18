@@ -33,14 +33,14 @@ document.addEventListener('pointerdown',event=>{
 },true);
 const codexPrompt=$('codex-prompt');
 function codexCanvasUrl(){return location.origin+location.pathname+(/^#space=[a-f0-9]{64}$/.test(location.hash||'')?location.hash:'');}
-function updateCodexPromptUrl(){if(['http:','https:'].includes(location.protocol))codexPrompt.value=codexPrompt.value.replace(/Open https?:\/\/\S+ in Codex/,'Open '+codexCanvasUrl()+' in Codex');}
+function updateCodexPromptUrl(){if(['http:','https:'].includes(location.protocol))codexPrompt.value=codexPrompt.value.replace(/^My Space URL: https?:\/\/\S+$/m,'My Space URL: '+codexCanvasUrl());}
 updateCodexPromptUrl();
 $('copy-codex-prompt').onclick=async()=>{
   const prompt=$('codex-prompt'),status=$('codex-prompt-status');
   try{
     updateCodexPromptUrl();
     await navigator.clipboard.writeText(prompt.value);
-    status.textContent='Prompt copied. Paste it into Codex with your request.';
+    status.textContent='Prompt copied.';
   }catch{
     prompt.focus();prompt.select();
     status.textContent='Press Ctrl+C or ⌘C to copy the selected prompt.';

@@ -18,8 +18,10 @@ function restoreProjectList(saved){
   for(const id of Array.isArray(saved.deleted)?saved.deleted:[])if(typeof id==='string'&&/^[-a-z0-9]+$/.test(id))deletedProjects.add(id);
   for(let index=localProjects.length-1;index>=0;index--)if(deletedProjects.has(localProjects[index].id))localProjects.splice(index,1);
   for(const project of saved.projects){
-    if(!project||typeof project.id!=='string'||!/^[-a-z0-9]+$/.test(project.id)||typeof project.name!=='string'||!project.name.trim()||deletedProjects.has(project.id)||localProjects.some(entry=>entry.id===project.id))continue;
-    localProjects.push({id:project.id,name:project.name,layout:null});
+    if(!project||typeof project.id!=='string'||!/^[-a-z0-9]+$/.test(project.id)||typeof project.name!=='string'||!project.name.trim()||deletedProjects.has(project.id))continue;
+    const existing=localProjects.find(entry=>entry.id===project.id);
+    if(existing)existing.name=project.name;
+    else localProjects.push({id:project.id,name:project.name,layout:null});
   }
 }
 function blankProjectLayout(){return {version:1,canvas:{width:393,height:852,background:'#000000'},items:[]};}
@@ -90,6 +92,13 @@ function saveProjectList(){
   try{localStorage.setItem(projectListKey,JSON.stringify(saved));localStorage.setItem(activeProjectKey,activeProject);}catch{}
   if(pictureDB)try{pictureDB.transaction('drafts','readwrite').objectStore('drafts').put(saved,projectListKey);}catch{}
   spaceClient?.changed();
+}
+function renameProject(name){
+  if(typeof name!=='string'||!name.trim()||name.length>200)throw new Error('Use a project name from 1 to 200 characters.');
+  const project=localProjects.find(project=>project.id===activeProject);
+  if(!project)throw new Error('Unknown project id.');
+  if(project.name===name.trim())return;
+  project.name=name.trim();renderProjects();saveProjectList();
 }
 function openProject(id,layout,session){
   activeProject=id;STORAGE=projectStorage(id);state=layout;

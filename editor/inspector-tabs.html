@@ -5,33 +5,24 @@
   </div>
   <aside class="inspector" id="inspector" role="tabpanel" aria-labelledby="inspector-tab-edit" hidden></aside>
   <section class="inspector-info" id="inspector-info" role="tabpanel" aria-labelledby="inspector-tab-info">
-    <h2>Your projects and Space</h2>
+    <h2>Free design editor</h2>
     <ul>
-      <li>Projects save as you work</li>
-      <li>Open the same Space link in each browser to share work</li>
       <li>No signup</li>
-      <li>Free to use</li>
+      <li>Connect your AI</li>
+      <li>Share your space</li>
       <li><a href="https://github.com/janpmz/uidesigneditor" target="_blank" rel="noopener noreferrer">Open source on GitHub</a></li>
     </ul>
     <div class="codex-prompt">
       <div class="codex-prompt-heading">
-        <h3 id="codex-prompt-title">Use with Codex</h3>
+        <h3 id="codex-prompt-title">Connect your AI</h3>
         <button type="button" id="copy-codex-prompt">Copy prompt</button>
       </div>
-      <p id="codex-tools-status" role="status">Site tools need a supported Codex browser.</p>
-      <textarea id="codex-prompt" rows="8" readonly spellcheck="false" aria-labelledby="codex-prompt-title">Open https://uidesigneditor.com/ in Codex's built-in browser as my design canvas, or reuse that page if it is already open. Use this page's WebMCP site tools to make edits. Keep the tab visible and open when you finish so I can use the result.
+      <p id="codex-tools-status" role="status">Paste this into Codex, Claude, etc:</p>
+      <textarea id="codex-prompt" rows="12" readonly spellcheck="false" aria-labelledby="codex-prompt-title">Help me design in my Space.
 
-Find the tools in this tab, then start with read_design. Create my work as a new named project unless I ask you to edit an existing project. For every change, use the latest projectId and revision returned by the tools. If the design changes while you work, read it again before retrying. Keep my edits and the normal Undo history.
+Read the instructions: https://uidesigneditor.com/instructions.txt
 
-The main editor opens a Space for me and remembers it in this browser. To share projects across browsers, open the same Space link in each browser. Anyone with the link can edit. Keep the #space part of the URL when opening it in Codex. Space edits save to the server and other open pages fetch the changed project. If a newer saved version exists, keep my unsaved work and let me reload or save it as a copy. HTML exports keep their own copy. If I ask for a project that is missing here, ask me for its Space link, saved HTML or screenshot.
-
-Use edit_design to add, move, resize, restyle or remove items. Use create_design for a full design in a new project. Keep text, shapes, icons and buttons as separate items I can edit. Use select_project to open a project listed by read_design.
-
-For an attached screenshot, call import_image with its bytes as a base64 image data URL. Use mode "new" to open it at its own size, or "add" to place it in the current design. Use move_image_region to move part of a screenshot, and edit_design to add or change items over it.
-
-For HTML saved by this editor, extract its initial-layout JSON and send import_html a small HTML document containing only that application/json script. For other HTML, rebuild its visible design as items with create_design or edit_design. Read the tools' input fields for the required values.
-
-Check the result with read_design and a PNG from export_design. Refresh the site's tool list if the browser reports a stale tool. Use export_design to save the editable HTML. Tell me what changed. If site tools are unavailable, explain that a supported browser with site tools enabled is required.</textarea>
+My Space URL: https://uidesigneditor.com/</textarea>
       <p id="codex-prompt-status" class="codex-prompt-status" role="status"></p>
     </div>
   </section>

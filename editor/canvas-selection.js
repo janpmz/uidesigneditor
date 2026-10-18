@@ -82,7 +82,10 @@ function prepareRegion(region){makeRegionPlan(region).catch(error=>{if(regionSel
 function closeCanvasMenu(){canvasMenu.hidden=true;}
 function selectionOrder(position){
   if(regionSelection)return null;
-  const entries=selectedItems().filter(entry=>!isPagePicture(entry));if(!entries.length)return null;
+  return orderedCanvasItems(selectedItems(),position);
+}
+function orderedCanvasItems(items,position){
+  const entries=items.filter(entry=>!entry.hidden&&!isPagePicture(entry));if(!entries.length)return null;
   const ids=new Set(entries.map(entry=>entry.id)),ordered=[...state.items],direction=position==='front'?1:-1;
   for(let index=direction===1?ordered.length-2:1;index>=0&&index<ordered.length;index-=direction){
     const next=index+direction;if(next<0||next>=ordered.length)continue;
@@ -104,34 +107,46 @@ function renderOrderActions(parent){
   }
 }
 function backgroundMergeSelection(){
-  const entries=selectedItems(),bases=state.items.filter(entry=>!entry.hidden&&isPagePicture(entry));
-  if(regionSelection||!entries.length||!bases.length||entries.some(entry=>entry.kind!=='image'||!entry.pictureFragment))return null;
+  return regionSelection?null:backgroundMergeForItems(selectedItems());
+}
+function backgroundMergeForItems(entries){
+  const bases=state.items.filter(entry=>!entry.hidden&&isPagePicture(entry));
+  if(!entries.length||!bases.length||entries.some(entry=>entry.hidden||entry.kind!=='image'||!entry.pictureFragment))return null;
   return {entries,bases};
+}
+async function makeBackgroundMergePlan(selection){
+  const before=JSON.stringify(state),{entries,bases}=selection,ids=new Set([...bases,...entries].map(entry=>entry.id));
+  const sources=state.items.filter(entry=>ids.has(entry.id)),width=state.canvas.width,height=state.canvas.height;
+  const images=await Promise.all(sources.map(source=>selectionImage(source.src)));
+  if(JSON.stringify(state)!==before)throw new Error('The page changed. Read the design or select the items again.');
+  const ratio=Math.min(4,Math.sqrt(24000000/(width*height)),Math.max(1,...images.map((image,index)=>Math.max(image.naturalWidth/sources[index].w,image.naturalHeight/sources[index].h))));
+  const canvas=await html2canvas($('phone'),{
+    width,height,scale:ratio,scrollX:0,scrollY:0,logging:false,backgroundColor:state.canvas.background,
+    windowWidth:Math.max(document.documentElement.clientWidth,width),windowHeight:Math.max(document.documentElement.clientHeight,height),
+    ignoreElements:element=>['selection-overlay','pixel-selection','guide','marquee'].some(name=>element.classList?.contains(name))||(element.classList?.contains('item')&&!ids.has(element.dataset.id)),
+    onclone:cloned=>{
+      const phone=cloned.getElementById('phone');phone.classList.remove('editing');
+      Object.assign(phone.style,{position:'fixed',left:'0',top:'0',width:width+'px',height:height+'px',transform:'none',boxShadow:'none',borderRadius:'0'});
+      cloned.querySelectorAll('dialog').forEach(dialog=>dialog.removeAttribute('open'));
+    },
+  });
+  try{
+    if(JSON.stringify(state)!==before)throw new Error('The page changed. Read the design or select the items again.');
+    const background=item(bases[0].id,bases.length===1?bases[0].name:'Page background','image',0,0,width,height,{src:canvas.toDataURL('image/png'),imageBase:true});
+    return {background,ids};
+  }finally{canvas.width=canvas.height=1;}
+}
+function applyBackgroundMerge(plan){
+  state.items=state.items.flatMap(entry=>entry.id===plan.background.id?[plan.background]:plan.ids.has(entry.id)?[]:[entry]);
 }
 async function mergeSelectionIntoBackground(){
   if(!editing||canvasGesture||canvasEditBusy||pictureDropBusy||pictureChoice.open)return;
   const selection=backgroundMergeSelection();if(!selection)return;
   canvasEditBusy=true;
-  const before=JSON.stringify(state),{entries,bases}=selection,ids=new Set([...bases,...entries].map(entry=>entry.id));
-  const sources=state.items.filter(entry=>ids.has(entry.id)),width=state.canvas.width,height=state.canvas.height;
   try{
-    const images=await Promise.all(sources.map(source=>selectionImage(source.src)));
-    if(JSON.stringify(state)!==before)throw new Error('The page changed. Choose No item again.');
-    const ratio=Math.min(4,Math.sqrt(24000000/(width*height)),Math.max(1,...images.map((image,index)=>Math.max(image.naturalWidth/sources[index].w,image.naturalHeight/sources[index].h))));
-    const canvas=await html2canvas($('phone'),{
-      width,height,scale:ratio,scrollX:0,scrollY:0,logging:false,backgroundColor:state.canvas.background,
-      windowWidth:Math.max(document.documentElement.clientWidth,width),windowHeight:Math.max(document.documentElement.clientHeight,height),
-      ignoreElements:element=>['selection-overlay','pixel-selection','guide','marquee'].some(name=>element.classList?.contains(name))||(element.classList?.contains('item')&&!ids.has(element.dataset.id)),
-      onclone:cloned=>{
-        const phone=cloned.getElementById('phone');phone.classList.remove('editing');
-        Object.assign(phone.style,{position:'fixed',left:'0',top:'0',width:width+'px',height:height+'px',transform:'none',boxShadow:'none',borderRadius:'0'});
-        cloned.querySelectorAll('dialog').forEach(dialog=>dialog.removeAttribute('open'));
-      },
-    });
-    if(JSON.stringify(state)!==before)throw new Error('The page changed. Choose No item again.');
-    const background=item(bases[0].id,bases.length===1?bases[0].name:'Page background','image',0,0,width,height,{src:canvas.toDataURL('image/png'),imageBase:true});
+    const plan=await makeBackgroundMergePlan(selection);
     change(()=>{
-      state.items=state.items.flatMap(entry=>entry.id===background.id?[background]:ids.has(entry.id)?[]:[entry]);
+      applyBackgroundMerge(plan);
       regionSelection=null;selected.clear();
     });
     stage.focus({preventScroll:true});notify('Merged into background');

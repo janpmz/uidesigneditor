@@ -51,7 +51,7 @@ export async function createSpaceServer({ database = ':memory:', publicDir = fil
     if (!['GET','HEAD'].includes(req.method)) throw failure(405, 'Use GET.');
     const file = path.endsWith('/') ? path + 'index.html' : path;
     // Never serve the database, source, dependency files or dotfiles.
-    if (!/^\/(?:index\.html|404\.html|robots\.txt|sitemap\.xml|llms\.txt|guide\/index\.html|assets\/[a-zA-Z0-9._-]+|drafts\/dark-(?:player|library|chapter|add)-layout\/index\.html)$/.test(file)) throw failure(404, 'Not found.');
+    if (!/^\/(?:index\.html|404\.html|robots\.txt|sitemap\.xml|llms\.txt|instructions\.txt|guide\/index\.html|assets\/[a-zA-Z0-9._-]+|drafts\/dark-(?:player|library|chapter|add)-layout\/index\.html)$/.test(file)) throw failure(404, 'Not found.');
     let data;
     try { data = await readFile(join(publicDir, file)); }
     catch (error) { if (error.code === 'ENOENT') throw failure(404, 'Not found.');throw error; }

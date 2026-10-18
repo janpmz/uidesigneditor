@@ -5,7 +5,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = new URL('../', import.meta.url);
 export const publicFiles = [
-  'index.html', '404.html', 'robots.txt', 'sitemap.xml', 'llms.txt',
+  'index.html', '404.html', 'robots.txt', 'sitemap.xml', 'llms.txt', 'instructions.txt',
   'guide/index.html',
   'assets/site.css', 'assets/icon.svg', 'assets/social-card.jpg',
 ];
