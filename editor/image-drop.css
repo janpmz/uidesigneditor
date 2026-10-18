@@ -2,7 +2,8 @@
 .picture-choice::backdrop{background:#0009}
 .picture-choice h2{margin:0 0 16px;font-size:18px;font-weight:600;letter-spacing:-.4px}
 .picture-choice-options{display:grid;gap:10px}
-.picture-choice-option{padding:15px;text-align:left;border-color:#46414e;font-size:14px;font-weight:600}
+.picture-choice-option{display:flex;align-items:center;gap:10px;padding:15px;text-align:left;border-color:#46414e;font-size:14px;font-weight:600}
+.picture-choice-option svg{width:18px;height:18px;flex:none}
 .picture-choice-option:hover{border-color:#b5a2df}
 .phone.picture-page{border-radius:0;box-shadow:0 0 0 1px #434348,0 15px 40px #0005}
 .phone.editing .item,.phone.editing .item.selected{cursor:default}

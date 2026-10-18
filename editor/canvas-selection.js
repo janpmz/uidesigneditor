@@ -34,6 +34,7 @@ function renderSelection(){
     outline.setAttribute('aria-label','Selected picture area');
     Object.assign(outline.style,{left:box.x+'px',top:box.y+'px',width:box.w+'px',height:box.h+'px'});phone.append(outline);return;
   }
+  if(selectedItems().length&&selectedItems().every(isPagePicture))return;
   renderNativeSelection();
 }
 function rememberRegion(box){
@@ -77,6 +78,7 @@ async function makeRegionPlan(region){
   return region.pending;
 }
 function applyRegionPatches(plan){for(const patch of plan.patches){const entry=state.items.find(item=>item.id===patch.id);if(entry){Object.assign(entry,patch);delete entry.imageContents;}}}
+function prepareRegion(region){makeRegionPlan(region).catch(error=>{if(regionSelection===region)notify(error.message);});}
 function closeCanvasMenu(){canvasMenu.hidden=true;}
 function selectionOrder(position){
   if(regionSelection)return null;
@@ -149,12 +151,10 @@ function moveGestureItems(gesture,point,event){
   let dx=point.x-gesture.start.x,dy=point.y-gesture.start.y;
   if(event?.shiftKey&&gesture.type!=='rectangle-resize'){if(Math.abs(dx)>Math.abs(dy))dy=0;else dx=0;}
   gesture.items.forEach((entry,index)=>Object.assign(entry,gesture.starts[index]));
-  const resizingPagePicture=['rectangle-resize','resize'].includes(gesture.type)&&isPagePicture(gesture.items[0]);
   if(gesture.type==='rectangle-resize')resizeRectangleFromHandle(gesture.items[0],gesture.starts[0],gesture.side,dx,dy);
   else if(gesture.type==='arrow-end')moveArrowEnd(gesture.items[0],gesture.starts[0],gesture.end,{x:gesture.start.x+dx,y:gesture.start.y+dy});
   else if(gesture.type==='resize')scaleItemFromCorner(gesture.items[0],gesture.starts[0],dx,dy,state.canvas);
   else moveWithin(gesture.items,dx,dy,state.canvas);
-  if(resizingPagePicture)gesture.items[0].imageBase=true;
   gesture.changed=gesture.before!==JSON.stringify(state);
   for(const entry of gesture.items){const node=[...$('phone').querySelectorAll('.item')].find(node=>node.dataset.id===entry.id);if(node)styleItem(node,entry);}
   renderSelection();
@@ -170,7 +170,7 @@ function applyPixelGesture(gesture){
 }
 function beginCanvasBox(common,event,point,entry,id){
   regionSelection=null;
-  canvasGesture={...common,type:'box',pixels:Boolean(state.canvas.picturePage&&pointInArea(point,{x:0,y:0,w:state.canvas.width,h:state.canvas.height})&&(!entry||entry.kind==='image')),hitId:entry?id:null,base:event.shiftKey?[...selected]:[],startX:event.clientX,startY:event.clientY};
+  canvasGesture={...common,type:'box',pixels:Boolean(state.canvas.picturePage&&pointInArea(point,{x:0,y:0,w:state.canvas.width,h:state.canvas.height})&&(!entry||entry.kind==='image')),hitId:entry&&!isPagePicture(entry)?id:null,base:event.shiftKey?[...selected]:[],startX:event.clientX,startY:event.clientY};
   if(canvasGesture.pixels||!event.shiftKey)selected.clear();drawBox(canvasGesture,event);refreshSelection();
 }
 stage.addEventListener('pointerdown',event=>{
@@ -179,15 +179,15 @@ stage.addEventListener('pointerdown',event=>{
   if(canvasGesture||canvasEditBusy||pictureDropBusy||pictureChoice.open)return;
   closeCanvasMenu();stage.focus({preventScroll:true});
   const point=phonePoint(event),hit=event.target.closest('.item,.selection-overlay'),id=hit?.dataset.id;
-  const entry=state.items.find(item=>item.id===id),resizeItems=selectedItems(),items=resizeItems.filter(item=>!isPagePicture(item));
+  const entry=state.items.find(item=>item.id===id),items=selectedItems().filter(item=>!isPagePicture(item));
   const common={pointer:event.pointerId,start:point,latest:point,selectionBefore:[...selected],regionBefore:regionSelection,before:JSON.stringify(state),changed:false,moved:false,rectangleTool:rectangleSelectionArmed};
   const rectangleHandle=event.target.closest('[data-rectangle-resize]');
   if(rectangleSelectionArmed){
     beginCanvasBox(common,event,point,entry,id);
-  }else if(resizeItems.length===1&&hasSideResizeHandles(resizeItems[0])&&rectangleHandle){
-    regionSelection=null;canvasGesture={...common,type:'rectangle-resize',side:rectangleHandle.dataset.rectangleResize,items:resizeItems,starts:resizeItems.map(copy)};
-  }else if(!event.shiftKey&&resizeItems.length===1&&event.target.closest('.resize-handle')){
-    regionSelection=null;canvasGesture={...common,type:'resize',items:resizeItems,starts:resizeItems.map(copy)};
+  }else if(items.length===1&&hasSideResizeHandles(items[0])&&rectangleHandle){
+    regionSelection=null;canvasGesture={...common,type:'rectangle-resize',side:rectangleHandle.dataset.rectangleResize,items,starts:items.map(copy)};
+  }else if(!event.shiftKey&&items.length===1&&event.target.closest('.resize-handle')){
+    regionSelection=null;canvasGesture={...common,type:'resize',items,starts:items.map(copy)};
   }else if(!event.shiftKey&&isRectangleShape(entry)){
     regionSelection=null;const moving=selected.has(entry.id)?items:[entry];
     selected=new Set(moving.map(item=>item.id));refreshSelection();

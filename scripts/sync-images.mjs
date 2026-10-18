@@ -134,8 +134,8 @@ for (const entry of await readdir(new URL('drafts/', root), { withFileTypes: tru
     'Drag across empty space to select items. Drag any selected item to move them together. Shift-click to add or remove items.',
     'Draw a box around items, then drag inside it to move them. Shift-click to add or remove an item.',
   ]) html = html.replaceAll(message, selectionHelp);
-  const pictureHelp='Click the main image to resize it. Drag to select part of the image.';
-  html = html.replaceAll('Draw a box to select part of the image. Drag inside the box to move it.', pictureHelp);
+  const pictureHelp='Draw a box to select part of the image. Drag inside the box to move it.';
+  html = html.replaceAll('Click the main image to resize it. Drag to select part of the image.', pictureHelp);
   if (!html.includes("state.canvas.picturePage?'" + pictureHelp + "'")) html = html.replace("':'" + selectionHelp + "'", "':state.canvas.picturePage?'" + pictureHelp + "':'" + selectionHelp + "'");
   html = html.replaceAll('Drag any selected item or the count above the box to move them together.', 'Drag inside the box to move the selected items.');
   html = html.replaceAll('Drag empty space to select · drag items to move · Shift-click to add · Delete to remove', 'Drag to select · drag the selection to move · ⌘X / ⌘V to cut and paste');

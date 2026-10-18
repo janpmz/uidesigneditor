@@ -244,54 +244,45 @@ test('added pictures and picture pieces resize on every side, keep their source,
     h.sandbox.state=JSON.parse(h.undo.pop());assert.deepEqual(h.read('state'),before);
   }
 });
-test('clicking the main image shows four side handles and the corner scale handle without changing the page',async()=>{
+test('the main image stays fixed and shows no resize handles when clicked or selected in the list',async()=>{
   const h=harness(true),target={closest:selector=>selector==='.item,.selection-overlay'?{dataset:{id:'base'}}:null};
   const nativeSelection=draft.slice(draft.indexOf('function renderNativeSelection()'),draft.indexOf('function fit()',draft.indexOf('function renderNativeSelection()')));
   vm.runInContext(nativeSelection,h.sandbox);
   h.sandbox.render=()=>vm.runInContext('renderSelection()',h.sandbox);
   h.send('pointerdown',h.event(100,100,{target}));await h.send('pointerup',h.event(100,100));
-  assert.deepEqual([...h.sandbox.selected],['base']);assert.equal(h.read('regionSelection'),null);
-  const overlay=h.get('phone').children.at(-1);
-  assert.equal(overlay.dataset.id,'base');assert.equal(overlay.style.width,'800px');assert.equal(overlay.style.height,'500px');
-  assert.deepEqual(overlay.children.filter(child=>child.className.startsWith('rectangle-handle')).map(child=>child.dataset.rectangleResize),['n','e','s','w']);
-  assert.equal(overlay.children.at(-1).attributes['aria-label'],'Scale Base');
+  assert.deepEqual([...h.sandbox.selected],[]);assert.equal(h.read('regionSelection'),null);
+  assert.equal(h.get('phone').children.length,0);
+  h.sandbox.selected.add('base');vm.runInContext('renderSelection()',h.sandbox);
+  assert.equal(h.get('phone').children.length,0);
   assert.deepEqual(h.read('state'),h.start);assert.equal(h.undo.length,0);
 });
-test('the main image resizes on every side and scales from the corner, with Undo and Escape',async()=>{
-  const expected={n:[0,50,800,450],e:[0,0,880,500],s:[0,0,800,550],w:[80,0,720,500],scale:[0,0,1200,750]};
+test('the main image ignores side and scale handles, including in older projects',async()=>{
   for(const legacy of [false,true])for(const side of ['n','e','s','w','scale']){
     const h=harness(true);if(legacy)delete h.sandbox.state.items[0].imageBase;
     h.sandbox.state.items.push({id:'label',kind:'label',x:40,y:40,w:100,h:30,text:'Keep me'});h.sandbox.selected.add('base');
     const before=structuredClone(h.sandbox.state),handle={dataset:{rectangleResize:side}};
     const target={closest:selector=>selector==='.item,.selection-overlay'?{dataset:{id:'base'}}:side==='scale'?selector==='.resize-handle'?{}:null:selector==='[data-rectangle-resize]'?handle:null};
-    const delta=side==='scale'?{x:400,y:250}:{x:80,y:50};
-    h.send('pointerdown',h.event(800,500,{target}));assert.equal(h.read('canvasGesture.type'),side==='scale'?'resize':'rectangle-resize');
-    h.send('pointermove',h.event(800+delta.x/2,500+delta.y/2));h.send('pointermove',h.event(800+delta.x,500+delta.y));await h.send('pointerup',h.event(800+delta.x,500+delta.y));
-    const after=h.read('state'),[x,y,w,height]=expected[side];
-    assert.deepEqual([after.items[0].x,after.items[0].y,after.items[0].w,after.items[0].h],[x,y,w,height]);
-    assert.equal(after.items[0].src,before.items[0].src);assert.equal(h.read('isPagePicture(state.items[0])'),true);
-    assert.deepEqual(after.canvas,before.canvas);assert.deepEqual(after.items.slice(1),before.items.slice(1));
-    assert.equal(h.undo.length,1);assert.deepEqual(JSON.parse(h.undo[0]),before);
-    h.send('pointerdown',h.event(800+delta.x,500+delta.y,{target}));h.send('pointermove',h.event(800+delta.x*2,500+delta.y*2));h.key(h.event(0,0,{key:'Escape'}));
-    assert.deepEqual(h.read('state'),after);assert.equal(h.undo.length,1);
-    h.sandbox.state=JSON.parse(h.undo.pop());assert.deepEqual(h.read('state'),before);
+    h.send('pointerdown',h.event(100,100,{target}));assert.equal(h.read('canvasGesture.type'),'box');
+    h.send('pointermove',h.event(180,150));
+    assert.deepEqual(h.read('state'),before);assert.equal(h.undo.length,0);
+    h.send('pointercancel',h.event(180,150));
+    assert.deepEqual(h.read('state'),before);assert.deepEqual([...h.sandbox.selected],['base']);assert.equal(h.undo.length,0);
   }
 });
-test('dragging inside a resized main image still selects an area using its current size',async()=>{
-  const h=harness(true);delete h.sandbox.state.items[0].imageBase;h.sandbox.selected.add('base');
+test('dragging inside the fixed main image still makes a picture piece',async()=>{
+  const h=harness(true);h.sandbox.selected.add('base');mockPictureCrop(h);
   const imageTarget={closest:selector=>selector==='.item,.selection-overlay'?{dataset:{id:'base'}}:null};
-  const resizeTarget={closest:selector=>selector==='[data-rectangle-resize]'?{dataset:{rectangleResize:'w'}}:imageTarget.closest(selector)};
-  h.send('pointerdown',h.event(0,250,{target:resizeTarget}));h.send('pointermove',h.event(80,250));await h.send('pointerup',h.event(80,250));
-  const resized=h.read('state');mockPictureCrop(h);
   h.send('pointerdown',h.event(100,100,{target:imageTarget}));assert.equal(h.read('canvasGesture.type'),'box');assert.equal(h.read('canvasGesture.pixels'),true);
   h.send('pointermove',h.event(280,200,{target:imageTarget}));
   assert.deepEqual(h.read('regionSelection.box'),{x:100,y:100,w:180,h:100});assert.equal(h.sandbox.selected.size,0);
-  assert.deepEqual(h.read('regionSelection.sources'),[resized.items[0]]);
-  assert.deepEqual(h.read('sourcePixelArea(regionSelection.box,state.items[0],800,500)'),{x:22,y:100,w:200,h:100});
-  assert.deepEqual(h.read('state'),resized);assert.equal(h.undo.length,1);
+  assert.deepEqual(h.read('regionSelection.sources'),h.start.items);
+  assert.deepEqual(h.read('sourcePixelArea(regionSelection.box,state.items[0],800,500)'),{x:100,y:100,w:180,h:100});
+  assert.deepEqual(h.read('state'),h.start);assert.equal(h.undo.length,0);
   await h.send('pointerup',h.event(280,200,{target:imageTarget}));
-  assert.equal(h.read('regionSelection'),null);assert.deepEqual([...h.sandbox.selected],['piece']);assert.equal(h.undo.length,2);
+  assert.equal(h.read('regionSelection'),null);assert.deepEqual([...h.sandbox.selected],['piece']);assert.equal(h.undo.length,1);
   assert.deepEqual(h.read('state.items.slice(1).map(({x,y,w,h})=>({x,y,w,h}))'),[{x:100,y:100,w:180,h:100}]);
+  assert.deepEqual(h.read('state.canvas'),h.start.canvas);
+  assert.deepEqual(h.read('({x:state.items[0].x,y:state.items[0].y,w:state.items[0].w,h:state.items[0].h})'),{x:0,y:0,w:800,h:500});
 });
 test('each selected item moves one place and keeps the order within its group',()=>{
   for(const [position,expected] of [['front',['background','b','a','d','c']],['back',['a','background','c','b','d']]]){

@@ -124,7 +124,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 .picture-choice::backdrop{background:#0009}
 .picture-choice h2{margin:0 0 16px;font-size:18px;font-weight:600;letter-spacing:-.4px}
 .picture-choice-options{display:grid;gap:10px}
-.picture-choice-option{padding:15px;text-align:left;border-color:#46414e;font-size:14px;font-weight:600}
+.picture-choice-option{display:flex;align-items:center;gap:10px;padding:15px;text-align:left;border-color:#46414e;font-size:14px;font-weight:600}
+.picture-choice-option svg{width:18px;height:18px;flex:none}
 .picture-choice-option:hover{border-color:#b5a2df}
 .phone.picture-page{border-radius:0;box-shadow:0 0 0 1px #434348,0 15px 40px #0005}
 .phone.editing .item,.phone.editing .item.selected{cursor:default}
@@ -735,8 +736,8 @@ Check the result in the editor, then use "Copy HTML" to keep an editable copy. G
 <dialog id="picture-drop-choice" class="picture-choice" aria-labelledby="picture-choice-title">
   <h2 id="picture-choice-title">Open file</h2>
   <div class="picture-choice-options">
-    <button id="picture-choice-new" class="picture-choice-option">New project</button>
-    <button id="picture-choice-add" class="picture-choice-option">Add to project</button>
+    <button id="picture-choice-new" class="picture-choice-option"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg>New project</button>
+    <button id="picture-choice-add" class="picture-choice-option"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 20H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2Z"/><path d="M12 10v7M8.5 13.5h7"/></svg>Add to project</button>
   </div>
 </dialog>
 <div id="canvas-edit-menu" class="canvas-edit-menu" role="menu" aria-label="Selection actions" hidden>
@@ -1396,7 +1397,7 @@ function renderInspector() {
     const actions=document.createElement('div');actions.className='action-grid';actions.style.marginTop='12px';renderOrderActions(actions);
     [['Duplicate selected',duplicate],['Delete selected',deleteSelected]].forEach(([name,fn])=>{const button=document.createElement('button');button.textContent=name;button.onclick=fn;if(name==='Delete selected')button.className='danger';actions.append(button);});group.append(actions);pane.append(group);
   }
-  else if(!item){const empty=document.createElement('div');empty.className='empty-state';empty.textContent=regionSelection?'Drag inside the selection to move it. Cut, copy and paste work with the usual keys or a right-click.':state.canvas.picturePage?'Click the main image to resize it. Drag to select part of the image.':'Draw a box to select items it touches. Drag inside to move them. Shift-click to add or remove an item.';pane.append(empty);}
+  else if(!item){const empty=document.createElement('div');empty.className='empty-state';empty.textContent=regionSelection?'Drag inside the selection to move it. Cut, copy and paste work with the usual keys or a right-click.':state.canvas.picturePage?'Draw a box to select part of the image. Drag inside the box to move it.':'Draw a box to select items it touches. Drag inside to move them. Shift-click to add or remove an item.';pane.append(empty);}
   else {
     const heading=section('Selected item');heading.append(field('Name','name',item.name,'text',true));renderImageEditAction(heading,item);if(item.hidden){const note=document.createElement('p');note.className='note';note.style.marginTop='8px';note.textContent='This item is removed from the phone. Use Restore below to bring it back.';heading.append(note);}pane.append(heading);
     const position=section('Position & size');const fields=document.createElement('div');fields.className='fields';[['X','x',item.x],['Y','y',item.y],['Width','w',item.w],['Height','h',item.h]].forEach(args=>fields.append(field(...args)));position.append(fields);pane.append(position);
@@ -2420,6 +2421,7 @@ function renderSelection(){
     outline.setAttribute('aria-label','Selected picture area');
     Object.assign(outline.style,{left:box.x+'px',top:box.y+'px',width:box.w+'px',height:box.h+'px'});phone.append(outline);return;
   }
+  if(selectedItems().length&&selectedItems().every(isPagePicture))return;
   renderNativeSelection();
 }
 function rememberRegion(box){
@@ -2463,6 +2465,7 @@ async function makeRegionPlan(region){
   return region.pending;
 }
 function applyRegionPatches(plan){for(const patch of plan.patches){const entry=state.items.find(item=>item.id===patch.id);if(entry){Object.assign(entry,patch);delete entry.imageContents;}}}
+function prepareRegion(region){makeRegionPlan(region).catch(error=>{if(regionSelection===region)notify(error.message);});}
 function closeCanvasMenu(){canvasMenu.hidden=true;}
 function selectionOrder(position){
   if(regionSelection)return null;
@@ -2535,12 +2538,10 @@ function moveGestureItems(gesture,point,event){
   let dx=point.x-gesture.start.x,dy=point.y-gesture.start.y;
   if(event?.shiftKey&&gesture.type!=='rectangle-resize'){if(Math.abs(dx)>Math.abs(dy))dy=0;else dx=0;}
   gesture.items.forEach((entry,index)=>Object.assign(entry,gesture.starts[index]));
-  const resizingPagePicture=['rectangle-resize','resize'].includes(gesture.type)&&isPagePicture(gesture.items[0]);
   if(gesture.type==='rectangle-resize')resizeRectangleFromHandle(gesture.items[0],gesture.starts[0],gesture.side,dx,dy);
   else if(gesture.type==='arrow-end')moveArrowEnd(gesture.items[0],gesture.starts[0],gesture.end,{x:gesture.start.x+dx,y:gesture.start.y+dy});
   else if(gesture.type==='resize')scaleItemFromCorner(gesture.items[0],gesture.starts[0],dx,dy,state.canvas);
   else moveWithin(gesture.items,dx,dy,state.canvas);
-  if(resizingPagePicture)gesture.items[0].imageBase=true;
   gesture.changed=gesture.before!==JSON.stringify(state);
   for(const entry of gesture.items){const node=[...$('phone').querySelectorAll('.item')].find(node=>node.dataset.id===entry.id);if(node)styleItem(node,entry);}
   renderSelection();
@@ -2556,7 +2557,7 @@ function applyPixelGesture(gesture){
 }
 function beginCanvasBox(common,event,point,entry,id){
   regionSelection=null;
-  canvasGesture={...common,type:'box',pixels:Boolean(state.canvas.picturePage&&pointInArea(point,{x:0,y:0,w:state.canvas.width,h:state.canvas.height})&&(!entry||entry.kind==='image')),hitId:entry?id:null,base:event.shiftKey?[...selected]:[],startX:event.clientX,startY:event.clientY};
+  canvasGesture={...common,type:'box',pixels:Boolean(state.canvas.picturePage&&pointInArea(point,{x:0,y:0,w:state.canvas.width,h:state.canvas.height})&&(!entry||entry.kind==='image')),hitId:entry&&!isPagePicture(entry)?id:null,base:event.shiftKey?[...selected]:[],startX:event.clientX,startY:event.clientY};
   if(canvasGesture.pixels||!event.shiftKey)selected.clear();drawBox(canvasGesture,event);refreshSelection();
 }
 stage.addEventListener('pointerdown',event=>{
@@ -2565,15 +2566,15 @@ stage.addEventListener('pointerdown',event=>{
   if(canvasGesture||canvasEditBusy||pictureDropBusy||pictureChoice.open)return;
   closeCanvasMenu();stage.focus({preventScroll:true});
   const point=phonePoint(event),hit=event.target.closest('.item,.selection-overlay'),id=hit?.dataset.id;
-  const entry=state.items.find(item=>item.id===id),resizeItems=selectedItems(),items=resizeItems.filter(item=>!isPagePicture(item));
+  const entry=state.items.find(item=>item.id===id),items=selectedItems().filter(item=>!isPagePicture(item));
   const common={pointer:event.pointerId,start:point,latest:point,selectionBefore:[...selected],regionBefore:regionSelection,before:JSON.stringify(state),changed:false,moved:false,rectangleTool:rectangleSelectionArmed};
   const rectangleHandle=event.target.closest('[data-rectangle-resize]');
   if(rectangleSelectionArmed){
     beginCanvasBox(common,event,point,entry,id);
-  }else if(resizeItems.length===1&&hasSideResizeHandles(resizeItems[0])&&rectangleHandle){
-    regionSelection=null;canvasGesture={...common,type:'rectangle-resize',side:rectangleHandle.dataset.rectangleResize,items:resizeItems,starts:resizeItems.map(copy)};
-  }else if(!event.shiftKey&&resizeItems.length===1&&event.target.closest('.resize-handle')){
-    regionSelection=null;canvasGesture={...common,type:'resize',items:resizeItems,starts:resizeItems.map(copy)};
+  }else if(items.length===1&&hasSideResizeHandles(items[0])&&rectangleHandle){
+    regionSelection=null;canvasGesture={...common,type:'rectangle-resize',side:rectangleHandle.dataset.rectangleResize,items,starts:items.map(copy)};
+  }else if(!event.shiftKey&&items.length===1&&event.target.closest('.resize-handle')){
+    regionSelection=null;canvasGesture={...common,type:'resize',items,starts:items.map(copy)};
   }else if(!event.shiftKey&&isRectangleShape(entry)){
     regionSelection=null;const moving=selected.has(entry.id)?items:[entry];
     selected=new Set(moving.map(item=>item.id));refreshSelection();
