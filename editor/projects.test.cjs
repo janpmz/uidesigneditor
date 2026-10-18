@@ -702,6 +702,67 @@ test('browser address updates work when a Space first opens and when it reopens'
   assert.equal(app.store.list(spaceId).length,1);
 });
 
+test('a first visit waits for an early edit or canvas move, then opens a Space with the finished work',{timeout:5000},async t=>{
+  const {createSpaceServer}=await import('../server/index.mjs');
+  const {once}=require('node:events');
+  const app=await createSpaceServer();app.server.listen(0,'127.0.0.1');await once(app.server,'listening');
+  const base='http://127.0.0.1:'+app.server.address().port,browsers=[];
+  const design={version:1,canvas:{width:400,height:300},items:[{id:'title',kind:'label',x:0,y:0,w:100,h:30,text:'Before setup'}]};
+  const data={version:1,active:'demo',projects:[{id:'demo',name:'Demo',layout:design}]};
+  t.after(async()=>{for(const h of browsers)h.run('spaceClient.close()');await app.close();});
+  for(const [begin,end] of [
+    ['canvasPan={}','canvasPan=null'],
+    ['canvasPinch={}','canvasPinch=null'],
+    ['drag={}','drag=null'],
+    ['fieldEdit={}','fieldEdit=null'],
+    ['imageEditSession={}','imageEditSession=null'],
+    ['projectSwitchBusy=true','projectSwitchBusy=false'],
+    ['pictureDropBusy=true','pictureDropBusy=false'],
+    ['pictureChoice.open=true','pictureChoice.open=false'],
+    ['canvasViewBusy=()=>true','canvasViewBusy=()=>false'],
+  ]){
+    const h=harness({spaceUrl:base+'/',data:structuredClone(data)});browsers.push(h);await h.ready;
+    let waiting;const idleWait=new Promise(resolve=>{waiting=resolve;}),timer=h.sandbox.setTimeout;
+    h.sandbox.setTimeout=(fn,delay)=>{if(delay===100)waiting();return timer(fn,delay);};
+    h.run(begin);h.run(spaceCode);let opened=false;h.run('spaceClient.ready').then(()=>{opened=true;});
+    await idleWait;
+    assert.equal(opened,false,begin);assert.equal(h.run('onlineSpaceId'),null,begin);
+    assert.equal(h.get('space-status').textContent,'Opening Space…',begin);
+    assert.equal(h.get('space-retry').hidden,true,begin);assert.equal(h.sandbox.message,undefined,begin);
+    h.run(end+';change(()=>state.items[0].text="Finished before setup")');
+    await h.run('spaceClient.ready');
+    const spaceId=h.run('onlineSpaceId');assert.match(spaceId,/^[a-f0-9]{64}$/,begin);
+    assert.equal(h.get('space-share').hidden,false,begin);assert.equal(h.get('space-retry').hidden,true,begin);
+    assert.equal(app.store.get(spaceId,'demo').layout.items[0].text,'Finished before setup',begin);
+    h.run('change(()=>state.items[0].text="Saved after setup")');await h.run('spaceClient.saved()');
+    assert.equal(app.store.get(spaceId,'demo').layout.items[0].text,'Saved after setup',begin);
+  }
+});
+
+test('a first visit keeps the canvas usable and saves edits made while the first save uploads',{timeout:5000},async t=>{
+  const {createSpaceServer}=await import('../server/index.mjs');
+  const {once}=require('node:events');
+  const app=await createSpaceServer();app.server.listen(0,'127.0.0.1');await once(app.server,'listening');
+  const base='http://127.0.0.1:'+app.server.address().port;
+  const design={version:1,canvas:{width:400,height:300},items:[{id:'title',kind:'label',x:0,y:0,w:100,h:30,text:'First save'}]};
+  const h=harness({spaceUrl:base+'/',data:{version:1,active:'demo',projects:[{id:'demo',name:'Demo',layout:design}]}});await h.ready;
+  let releaseSave,beginSave,held=false;
+  const waiting=new Promise(resolve=>{releaseSave=resolve;}),uploading=new Promise(resolve=>{beginSave=resolve;});
+  const fetch=h.sandbox.fetch;
+  h.sandbox.fetch=async(path,options)=>{
+    if(path==='/api/projects/demo'&&options.method==='PUT'&&!held){held=true;beginSave();await waiting;}
+    return fetch(path,options);
+  };
+  t.after(async()=>{releaseSave();await h.run('spaceClient.ready');h.run('spaceClient.close()');await app.close();});
+  h.run(spaceCode);await uploading;
+  assert.equal(Boolean(h.sandbox.stage.inert),false);
+  h.run('canvasPan={};change(()=>state.items[0].text="Edited during setup");canvasPan=null');
+  releaseSave();await h.run('spaceClient.ready');await h.run('spaceClient.saved()');
+  assert.equal(app.store.get(h.run('onlineSpaceId'),'demo').layout.items[0].text,'Edited during setup');
+  assert.equal(h.get('space-retry').hidden,true);assert.equal(h.sandbox.message,undefined);
+  assert.equal(h.run('undoHistory.length'),1);
+});
+
 test('separate browser stores share a Space, keep Undo, preserve conflicts, and save copies', async t => {
   const {createSpaceServer}=await import('../server/index.mjs');
   const {once}=require('node:events');

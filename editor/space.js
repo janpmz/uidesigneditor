@@ -72,27 +72,26 @@
   }
 
   async function createSpace(){
-    await projectsReady;
-    if(busy())throw new Error('Finish the current edit first.');
-    const seeds=localProjects.map(project=>({id:project.id,...JSON.parse(snapshot(project.id))}));
-    setLoading(true);
+    starting=true;showStatus();
     try{
+      await projectsReady;
       const {spaceId}=await request('/api/spaces',{method:'POST'},null);
-      const created=[];
-      for(const project of seeds){
-        const layout=await encodePictures(project.layout,spaceId,project.id);
-        const result=await request('/api/projects/'+project.id,{method:'PUT',body:{name:project.name,layout,version:0}},spaceId);
-        created.push({id:project.id,version:result.version});
-      }
+      while(!stopped&&busy())await new Promise(resolve=>setTimeout(resolve,100));
+      if(stopped)return;
       onlineSpaceId=spaceId;
       activeProjectKey='ui-design-editor-active-project-v1:'+projectScope();
       projectListKey='ui-design-editor-projects-v1:'+projectScope();STORAGE=projectStorage(activeProject);
       window.history.replaceState(null,'','#space='+spaceId);
       rememberSpace();
       if(typeof updateCodexPromptUrl==='function')updateCodexPromptUrl();
-      for(const project of created){const local=snapshot(project.id),seed=seeds.find(seed=>seed.id===project.id);records.set(project.id,{version:project.version,local,saved:JSON.stringify({name:seed.name,layout:seed.layout}),conflict:false});cacheProject(project.id,JSON.parse(local).layout);}
+      for(const project of localProjects){
+        const local=snapshot(project.id);
+        records.set(project.id,{version:0,local,saved:null,conflict:false});
+        cacheProject(project.id,JSON.parse(local).layout);
+      }
       enabled=true;saveMetadata();saveProjectList();problem='';connect();
-    }finally{setLoading(false);}
+      await flush();
+    }finally{starting=false;showStatus();}
   }
 
   function changed(){
