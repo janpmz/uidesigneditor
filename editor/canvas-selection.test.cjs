@@ -9,7 +9,7 @@ const shapes = readFileSync(join(__dirname, 'annotation-shapes.js'), 'utf8');
 const fitContent = readFileSync(join(__dirname, 'fit-content.js'), 'utf8');
 const controller = readFileSync(join(__dirname, 'canvas-selection.js'), 'utf8');
 const imageEditor = readFileSync(join(__dirname, 'image-edit.js'), 'utf8');
-const draft = readFileSync(join(__dirname, '../drafts/dark-player-layout/index.html'), 'utf8');
+const draft = readFileSync(join(__dirname, '../index.html'), 'utf8');
 const geometry = draft.split('// BEGIN SELECTION GEOMETRY')[1].split('// END SELECTION GEOMETRY')[0];
 const scaling = draft.split('// BEGIN ITEM SCALE')[1].split('// END ITEM SCALE')[0];
 const defaults = 'const round=v=>Math.round(v*10)/10,clamp=(v,a,b)=>Math.max(a,Math.min(b,v));';

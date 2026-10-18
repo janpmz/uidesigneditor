@@ -10,7 +10,7 @@ const helpers = pictures.split('// BEGIN PICTURE HELPERS')[1].split('// END PICT
 const validation = pictures.slice(pictures.indexOf('function validEditorPage('),pictures.indexOf('async function readEditorPage('));
 const sizes = pictures.split('// BEGIN PAGE SIZE HELPERS')[1].split('// END PAGE SIZE HELPERS')[0];
 const controller = read('canvas-selection.js'),editor = read('image-edit.js');
-const draft = read('../drafts/dark-player-layout/index.html');
+const draft = read('../index.html');
 const geometry = draft.split('// BEGIN SELECTION GEOMETRY')[1].split('// END SELECTION GEOMETRY')[0];
 
 function harness(){

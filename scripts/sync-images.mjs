@@ -24,10 +24,10 @@ const support = '<!-- BEGIN HEIC READER -->\n' +
   '<script data-vendor="heic-to" data-version="1.6.6">\n' + reader.replace(/<\/script/gi, '<\\/script') + '\n</script>\n' +
   '<script type="text/plain" data-license="heic-to">\nSource: https://registry.npmjs.org/heic-to/-/heic-to-1.6.6.tgz\n' + license + '\n</script>\n' +
   '<!-- END HEIC READER -->';
-for (const entry of await readdir(new URL('drafts/', root), { withFileTypes: true })) {
-  if (!entry.isDirectory()) continue;
-  const draft = entry.name;
-  const path = new URL(`drafts/${draft}/index.html`, root);
+const editorFiles = ['index.html', ...(await readdir(new URL('drafts/', root), { withFileTypes: true }))
+  .filter(entry => entry.isDirectory()).map(entry => `drafts/${entry.name}/index.html`)];
+for (const file of editorFiles) {
+  const path = new URL(file, root);
   let html = await readFile(path, 'utf8');
   if (!html.includes('// BEGIN PICTURE DROP\n')) continue;
   html = html.replace('<h1>uidesigneditor.com</h1>', '<h1><a href="/" style="color:inherit;text-decoration:none">uidesigneditor.com</a></h1>');
@@ -58,7 +58,6 @@ for (const entry of await readdir(new URL('drafts/', root), { withFileTypes: tru
   html = html.replace("showToolPanel(name);\n  if(name==='edit'&&current())", "showToolPanel(name);syncInspectorTabs();\n  if(name==='edit'&&inspectorTab==='edit'&&current())");
   html = html.replace("textContent={edit:'Edit',items:", "textContent={edit:inspectorTab==='info'?'Info':'Edit',items:");
   html = html.replaceAll('href="../dark-player-layout/"', 'href="/"');
-  if (draft === 'dark-player-layout') html = html.replace("const STORAGE='dark-player-layout-v2:'+location.pathname;", "const STORAGE='dark-player-layout-v2:'+(['/', '/index.html'].includes(location.pathname)?'/drafts/dark-player-layout/':location.pathname);");
   const viewStart = html.indexOf('// BEGIN CANVAS VIEW\n');
   if (viewStart < 0) html = html.replace('// BEGIN CANVAS EDITOR\n', view.trimEnd() + '\n// BEGIN CANVAS EDITOR\n');
   else {

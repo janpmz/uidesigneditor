@@ -4,8 +4,8 @@ const { readFileSync } = require('node:fs');
 const { join } = require('node:path');
 const vm = require('node:vm');
 
-for (const page of ['dark-player-layout', 'dark-library-layout', 'dark-chapter-layout']) {
-  const html = readFileSync(join(__dirname, page, 'index.html'), 'utf8');
+for (const page of ['../index.html', 'dark-library-layout/index.html', 'dark-chapter-layout/index.html']) {
+  const html = readFileSync(join(__dirname, page), 'utf8');
   const script = html.match(/<script>\s*([\s\S]*?)<\/script>/)[1];
   new vm.Script(script);
   const helper = script.split('// BEGIN ITEM SCALE')[1].split('// END ITEM SCALE')[0];

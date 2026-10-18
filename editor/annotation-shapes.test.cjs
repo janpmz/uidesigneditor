@@ -80,7 +80,7 @@ test('a drag cannot turn an arrow into a dot',()=>{
   assert.deepEqual(run(`(()=>{const start=${JSON.stringify(arrow)},entry={...start};moveArrowEnd(entry,start,'end',{x:112,y:220});return entry;})()`),arrow);
 });
 
-const pages=['dark-player-layout','dark-library-layout','dark-chapter-layout','dark-add-layout'].map(name=>`drafts/${name}/index.html`);
+const pages=['dark-library-layout','dark-chapter-layout','dark-add-layout'].map(name=>`drafts/${name}/index.html`);
 if(readFileSync(join(__dirname,'../index.html'),'utf8').includes('// BEGIN CANVAS EDITOR'))pages.unshift('index.html');
 for(const file of pages){
   const html=readFileSync(join(__dirname,'..',file),'utf8');

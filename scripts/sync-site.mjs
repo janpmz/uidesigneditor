@@ -4,8 +4,8 @@ import { runInNewContext } from 'node:vm';
 const root = new URL('../', import.meta.url);
 export const origin = 'https://uidesigneditor.com';
 export const pages = [
-  { path: '/', file: 'index.html', source: 'editor/inspector-tabs.html', title: 'UI Design Editor | Free screen editor', description: 'A free UI design tool. Move and resize text, shapes and pictures. Projects save in your Space. Share its link across browsers. No signup.' },
-  { path: '/guide/', file: 'guide/index.html', source: 'site/guide.html', title: 'About UI Design Editor', description: 'Free UI design tool. Projects save in your Space. Share its link across browsers. No signup.' },
+  { path: '/', file: 'index.html', source: 'editor/inspector-tabs.html', title: 'UI Design Editor | Free screen editor', description: 'A simple and free ui design tool. Select, cut, move and resize. Work together with your AI. No signup.' },
+  { path: '/guide/', file: 'guide/index.html', source: 'site/guide.html', title: 'About UI Design Editor', description: 'Free UI design tool. No signup. A canvas for your AI. Share your work.' },
 ];
 const escape = value => value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 const header = `<a class="skip-link" href="#main">Skip to content</a>
@@ -16,7 +16,7 @@ function structuredData(page) {
     '@context': 'https://schema.org',
     '@graph': [
       { '@type': 'WebSite', '@id': origin + '/#website', name: 'UI Design Editor', alternateName: 'uidesigneditor.com', url: origin + '/', inLanguage: 'en' },
-      { '@type': 'WebApplication', '@id': origin + '/#app', name: 'UI Design Editor', url: origin + '/', description: pages[0].description, applicationCategory: 'DesignApplication', operatingSystem: 'Any', browserRequirements: 'Requires JavaScript and browser storage.', isAccessibleForFree: true, image: origin + '/assets/social-card.jpg', featureList: ['Move and resize screen items', 'Edit text, shapes, icons and pictures', 'Save drafts in the browser', 'Copy a full HTML draft with pictures', 'Save a PNG screenshot'] },
+      { '@type': 'WebApplication', '@id': origin + '/#app', name: 'UI Design Editor', url: origin + '/', description: pages[0].description, applicationCategory: 'DesignApplication', operatingSystem: 'Any', browserRequirements: 'Requires JavaScript and browser storage.', isAccessibleForFree: true, image: origin + '/assets/social-card.jpg', featureList: ['Move and resize screen items', 'Edit text, shapes, icons and pictures', 'Save and share drafts', 'Copy a full HTML draft with pictures', 'Save a PNG screenshot'] },
       { '@type': 'WebPage', '@id': origin + page.path + '#page', url: origin + page.path, name: page.title, description: page.description, inLanguage: 'en', isPartOf: { '@id': origin + '/#website' }, about: { '@id': origin + '/#app' }, ...(page.path === '/' ? { mainEntity: { '@id': origin + '/#app' } } : {}) },
     ],
   };
@@ -38,12 +38,12 @@ export function metadata(page, { index = true, schema = true } = {}) {
 <meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1280">
 <meta property="og:image:height" content="720">
-<meta property="og:image:alt" content="Free UI design tool. Local projects or a shared Space. No signup.">
+<meta property="og:image:alt" content="Free UI mockup tool. No accounts. Select, cut, move, resize. Connect your AI.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${escape(page.title)}">
 <meta name="twitter:description" content="${escape(page.description)}">
 <meta name="twitter:image" content="${origin}/assets/social-card.jpg">
-<meta name="twitter:image:alt" content="Free UI design tool. Local projects or a shared Space. No signup.">
+<meta name="twitter:image:alt" content="Free UI mockup tool. No accounts. Select, cut, move, resize. Connect your AI.">
 ${schema ? `<script type="application/ld+json">\n${JSON.stringify(structuredData(page), null, 2)}\n</script>` : ''}`;
 }
 function document(page, body, options) {
@@ -92,7 +92,6 @@ for (const file of ['llms-full.txt', 'index.md', 'guide/index.md']) await rm(new
 const errorPage = { path: '/404.html', title: 'Page not found | UI Design Editor', description: 'This page does not exist. Open UI Design Editor.' };
 await writeFile(new URL('404.html', root), document(errorPage, '<main id="main" class="error"><p class="eyebrow">404</p><h1>Page not found.</h1><a class="button primary" href="/">Open editor</a></main>', { index: false, schema: false }));
 const drafts = [
-  ['dark-player-layout', 'Player layout editor', 'Edit a player screen with text, icons and buttons. Move and resize items, work with pictures and keep the draft in your browser.'],
   ['dark-library-layout', 'Library layout editor', 'Edit the UI design. Draw a rectangle to select items and move them around and resize them.'],
   ['dark-chapter-layout', 'Chapter layout editor', 'Edit a chapter list with text, icons and shapes. Move and resize items and keep the draft in your browser.'],
   ['dark-add-layout', 'Upload screen editor', 'Edit an upload screen, add pictures and arrange screen items. Keep the draft in your browser or copy a full HTML file.'],
@@ -105,8 +104,8 @@ for (const [name, title, description] of drafts) {
   else html = html.replace(/<meta name="robots"[^>]*>\s*<title>[^<]*<\/title>/, block);
   await writeFile(file, html);
 }
-const playerFile = new URL('drafts/dark-player-layout/index.html', root);
-let editorHome = await readFile(playerFile, 'utf8');
+const editorFile = new URL('index.html', root);
+let editorHome = await readFile(editorFile, 'utf8');
 const librarySource = await readFile(new URL('drafts/dark-library-layout/index.html', root), 'utf8');
 const libraryOriginal = librarySource.match(/function original\(\) \{[\s\S]*?\n\}/)[0];
 const libraryUpdates = librarySource.slice(librarySource.indexOf('// Update older saved drafts'), librarySource.indexOf('function remember('));
@@ -140,8 +139,7 @@ editorHome = editorHome.replace(/<!-- BEGIN SPACE -->[\s\S]*?<!-- END SPACE -->\
 const spaceScript = '<!-- BEGIN SPACE -->\n<script data-editor-space>\n' + (await readFile(new URL('editor/space.js', root), 'utf8')).trimEnd() + '\n</script>\n<!-- END SPACE -->\n';
 editorHome = editorHome.replace('<!-- BEGIN WEBMCP -->', () => spaceScript + '<!-- BEGIN WEBMCP -->');
 if (!editorHome.includes('spaceClient?.changed();savePictureDraft')) editorHome = editorHome.replace('savePictureDraft(stored);', 'spaceClient?.changed();savePictureDraft(stored);');
-await writeFile(playerFile, editorHome);
 editorHome = editorHome.replace(/<!-- BEGIN SITE META -->[\s\S]*?<!-- END SITE META -->/, `<!-- BEGIN SITE META -->\n${metadata(pages[0])}\n<!-- END SITE META -->`);
 for (const name of ['dark-library-layout', 'dark-chapter-layout', 'dark-add-layout']) editorHome = editorHome.replaceAll(`href="../${name}/"`, `href="/drafts/${name}/"`);
-await writeFile(new URL('index.html', root), editorHome);
+await writeFile(editorFile, editorHome);
 console.log('Updated public pages, editor metadata and crawler files.');

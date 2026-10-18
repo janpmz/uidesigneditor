@@ -1,6 +1,6 @@
 # uidesigneditor.com
 
-Free UI design tool. Keep projects in your browser or share them through a Space. Use **Copy HTML** to keep a file.
+Free UI design tool. Edit projects in your browser or share them through a Space. Use **Copy HTML** to keep a file.
 
 Needs Node.js 24 or later. Run `npm ci` once.
 

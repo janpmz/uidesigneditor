@@ -26,8 +26,8 @@ test('public pages have readable content and one matching title, canonical and s
     assert.equal(meta(html, 'description'), meta(html, 'og:description'));
     assert.equal(meta(html, 'description'), meta(html, 'twitter:description'));
     assert.equal(meta(html, 'description'), path === '/'
-      ? 'A free UI design tool. Move and resize text, shapes and pictures. Projects save in your Space. Share its link across browsers. No signup.'
-      : 'Free UI design tool. Projects save in your Space. Share its link across browsers. No signup.');
+      ? 'A simple and free ui design tool. Select, cut, move and resize. Work together with your AI. No signup.'
+      : 'Free UI design tool. No signup. A canvas for your AI. Share your work.');
     assert.equal(meta(html, 'og:title'), title);
     assert.equal(meta(html, 'twitter:title'), title);
     assert.equal(meta(html, 'og:url'), origin + path);
@@ -92,7 +92,8 @@ test('robots and sitemap allow the public pages and omit the noindex editors', (
   assert.match(robots, /Sitemap: https:\/\/uidesigneditor.com\/sitemap.xml/);
   const urls = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(([, url]) => url);
   assert.deepEqual(urls, publicPages.map(([path]) => origin + path));
-  for (const name of ['dark-player-layout', 'dark-library-layout', 'dark-chapter-layout', 'dark-add-layout']) {
+  assert.equal(existsSync(join(root, 'drafts/dark-player-layout/index.html')), false);
+  for (const name of ['dark-library-layout', 'dark-chapter-layout', 'dark-add-layout']) {
     const html = read(`drafts/${name}/index.html`);
     assert.equal(meta(html, 'robots'), 'noindex,follow');
     assert.equal(meta(html, 'og:url'), `${origin}/drafts/${name}/`);

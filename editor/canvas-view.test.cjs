@@ -4,7 +4,7 @@ const {readFileSync,readdirSync}=require('node:fs');
 const {join}=require('node:path');
 const vm=require('node:vm');
 const source=readFileSync(join(__dirname,'canvas-view.js'),'utf8');
-const draft=readFileSync(join(__dirname,'../drafts/dark-player-layout/index.html'),'utf8');
+const draft=readFileSync(join(__dirname,'../index.html'),'utf8');
 const geometry=draft.split('// BEGIN SELECTION GEOMETRY')[1].split('// END SELECTION GEOMETRY')[0];
 function harness(){
   const nodes=new Map(),listeners={stage:new Map(),document:new Map(),window:new Map()},captures=new Set();

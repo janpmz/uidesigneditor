@@ -86,7 +86,7 @@ test('clicking a selected canvas item opens Edit, and tab keys update focus and 
 
 test('the root is the working editor and each sidebar keeps the Info text', () => {
   const info = ['Your projects and Space', 'Projects save as you work', 'Open the same Space link in each browser to share work', 'No signup', 'Free to use', 'Open source on GitHub'];
-  for (const file of ['index.html', ...['dark-player-layout', 'dark-library-layout', 'dark-chapter-layout', 'dark-add-layout'].map(name => `drafts/${name}/index.html`)]) {
+  for (const file of ['index.html', ...['dark-library-layout', 'dark-chapter-layout', 'dark-add-layout'].map(name => `drafts/${name}/index.html`)]) {
     const html = readFileSync(join(root, file), 'utf8');
     new vm.Script(html.match(/<script>\s*([\s\S]*?)<\/script>/)[1]);
     const content = html.match(/<section class="inspector-info"[^>]*>([\s\S]*?)<\/section>/)[1];
@@ -96,7 +96,7 @@ test('the root is the working editor and each sidebar keeps the Info text', () =
     assert.equal(html.split('// BEGIN INSPECTOR TABS\n').length - 1, 1);
     if (html.includes('const toolLocations=')) assert.match(html, /\['editor-inspector','home-inspector','tools-edit'\]/);
     const projects = html.match(/<nav class="project-pages" id="editor-pages"[\s\S]*?<\/nav>/)[0];
-    if (file === 'index.html' || file === 'drafts/dark-player-layout/index.html') {
+    if (file === 'index.html') {
       assert.deepEqual([...projects.matchAll(/data-project="([^"]+)"/g)].map(([, id]) => id), ['player', 'library']);
       assert.match(projects, />Projects<\/h2>/);
       assert.doesNotMatch(projects, /href=/);

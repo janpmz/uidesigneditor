@@ -209,7 +209,7 @@ test('exports return editable data or download a file without changing the desig
 });
 
 test('built pages and editable exports include the same tools and the new prompt', () => {
-  for (const path of ['../index.html', ...['dark-player-layout', 'dark-library-layout', 'dark-chapter-layout', 'dark-add-layout'].map(name => '../drafts/' + name + '/index.html')]) {
+  for (const path of ['../index.html', ...['dark-library-layout', 'dark-chapter-layout', 'dark-add-layout'].map(name => '../drafts/' + name + '/index.html')]) {
     const html = readFileSync(join(__dirname, path), 'utf8');
     const script = html.match(/<script data-editor-webmcp>\n([\s\S]*?)\n<\/script>/)[1];
     assert.equal(script.trimEnd(), code.trimEnd());
