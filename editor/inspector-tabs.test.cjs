@@ -6,7 +6,7 @@ const vm = require('node:vm');
 
 const root = join(__dirname, '..');
 const code = readFileSync(join(__dirname, 'inspector-tabs.js'), 'utf8');
-function harness() {
+function harness(url = 'https://uidesigneditor.com/') {
   const nodes = new Map(), listeners = new Map();
   const get = id => {
     if (!nodes.has(id)) nodes.set(id, { hidden: false, dataset: {}, attributes: {}, textContent: '',
@@ -16,8 +16,9 @@ function harness() {
     });
     return nodes.get(id);
   };
+  get('codex-prompt').value = readFileSync(join(__dirname, 'inspector-tabs.html'), 'utf8').match(/<textarea id="codex-prompt"[^>]*>([\s\S]*?)<\/textarea>/)[1];
   const buttons = ['edit', 'info'].map(name => { const button = get('inspector-tab-' + name);button.dataset.inspectorTab = name;return button; });
-  const sandbox = vm.createContext({ selected: new Set(), regionSelection: null, $: get,
+  const sandbox = vm.createContext({ selected: new Set(), regionSelection: null, $: get, location: new URL(url),
     stage: { contains: target => target.onStage },
     document: { querySelectorAll: () => buttons, addEventListener: (name, fn) => listeners.set(name, fn) },
   });
@@ -35,6 +36,32 @@ test('Info opens first, and selecting an item opens Edit', () => {
   assert.equal(h.get('inspector-info').hidden, true);
   assert.equal(h.get('inspector').hidden, false);
   assert.equal(h.get('quick-edit').textContent, 'Edit');
+});
+
+test('the copied prompt opens the current site in a new chat and leaves private URL fields out', async () => {
+  const h = harness('http://127.0.0.1:3000/drafts/dark-player-layout/?key=private#selection');
+  let copied;
+  h.sandbox.navigator = { clipboard: { writeText: async text => { copied = text; } } };
+  await h.get('copy-codex-prompt').onclick();
+  assert.match(copied, /^Open http:\/\/127\.0\.0\.1:3000\/drafts\/dark-player-layout\/ in Codex's built-in browser/);
+  assert.doesNotMatch(copied, /key=private|#selection|https:\/\/uidesigneditor.com/);
+  assert.match(copied, /new named project/);
+  assert.match(copied, /visible and open/);
+  assert.match(copied, /open the same Space link/);
+});
+
+test('copied prompts keep the Space link when it changes after the page opens',async()=>{
+  const h=harness('https://uidesigneditor.com/?private=value');let copied;
+  h.sandbox.location.hash='space='+'a'.repeat(64);
+  h.sandbox.navigator={clipboard:{writeText:async text=>{copied=text;}}};
+  await h.get('copy-codex-prompt').onclick();
+  assert.ok(copied.startsWith('Open https://uidesigneditor.com/#space='+'a'.repeat(64)+' in Codex'));
+  assert.doesNotMatch(copied,/private=value/);
+});
+
+test('saved files keep the public site address in their prompt', () => {
+  const h = harness('file:///tmp/design.html');
+  assert.match(h.get('codex-prompt').value, /^Open https:\/\/uidesigneditor\.com\//);
 });
 
 test('Info stays open during redraws until the user changes their selection', () => {
@@ -58,7 +85,7 @@ test('clicking a selected canvas item opens Edit, and tab keys update focus and 
 });
 
 test('the root is the working editor and each sidebar keeps the Info text', () => {
-  const info = ['100% local editor', 'All files stay in your browser', 'No signup', 'Free to use', 'Open source on GitHub'];
+  const info = ['Your projects and Space', 'Projects save as you work', 'Open the same Space link in each browser to share work', 'No signup', 'Free to use', 'Open source on GitHub'];
   for (const file of ['index.html', ...['dark-player-layout', 'dark-library-layout', 'dark-chapter-layout', 'dark-add-layout'].map(name => `drafts/${name}/index.html`)]) {
     const html = readFileSync(join(root, file), 'utf8');
     new vm.Script(html.match(/<script>\s*([\s\S]*?)<\/script>/)[1]);

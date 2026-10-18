@@ -2,9 +2,11 @@
 
 Source: https://uidesigneditor.com/
 
-## 100% local editor
+## Your projects and Space
 
-- All files stay in your browser
+- Projects save as you work
+
+- Open the same Space link in each browser to share work
 
 - No signup
 
@@ -16,17 +18,21 @@ Source: https://uidesigneditor.com/
 
 Copy prompt
 
-Open https://uidesigneditor.com/ in your browser and use the editor to carry out my design request. Use any files I attach.
+Site tools need a supported Codex browser.
 
-Screenshot: Drop the picture onto the editor and choose "Open as new page?" to edit it at its own size, or "Add to page?" to place it in the current design. Edit parts of the picture or add text, shapes, buttons and icons as I ask.
+Open https://uidesigneditor.com/ in Codex's built-in browser as my design canvas, or reuse that page if it is already open. Use this page's WebMCP site tools to make edits. Keep the tab visible and open when you finish so I can use the result.
 
-New items or a full design: Make separate items I can move, resize and edit. Add items to the current page; open a full design as a new page.
+Find the tools in this tab, then start with read_design. Create my work as a new named project unless I ask you to edit an existing project. For every change, use the latest projectId and revision returned by the tools. If the design changes while you work, read it again before retrying. Keep my edits and the normal Undo history.
 
-HTML: Drop HTML saved with this editor's "Copy HTML" straight into the editor. For other HTML, rebuild its visible design as editor items first. The editor reads an application/json script with id="initial-layout" from the dropped HTML file. Its JSON must have version: 1, canvas: {width, height, background}, and items: [...]. Each item needs a unique id, name, kind, x, y, w and h. Use positive sizes in pixels. Item kinds are label, icon, shape, reading, tab, button, textbox and image. Set text, fontSize, color, background, borderColor, borderWidth, radius, align and opacity as needed. Images need a src with an embedded PNG data URL. Inspect the editor's page source for examples and defaults.
+The main editor opens a Space for me and remembers it in this browser. To share projects across browsers, open the same Space link in each browser. Anyone with the link can edit. Keep the #space part of the URL when opening it in Codex. Space edits save to the server and other open pages fetch the changed project. If a newer saved version exists, keep my unsaved work and let me reload or save it as a copy. HTML exports keep their own copy. If I ask for a project that is missing here, ask me for its Space link, saved HTML or screenshot.
 
-Use your browser's file drop tools to upload. If your tools allow page scripts, put the File in a DataTransfer and send a bubbling drop event to #stage. Then choose "Add to page?" for new items or "Open as new page?" for a full design.
+Use edit_design to add, move, resize, restyle or remove items. Use create_design for a full design in a new project. Keep text, shapes, icons and buttons as separate items I can edit. Use select_project to open a project listed by read_design.
 
-Check the result in the editor, then use "Copy HTML" to keep an editable copy. Give me the saved HTML file and a brief note on what changed.
+For an attached screenshot, call import_image with its bytes as a base64 image data URL. Use mode "new" to open it at its own size, or "add" to place it in the current design. Use move_image_region to move part of a screenshot, and edit_design to add or change items over it.
+
+For HTML saved by this editor, extract its initial-layout JSON and send import_html a small HTML document containing only that application/json script. For other HTML, rebuild its visible design as items with create_design or edit_design. Read the tools' input fields for the required values.
+
+Check the result with read_design and a PNG from export_design. Refresh the site's tool list if the browser reports a stale tool. Use export_design to save the editable HTML. Tell me what changed. If site tools are unavailable, explain that a supported browser with site tools enabled is required.
 
 ---
 
@@ -34,11 +40,15 @@ Check the result in the editor, then use "Copy HTML" to keep an editable copy. G
 
 Move and resize text, shapes, icons and pictures in your browser.
 
-Your work stays in this browser. The editor sends no project data to a server.
+The main editor opens your Space and saves projects and pictures on the server. On the first visit it creates a Space and brings in any existing local projects. This browser remembers it for your next visit.
 
-Player and Library start as local projects. Use **Projects** to switch between them. Each keeps its own edits.
+Use **Copy Space link** and open the same link in each browser. Anyone with that link can read and edit every project in the Space. Keep the link private.
 
-Use **Copy HTML** to keep a file. Clearing browser data removes saved drafts.
+Space changes appear in other open pages. If another page saved a newer version, reload the saved project or save your work as a copy.
+
+Player and Library are the first sample projects. Use **Projects** to switch between them. Each keeps its own edits.
+
+Use **Copy HTML** to keep a file that works on its own. Clearing browser data removes the remembered Space and local drafts. Saved Space projects stay on the server; keep the Space link to open them again.
 
 Free to use. [View the code on GitHub](https://github.com/janpmz/uidesigneditor).
 

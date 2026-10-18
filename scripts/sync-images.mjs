@@ -9,9 +9,12 @@ const imageEditBar = await readFile(new URL('editor/image-edit-bar.html', root),
 const selectTools = (await readFile(new URL('editor/select-tools.html', root), 'utf8')).trimEnd();
 const inspectorMarkup = (await readFile(new URL('editor/inspector-tabs.html', root), 'utf8')).trimEnd();
 const inspectorCode = (await readFile(new URL('editor/inspector-tabs.js', root), 'utf8')).trimEnd();
+const webmcpCode = (await readFile(new URL('editor/webmcp.js', root), 'utf8')).trimEnd();
+const webmcp = '<!-- BEGIN WEBMCP -->\n<script data-editor-webmcp>\n' + webmcpCode.replace(/<\/script/gi, '<\\/script') + '\n</script>\n<!-- END WEBMCP -->';
 const styles = (await Promise.all(['image-drop.css', 'canvas-view.css', 'sidebar-tabs.css', 'inspector-tabs.css', 'annotation-shapes.css'].map(name => readFile(new URL(`editor/${name}`, root), 'utf8')))).join('\n');
 const view = await readFile(new URL('editor/canvas-view.js', root), 'utf8');
 const viewTools = (await readFile(new URL('editor/canvas-view-tools.html', root), 'utf8')).trimEnd();
+const sizeDialog = (await readFile(new URL('editor/canvas-size-dialog.html', root), 'utf8')).trimEnd();
 const reader = await readFile(new URL('editor/vendor/heic-to-1.6.6.js', root), 'utf8');
 const license = await readFile(new URL('editor/vendor/heic-to.LICENSE.txt', root), 'utf8');
 const pictureStyles = '<style data-picture-drop>\n' + styles + '\n</style>\n';
@@ -71,6 +74,9 @@ for (const entry of await readdir(new URL('drafts/', root), { withFileTypes: tru
     if (toolsEnd < 0) throw new Error('Missing canvas view tools end mark.');
     html = html.slice(0, toolsStart) + toolsBlock + html.slice(toolsEnd + '<!-- END CANVAS VIEW TOOLS -->'.length);
   }
+  const sizeDialogBlock = '<!-- BEGIN CANVAS SIZE DIALOG -->\n' + sizeDialog + '\n<!-- END CANVAS SIZE DIALOG -->';
+  if (html.includes('<!-- BEGIN CANVAS SIZE DIALOG -->')) html = html.replace(/<!-- BEGIN CANVAS SIZE DIALOG -->[\s\S]*?<!-- END CANVAS SIZE DIALOG -->/, () => sizeDialogBlock);
+  else html = html.replace('<!-- BEGIN PICTURE CHOICE -->', () => sizeDialogBlock + '\n<!-- BEGIN PICTURE CHOICE -->');
   const imageEditStart = html.indexOf('<!-- BEGIN IMAGE EDIT BAR -->');
   const imageEditBlock = '<!-- BEGIN IMAGE EDIT BAR -->\n' + imageEditBar.trimEnd() + '\n<!-- END IMAGE EDIT BAR -->';
   if (imageEditStart < 0) {
@@ -90,7 +96,9 @@ for (const entry of await readdir(new URL('drafts/', root), { withFileTypes: tru
   html = html.replace(/^function reorder\(direction\)\{[^\n]*\}\n/m, '');
   if (!html.includes('renderOrderActions(actions);')) html = html.replace("actions.className='action-grid';actions.style.marginTop='12px';", "actions.className='action-grid';actions.style.marginTop='12px';renderOrderActions(actions);");
   html = html.replace("note.textContent='Changes save in this browser.", "note.textContent=imageEditSession?'Choose Done to save the image and return to the page. Cancel discards these edits.':'Changes save in this browser.");
+  if (!html.includes('Changes save to this Space.')) html = html.replace("':'Changes save in this browser.", "':typeof onlineSpaceId!=='undefined'&&onlineSpaceId?'Changes save to this Space. Open its link in another browser to share work.':'Changes save in this browser.");
   html = html.replace(/<!-- BEGIN HEIC READER -->[\s\S]*?<!-- END HEIC READER -->\n?/, '');
+  html = html.replace(/<!-- BEGIN WEBMCP -->[\s\S]*?<!-- END WEBMCP -->\n?/g, '');
   if (html.includes('<style data-picture-drop>')) html = html.replace(/<style data-picture-drop>[\s\S]*?<\/style>\n?/, pictureStyles);
   else html = html.replace('</head>', pictureStyles + '</head>');
   // Embed the shared styles so Copy HTML also works without a server.
@@ -98,7 +106,7 @@ for (const entry of await readdir(new URL('drafts/', root), { withFileTypes: tru
   html = html.replace(/<script type="text\/plain" data-license="shadcn-ui">[\s\S]*?<\/script>\n?/g, '');
   html = html.replace('</head>', () => shadcnStyles + shadcnLicense + '</head>');
   // Keep dollar signs in the reader unchanged when adding it after the editor.
-  html = html.replace('</body>', () => support + '\n</body>');
+  html = html.replace('</body>', () => webmcp + '\n' + support + '\n</body>');
   const begin = html.indexOf('// BEGIN PICTURE DROP\n'), end = html.indexOf('// END PICTURE DROP', begin);
   if (begin < 0 || end < 0) throw new Error('Missing picture drop marks.');
   html = html.slice(0, begin) + '// BEGIN PICTURE DROP\n' + code.trimEnd() + '\n' + html.slice(end);
@@ -119,14 +127,14 @@ for (const entry of await readdir(new URL('drafts/', root), { withFileTypes: tru
     html = html.slice(0, choiceStart) + choice + html.slice(choiceEnd + '<!-- END PICTURE CHOICE -->'.length);
   }
   if (!html.includes("phone.classList.toggle('picture-page'")) html = html.replace("phone.classList.toggle('editing',editing);", "phone.classList.toggle('editing',editing);phone.classList.toggle('picture-page',Boolean(state.canvas.picturePage));");
+  if (!html.includes("phone.classList.toggle('free-page'")) html = html.replace("phone.classList.toggle('picture-page',Boolean(state.canvas.picturePage));", "phone.classList.toggle('picture-page',Boolean(state.canvas.picturePage));phone.classList.toggle('free-page',!isPhoneCanvas(state.canvas));");
   html = html.replace('Math.max(.2,Math.min(1,', 'Math.max(state.canvas.picturePage ? .01 : .2,Math.min(1,');
-  html = html.replace("const canvas=section('Phone');", "const canvas=section(state.canvas.picturePage?'Page':'Phone');");
+  html = html.replace(/const canvas=section\((?:'Phone'|state\.canvas\.picturePage\?'Page':'Phone')\);/, "const canvas=section('Canvas');");
   html = html.replace("preset.setAttribute('aria-label','Phone size');", "preset.setAttribute('aria-label',state.canvas.picturePage?'Page size':'Phone size');");
   html = html.replace(/\[\['393,852','iPhone 16[^\n]*\n\s*preset\.onchange=[^\n]*canvas\.append\(preset\);/, 'renderPageSizePicker(preset);canvas.append(preset);');
   if (!html.includes('cleanPictureExport(doc);')) html = html.replace('const doc=document.documentElement.cloneNode(true);', 'const doc=document.documentElement.cloneNode(true);cleanPictureExport(doc);');
   html = html.replace('function renderSelection() {', 'function renderNativeSelection() {');
   if (!html.includes("el.classList.toggle('page-image'")) html = html.replace('styleItem(el,item);', "styleItem(el,item);el.classList.toggle('page-image',isPagePicture(item));");
-  html = html.replace("$('copy-items').disabled=!editing||!selectedItems().length;", "$('copy-items').disabled=!editing||(!regionSelection&&!selectedItems().length);");
   html = html.replace("empty.textContent='Drag across", "empty.textContent=regionSelection?'Drag inside the selection to move it. Cut, copy and paste work with the usual keys or a right-click.':'Drag across");
   const selectionHelp='Draw a box to select items it touches. Drag inside to move them. Shift-click to add or remove an item.';
   for (const message of [

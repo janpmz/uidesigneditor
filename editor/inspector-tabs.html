@@ -5,9 +5,10 @@
   </div>
   <aside class="inspector" id="inspector" role="tabpanel" aria-labelledby="inspector-tab-edit" hidden></aside>
   <section class="inspector-info" id="inspector-info" role="tabpanel" aria-labelledby="inspector-tab-info">
-    <h2>100% local editor</h2>
+    <h2>Your projects and Space</h2>
     <ul>
-      <li>All files stay in your browser</li>
+      <li>Projects save as you work</li>
+      <li>Open the same Space link in each browser to share work</li>
       <li>No signup</li>
       <li>Free to use</li>
       <li><a href="https://github.com/janpmz/uidesigneditor" target="_blank" rel="noopener noreferrer">Open source on GitHub</a></li>
@@ -17,19 +18,24 @@
         <h3 id="codex-prompt-title">Use with Codex</h3>
         <button type="button" id="copy-codex-prompt">Copy prompt</button>
       </div>
-      <textarea id="codex-prompt" rows="8" readonly spellcheck="false" aria-labelledby="codex-prompt-title">Open https://uidesigneditor.com/ in your browser and use the editor to carry out my design request. Use any files I attach.
+      <p id="codex-tools-status" role="status">Site tools need a supported Codex browser.</p>
+      <textarea id="codex-prompt" rows="8" readonly spellcheck="false" aria-labelledby="codex-prompt-title">Open https://uidesigneditor.com/ in Codex's built-in browser as my design canvas, or reuse that page if it is already open. Use this page's WebMCP site tools to make edits. Keep the tab visible and open when you finish so I can use the result.
 
-Screenshot: Drop the picture onto the editor and choose "Open as new page?" to edit it at its own size, or "Add to page?" to place it in the current design. Edit parts of the picture or add text, shapes, buttons and icons as I ask.
+Find the tools in this tab, then start with read_design. Create my work as a new named project unless I ask you to edit an existing project. For every change, use the latest projectId and revision returned by the tools. If the design changes while you work, read it again before retrying. Keep my edits and the normal Undo history.
 
-New items or a full design: Make separate items I can move, resize and edit. Add items to the current page; open a full design as a new page.
+The main editor opens a Space for me and remembers it in this browser. To share projects across browsers, open the same Space link in each browser. Anyone with the link can edit. Keep the #space part of the URL when opening it in Codex. Space edits save to the server and other open pages fetch the changed project. If a newer saved version exists, keep my unsaved work and let me reload or save it as a copy. HTML exports keep their own copy. If I ask for a project that is missing here, ask me for its Space link, saved HTML or screenshot.
 
-HTML: Drop HTML saved with this editor's "Copy HTML" straight into the editor. For other HTML, rebuild its visible design as editor items first. The editor reads an application/json script with id="initial-layout" from the dropped HTML file. Its JSON must have version: 1, canvas: {width, height, background}, and items: [...]. Each item needs a unique id, name, kind, x, y, w and h. Use positive sizes in pixels. Item kinds are label, icon, shape, reading, tab, button, textbox and image. Set text, fontSize, color, background, borderColor, borderWidth, radius, align and opacity as needed. Images need a src with an embedded PNG data URL. Inspect the editor's page source for examples and defaults.
+Use edit_design to add, move, resize, restyle or remove items. Use create_design for a full design in a new project. Keep text, shapes, icons and buttons as separate items I can edit. Use select_project to open a project listed by read_design.
 
-Use your browser's file drop tools to upload. If your tools allow page scripts, put the File in a DataTransfer and send a bubbling drop event to #stage. Then choose "Add to page?" for new items or "Open as new page?" for a full design.
+For an attached screenshot, call import_image with its bytes as a base64 image data URL. Use mode "new" to open it at its own size, or "add" to place it in the current design. Use move_image_region to move part of a screenshot, and edit_design to add or change items over it.
 
-Check the result in the editor, then use "Copy HTML" to keep an editable copy. Give me the saved HTML file and a brief note on what changed.</textarea>
+For HTML saved by this editor, extract its initial-layout JSON and send import_html a small HTML document containing only that application/json script. For other HTML, rebuild its visible design as items with create_design or edit_design. Read the tools' input fields for the required values.
+
+Check the result with read_design and a PNG from export_design. Refresh the site's tool list if the browser reports a stale tool. Use export_design to save the editable HTML. Tell me what changed. If site tools are unavailable, explain that a supported browser with site tools enabled is required.</textarea>
       <p id="codex-prompt-status" class="codex-prompt-status" role="status"></p>
     </div>
   </section>
-  <footer class="inspector-credit">Vibecoded with <span role="img" aria-label="love">❤️</span> by <a href="https://x.com/janxpm" target="_blank" rel="noopener noreferrer">@janxpm</a></footer>
+  <footer class="inspector-credit">
+    <span>Made with <span class="inspector-credit-icons"><span role="img" aria-label="love">❤️</span><span role="img" aria-label="coffee">☕</span><span role="img" aria-label="artist">🧑‍🎨</span><span role="img" aria-label="eyes">👀</span></span> <span class="inspector-credit-author">by <a href="https://x.com/janxpm" target="_blank" rel="noopener noreferrer">@janxpm</a></span></span>
+  </footer>
 </aside>

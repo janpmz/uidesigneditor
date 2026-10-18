@@ -1,8 +1,49 @@
 # Publish with Caddy
 
 The existing VPS setup can serve this site through Cloudflare Tunnel and Caddy.
-It needs no Python or Node server, extra app port, database, or project upload path.
-Node is used only to prepare the files and run checks.
+Static pages use Caddy. Space saves need Node.js 24 or later, the `ws` package,
+and a private folder for the SQLite database and pictures. The save service listens only on `127.0.0.1:3000`.
+Caddy sends `/api/*` and `/ws` to it, including WebSocket connections.
+
+## Start with PM2
+
+Use Node.js 24 or later and PM2. Keep the checkout in your usual projects
+folder. Run these scripts as the same VPS user that runs your other PM2 apps.
+
+Give that user a folder for saved work once:
+
+```sh
+sudo install -d -o "$(id -un)" -g "$(id -gn)" /var/lib/uidesigneditor
+```
+
+After the first build, `./startServer.sh` starts the PM2 app named
+`uidesigneditor`, or restarts it with the current settings if it exists.
+It saves the PM2 app list. It uses port `3000`, public files in
+`/srv/uidesigneditor`, and saved work in `/var/lib/uidesigneditor`.
+Set `PORT`, `PUBLIC_DIR` or `DATA_DIR` to change these paths and port.
+Logs go to `$HOME/projects/logs/uidesigneditor.log`; `LOG_DIR` changes the
+log folder. Keep the same settings for each start and release.
+
+If PM2 does not yet start on boot, run `pm2 startup` and follow the command it
+prints. Use `pm2 logs uidesigneditor` to read logs.
+
+If you already installed the old systemd service, stop and disable it before
+starting PM2: `sudo systemctl disable --now uidesigneditor`. Give the PM2 user
+ownership of the existing data folder and its files. Keep the same `DATA_DIR`
+so PM2 opens the saved database.
+
+The server stores work under `/var/lib/uidesigneditor`:
+
+```text
+spaces.sqlite
+pictures/<spaceId>/<projectId>/<pictureId>.png
+```
+
+SQLite keeps project data and picture file names. Pictures stay private and load
+through the saved project's picture route. Keep this whole folder across
+releases. Stop `uidesigneditor` with PM2 before copying the folder for a backup,
+then restart it. A database copy alone does not include the pictures. Never put
+this folder in `dist/` or `/srv/uidesigneditor/`.
 
 ## Prepare the files
 
@@ -12,9 +53,10 @@ Run on the VPS from this project folder:
 ./redeploy.sh
 ```
 
-The script pulls the latest code, builds the public files, runs the checks, then
+The script pulls the latest code, installs packages, builds the public files, runs the checks, then
 copies `dist/` to `/srv/uidesigneditor/`. It stops if the pull fails or needs a
 merge. It replaces files there to match the build. Caddy serves that folder.
+It then runs `startServer.sh` to start or restart the save server with PM2.
 
 ## Add the site to Caddy
 
@@ -23,7 +65,8 @@ repo. Keep its existing global block, local bind address and DNS settings.
 
 The blocks serve `uidesigneditor.com` and redirect `www` to it. They turn on
 compression, let browsers check for new files, and return a real 404 status for
-a missing page. They do not add directory listings or a project save service.
+a missing page. They send Space requests to the save service and keep its
+database outside the public site.
 
 Use the VPS repo's existing commands to check, install and reload that Caddyfile:
 
@@ -77,10 +120,19 @@ projects. It helps tools read the site; it does not guarantee search rank.
 
 ## User work
 
-Drafts and pictures stay in each user's browser. Publishing these files neither
-uploads those drafts nor moves them between addresses. A draft at localhost
-will not appear at `https://uidesigneditor.com`; use Copy HTML and open that file
-at the new address to move it.
+The main editor creates a Space on the first visit, copies existing local
+projects to it, and remembers it in that browser for later visits. HTML exports
+keep their own local copy. Open the same secret Space link in each browser
+to share work. Anyone with that link can read and edit every project in it.
+Keep these links out of public logs and shared screenshots.
+
+A Space on localhost and one on the public site use different databases.
+Use Copy HTML and import the file at the other site to move work between them.
+Publishing the site files alone does not move local drafts or Space data.
+
+Check two browsers with the same Space link: create a project, edit it, and
+check that the other page updates. Disconnect one page, edit in the other,
+then reconnect. A page with unsaved work must offer reload or save as a copy.
 
 Keep one public address. Redirect `www` to the main domain before people start
 saving work, since each address has its own browser store. Keep regular copies

@@ -4,13 +4,13 @@ import { runInNewContext } from 'node:vm';
 const root = new URL('../', import.meta.url);
 export const origin = 'https://uidesigneditor.com';
 export const pages = [
-  { path: '/', file: 'index.html', source: 'editor/inspector-tabs.html', title: 'UI Design Editor | Free local screen editor', description: 'A simple and free ui design tool. Select, cut, move and resize. Add buttons and rectangles. 100% local, all files stay in your browser. No signup.' },
-  { path: '/guide/', file: 'guide/index.html', source: 'site/guide.html', title: 'About UI Design Editor', description: 'Free UI design tool. Your work stays 100% local in your browser. No signup.' },
+  { path: '/', file: 'index.html', source: 'editor/inspector-tabs.html', title: 'UI Design Editor | Free screen editor', description: 'A free UI design tool. Move and resize text, shapes and pictures. Projects save in your Space. Share its link across browsers. No signup.' },
+  { path: '/guide/', file: 'guide/index.html', source: 'site/guide.html', title: 'About UI Design Editor', description: 'Free UI design tool. Projects save in your Space. Share its link across browsers. No signup.' },
 ];
 const escape = value => value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 const header = `<a class="skip-link" href="#main">Skip to content</a>
 <header class="site-header"><a class="brand" href="/"><img src="/assets/icon.svg" alt="" width="25" height="25">uidesigneditor.com</a><nav class="site-nav" aria-label="Main"><a href="/guide/">About</a><a class="nav-editor" href="/">Open editor</a></nav></header>`;
-const footer = `<footer class="site-footer"><span>UI Design Editor · Your drafts stay on your device.</span><nav aria-label="More"><a href="https://github.com/janpmz/uidesigneditor" target="_blank" rel="noopener noreferrer">GitHub</a><a href="/guide/#save">Saving &amp; privacy</a><a href="/llms.txt">LLMs.txt</a><a href="/sitemap.xml">Sitemap</a></nav></footer>`;
+const footer = `<footer class="site-footer"><span>UI Design Editor · Projects save in your Space.</span><nav aria-label="More"><a href="https://github.com/janpmz/uidesigneditor" target="_blank" rel="noopener noreferrer">GitHub</a><a href="/guide/#save">Saving &amp; privacy</a><a href="/llms.txt">LLMs.txt</a><a href="/sitemap.xml">Sitemap</a></nav></footer>`;
 function structuredData(page) {
   return {
     '@context': 'https://schema.org',
@@ -38,12 +38,12 @@ export function metadata(page, { index = true, schema = true } = {}) {
 <meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1280">
 <meta property="og:image:height" content="720">
-<meta property="og:image:alt" content="Free UI mockup tool. 100% local in your browser. No accounts. Select, cut, move, resize.">
+<meta property="og:image:alt" content="Free UI design tool. Local projects or a shared Space. No signup.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${escape(page.title)}">
 <meta name="twitter:description" content="${escape(page.description)}">
 <meta name="twitter:image" content="${origin}/assets/social-card.jpg">
-<meta name="twitter:image:alt" content="Free UI mockup tool. 100% local in your browser. No accounts. Select, cut, move, resize.">
+<meta name="twitter:image:alt" content="Free UI design tool. Local projects or a shared Space. No signup.">
 ${schema ? `<script type="application/ld+json">\n${JSON.stringify(structuredData(page), null, 2)}\n</script>` : ''}`;
 }
 function document(page, body, options) {
@@ -122,7 +122,9 @@ editorHome = editorHome.replace('let state=original(),selected=', 'let state=loc
 editorHome = editorHome.replace(/^try \{ const saved=JSON.parse\(localStorage.getItem\(STORAGE\)[^\n]+\n/m, '');
 const pageIcon = '<svg viewBox="0 0 16 18" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><path d="M9.5 1.5H3a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V6L9.5 1.5Z"/><path d="M9 1.5V6h5M5 10h6M5 13h4"/></svg>';
 const deleteIcon = '<svg viewBox="0 0 16 18" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><path d="M2 4.5h12M6 4.5v-2h4v2M3.5 4.5l.7 11h7.6l.7-11M6.5 7v6M9.5 7v6"/></svg>';
-editorHome = editorHome.replace(/<nav class="project-pages" id="editor-pages"[\s\S]*?<\/nav>/, `<nav class="project-pages" id="editor-pages" aria-labelledby="project-pages-title">\n      <h2 id="project-pages-title">Projects</h2>\n      <div class="project-page-list">\n${['Player','Library'].map(name => `        <div class="project-page-row" data-project-row="${name.toLowerCase()}"><button type="button" class="project-page" data-project="${name.toLowerCase()}"${name === 'Player' ? ' aria-current="page"' : ''}>${pageIcon}<span>${name}</span></button><button type="button" class="project-delete" data-delete-project="${name.toLowerCase()}" aria-label="Delete ${name}" title="Delete ${name}">${deleteIcon}</button></div>`).join('\n')}\n      </div>\n    </nav>`);
+const newProjectIcon = '<svg viewBox="0 0 16 18" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M8 3v12M2 9h12"/></svg>';
+const spaceControls = (await readFile(new URL('editor/space.html', root), 'utf8')).trimEnd();
+editorHome = editorHome.replace(/<nav class="project-pages" id="editor-pages"[\s\S]*?<\/nav>/, `<nav class="project-pages" id="editor-pages" aria-labelledby="project-pages-title">\n      ${spaceControls}\n      <h2 id="project-pages-title">Projects</h2>\n      <button type="button" class="project-page project-new" id="project-new">${newProjectIcon}<span>New Project</span></button>\n      <div class="project-page-list">\n${['Player','Library'].map(name => `        <div class="project-page-row" data-project-row="${name.toLowerCase()}"><button type="button" class="project-page" data-project="${name.toLowerCase()}"${name === 'Player' ? ' aria-current="page"' : ''}>${pageIcon}<span>${name}</span></button><button type="button" class="project-delete" data-delete-project="${name.toLowerCase()}" aria-label="Delete ${name}" title="Delete ${name}">${deleteIcon}</button></div>`).join('\n')}\n      </div>\n    </nav>`);
 const projectStyles = '<style data-projects>\n' + (await readFile(new URL('editor/projects.css', root), 'utf8')).trimEnd() + '\n</style>';
 if (editorHome.includes('<style data-projects>')) editorHome = editorHome.replace(/<style data-projects>[\s\S]*?<\/style>/, () => projectStyles);
 else editorHome = editorHome.replace('</head>', projectStyles + '\n</head>');
@@ -134,6 +136,10 @@ if (!editorHome.includes('cleanPictureExport(doc);exportProjects(doc);')) editor
 if (!editorHome.includes('await projectsReady;await navigator.clipboard.writeText(exportHtml())')) editorHome = editorHome.replace('await navigator.clipboard.writeText(exportHtml())', 'await projectsReady;await navigator.clipboard.writeText(exportHtml())');
 editorHome = editorHome.replace("downloadBlob(blob,'player-design.png');", "downloadBlob(blob,activeProject+'-design.png');");
 if (!editorHome.includes('const projectsReady=initializeProjects();')) editorHome = editorHome.replace('syncToolLayout();render();', 'syncToolLayout();render();\nconst projectsReady=initializeProjects();');
+editorHome = editorHome.replace(/<!-- BEGIN SPACE -->[\s\S]*?<!-- END SPACE -->\n?/g, '');
+const spaceScript = '<!-- BEGIN SPACE -->\n<script data-editor-space>\n' + (await readFile(new URL('editor/space.js', root), 'utf8')).trimEnd() + '\n</script>\n<!-- END SPACE -->\n';
+editorHome = editorHome.replace('<!-- BEGIN WEBMCP -->', () => spaceScript + '<!-- BEGIN WEBMCP -->');
+if (!editorHome.includes('spaceClient?.changed();savePictureDraft')) editorHome = editorHome.replace('savePictureDraft(stored);', 'spaceClient?.changed();savePictureDraft(stored);');
 await writeFile(playerFile, editorHome);
 editorHome = editorHome.replace(/<!-- BEGIN SITE META -->[\s\S]*?<!-- END SITE META -->/, `<!-- BEGIN SITE META -->\n${metadata(pages[0])}\n<!-- END SITE META -->`);
 for (const name of ['dark-library-layout', 'dark-chapter-layout', 'dark-add-layout']) editorHome = editorHome.replaceAll(`href="../${name}/"`, `href="/drafts/${name}/"`);

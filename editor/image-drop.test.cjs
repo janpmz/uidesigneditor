@@ -35,8 +35,8 @@ test('a new page holds several pictures without placing one over another', () =>
   assert.deepEqual(plan.canvas.picturePageSize,{width:800,height:700});
 });
 
-test('a picture can switch to every phone size and back to its page size', () => {
-  for(const phone of ['393,852','402,874','440,956']){
+test('a picture can switch to every preset and back to its page size', () => {
+  for(const phone of ['393,852','402,874','440,956','768,1024','1440,900','1920,1080','1080,1080','794,1123']){
     const result=run(`(()=>{
       const layout={canvas:{width:903,height:552,picturePage:true},items:[{x:0,y:0,w:903,h:552},{x:100,y:100,w:160,h:70}]};
       setPageSize(layout,${JSON.stringify(phone)});const phoneChoices=pageSizeChoices(layout),phoneMode=Boolean(layout.canvas.picturePage);
@@ -60,15 +60,87 @@ test('a picture with phone dimensions still has separate Page and iPhone choices
   const choices=run('pageSizeChoices({canvas:{width:393,height:852,picturePage:true},items:[]})');
   assert.equal(choices.value,'page');assert.deepEqual(choices.options.slice(0,2).map(option=>option.value),['page','393,852']);
 });
-test('a plain phone draft keeps the three phone choices', () => {
+test('every draft offers phones, a tablet, a website, slides, a square, a page and a custom size', () => {
   const choices=run('pageSizeChoices({canvas:{width:393,height:852},items:[]})');
-  assert.equal(choices.page,null);assert.deepEqual(choices.options.map(option=>option.value),['393,852','402,874','440,956']);
+  assert.equal(choices.page,null);
+  assert.deepEqual(choices.options.map(option=>option.value),['393,852','402,874','440,956','768,1024','1440,900','1920,1080','1080,1080','794,1123','custom']);
+  assert.match(choices.options.find(option=>option.value==='1440,900').text,/Website/);
+  const custom=run('pageSizeChoices({canvas:{width:2345,height:678},items:[]})');
+  assert.equal(custom.value,'2345,678');
+  assert.deepEqual(custom.options.at(-2),{value:'2345,678',text:'2345 × 678'});
+});
+test('custom sizes can keep item sizes and positions, and reject invalid sides', () => {
+  const result=run(`(()=>{
+    const layout={canvas:{width:393,height:852,background:'#fff'},items:[{x:-20,y:900,w:180,h:60}]};
+    setPageSize(layout,'2345,678',false);return layout;
+  })()`);
+  assert.deepEqual(result.canvas,{width:2345,height:678,background:'#fff'});
+  assert.deepEqual(result.items,[{x:-20,y:900,w:180,h:60}]);
+  for(const value of ['0,20','1.5,20','16001,20','10,NaN','custom','-1,50']){
+    assert.deepEqual(run(`(()=>{const layout=${JSON.stringify(result)};setPageSize(layout,${JSON.stringify(value)});return layout;})()`),result);
+  }
+  assert.ok(run('(()=>{const layout={canvas:{width:16000,height:16000},items:[{x:0,y:0,w:.1,h:.1}]};setPageSize(layout,"1,1");return layout.items[0].w;})()')>0);
+});
+test('only phone presets have rounded canvas edges', () => {
+  for(const [width,height] of [[393,852],[402,874],[440,956]]){
+    assert.equal(run(`isPhoneCanvas({width:${width},height:${height}})`),true);
+    assert.equal(run(`isPhoneCanvas({width:${width},height:${height},picturePage:true})`),false);
+  }
+  for(const [width,height] of [[1440,900],[1080,1080],[2345,678],[794,1123]])assert.equal(run(`isPhoneCanvas({width:${width},height:${height}})`),false);
 });
 test('old picture pages recover their page size after a switch to a phone', () => {
   const header=Buffer.alloc(24);Buffer.from([137,80,78,71,13,10,26,10]).copy(header);header.write('IHDR',12);header.writeUInt32BE(903,16);header.writeUInt32BE(552,20);
   const src='data:image/png;base64,'+header.toString('base64');
   assert.deepEqual(run(`picturePageSizeFor({canvas:{width:393,height:852},items:[{imageBase:true,src:${JSON.stringify(src)},x:0,y:0,w:393,h:852}]})`),{width:903,height:552});
   assert.equal(run('storedPictureSize("data:image/png;base64,AAAA")'),null);
+});
+
+function sizePickerHarness(){
+  const nodes=new Map(),history=[],listeners=new Map();
+  const get=id=>{
+    if(!nodes.has(id))nodes.set(id,{value:'',checked:false,open:false,options:[],
+      replaceChildren(){this.options=[];},append(option){this.options.push(option);},focus(){},select(){},
+      reportValidity(){return this.valid!==false;},showModal(){this.open=true;},
+      close(){this.open=false;this.onclose?.();},addEventListener(type,fn){this['on'+type]=fn;},
+    });
+    return nodes.get(id);
+  };
+  const sandbox=vm.createContext({$:get,round:value=>Math.round(value*10)/10,atob,
+    state:{version:1,canvas:{width:393,height:852,background:'#fff'},items:[{x:10,y:20,w:100,h:60}]},
+    canvasViewBusy:()=>false,canvasPan:null,canvasPinch:null,drag:null,pictureChoice:{open:false},
+    clearCanvasRegion(){},document:{createElement:()=>({}),addEventListener(type,fn){listeners.set(type,fn);}},
+  });
+  const execute=code=>vm.runInContext(code,sandbox),plain=code=>JSON.parse(JSON.stringify(execute(code)));
+  sandbox.change=fn=>{history.push(plain('state'));fn();execute('renderPageSizePicker($("page-size"))');};
+  execute(helpers+sizes+source.split('// BEGIN PAGE SIZE PICKER')[1].split('// END PAGE SIZE PICKER')[0]);
+  execute('renderPageSizePicker($("page-size"))');
+  return {get,sandbox,history,listeners,plain,execute,
+    open(){get('page-size').value='custom';get('page-size').onchange();},
+    apply(width,height,resize=false){get('canvas-width').value=String(width);get('canvas-height').value=String(height);get('canvas-resize-items').checked=resize;get('canvas-size-form').onsubmit({preventDefault(){}});},
+  };
+}
+test('custom size opens with the current size, applies once and can undo or cancel',()=>{
+  const h=sizePickerHarness(),before=h.plain('state');h.open();
+  assert.equal(h.get('canvas-size-dialog').open,true);
+  assert.equal(h.get('canvas-width').value,393);assert.equal(h.get('canvas-height').value,852);
+  assert.equal(h.get('page-size').value,'393,852');assert.equal(h.history.length,0);
+  h.apply(2345,678);
+  assert.equal(h.get('canvas-size-dialog').open,false);assert.equal(h.history.length,1);
+  assert.deepEqual(h.plain('state.canvas'),{width:2345,height:678,background:'#fff'});
+  assert.deepEqual(h.plain('state.items'),before.items);assert.equal(h.get('page-size').value,'2345,678');
+  h.sandbox.state=h.history.pop();h.execute('renderPageSizePicker($("page-size"))');
+  assert.deepEqual(h.plain('state'),before);
+  h.open();h.get('canvas-width').value=500;h.get('canvas-size-cancel').onclick();
+  assert.deepEqual(h.plain('state'),before);assert.equal(h.history.length,0);
+  h.open();h.get('canvas-size-dialog').close();assert.deepEqual(h.plain('state'),before);
+});
+test('custom size can resize items and makes no change for the same or invalid size',()=>{
+  const h=sizePickerHarness();h.open();h.apply(393,852);assert.equal(h.history.length,0);
+  h.open();h.apply(0,500);assert.equal(h.get('canvas-size-dialog').open,true);assert.equal(h.history.length,0);
+  h.apply(786,1704,true);assert.deepEqual(h.plain('state.items'),[{x:20,y:40,w:200,h:120}]);
+  assert.equal(h.history.length,1);
+  h.open();const next={canvas:{width:900,height:600},items:[]};h.sandbox.state=next;
+  h.apply(1000,1000);assert.deepEqual(h.plain('state'),next);assert.equal(h.history.length,1);
 });
 
 const action = source.split('// BEGIN DROP ACTION')[1].split('// END DROP ACTION')[0];

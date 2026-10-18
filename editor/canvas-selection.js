@@ -314,12 +314,6 @@ document.addEventListener('keydown',event=>{
     void (async()=>{const region=regionSelection;try{const plan=await makeRegionPlan(region);if(regionSelection===region&&regionIsCurrent(region))change(()=>{applyRegionPatches(plan);regionSelection=null;});}catch(error){notify(error.message);}finally{canvasEditBusy=false;}})();
   }
 },true);
-if($('copy-items'))$('copy-items').onclick=()=>copyCanvasSelection();
-if($('paste-items'))$('paste-items').onclick=async()=>{
-  if(pasteCanvasClipboard())return;
-  try{const text=await Promise.race([navigator.clipboard.readText(),new Promise(resolve=>setTimeout(()=>resolve(''),700))]);const payload=readCanvasClipboard(text);if(payload&&pasteCanvasClipboard(payload))return;}catch{}
-  notify('Copy items or a picture selection first.');
-};
 function showCanvasMenu(event,fromList=false){
   if(!canEditCanvas(event)||pictureDropBusy)return;
   const id=event.target.closest(fromList?'.layer':'.item,.selection-overlay')?.dataset.id;

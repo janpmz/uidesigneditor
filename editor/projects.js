@@ -2,8 +2,16 @@
 const projectData=JSON.parse($('initial-projects').textContent);
 const localProjects=projectData.projects;
 const projectHome=['/','/index.html','/drafts/dark-player-layout/','/drafts/dark-player-layout/index.html'].includes(location.pathname);
-const activeProjectKey='ui-design-editor-active-project-v1:'+(projectHome?'/':location.pathname);
-const projectListKey='ui-design-editor-projects-v1:'+(projectHome?'/':location.pathname);
+let spaceClient=null;
+const lastSpaceKey='ui-design-editor-last-space-v1';
+let onlineSpaceId=location.protocol==='file:'?null:(location.hash||'').match(/^#space=([a-f0-9]{64})$/)?.[1]||null;
+if(['http:','https:'].includes(location.protocol)&&!onlineSpaceId){
+  try{const saved=localStorage.getItem(lastSpaceKey);if(/^[a-f0-9]{64}$/.test(saved||''))onlineSpaceId=saved;}catch{}
+  if(onlineSpaceId)window.history.replaceState(null,'','#space='+onlineSpaceId);
+}
+function projectScope(){return onlineSpaceId?'space:'+onlineSpaceId:(projectHome?'/':location.pathname);}
+let activeProjectKey='ui-design-editor-active-project-v1:'+projectScope();
+let projectListKey='ui-design-editor-projects-v1:'+projectScope();
 const deletedProjects=new Set();
 function restoreProjectList(saved){
   if(saved?.version!==1||!Array.isArray(saved.projects))return;
@@ -14,20 +22,21 @@ function restoreProjectList(saved){
     localProjects.push({id:project.id,name:project.name,layout:null});
   }
 }
-function blankProject(){return {id:'project-'+crypto.randomUUID(),name:'New project',layout:{version:1,canvas:{width:393,height:852,background:'#000000'},items:[]}};}
+function blankProjectLayout(){return {version:1,canvas:{width:393,height:852,background:'#000000'},items:[]};}
+function blankProject(){return {id:'project-'+crypto.randomUUID(),name:'New project',layout:blankProjectLayout()};}
 let savedProjectList,savedActiveProject;
 try{savedProjectList=JSON.parse(localStorage.getItem(projectListKey)||'null');restoreProjectList(savedProjectList);}catch{}
 if(!localProjects.length)localProjects.push(blankProject());
 let activeProject=projectData.active||'player';
 try{savedActiveProject=localStorage.getItem(activeProjectKey)||savedProjectList?.active;if(localProjects.some(project=>project.id===savedActiveProject))activeProject=savedActiveProject;}catch{}
 if(!localProjects.some(project=>project.id===activeProject))activeProject=localProjects[0].id;
-function projectStorage(id){return 'dark-'+id+'-layout-v2:'+(projectHome?'/drafts/dark-'+id+'-layout/':location.pathname);}
+function projectStorage(id){return 'dark-'+id+'-layout-v2:'+(onlineSpaceId?'space:'+onlineSpaceId:(projectHome?'/drafts/dark-'+id+'-layout/':location.pathname));}
 let STORAGE=projectStorage(activeProject);
 const projectSessions=new Map();
 let projectSwitchBusy=false;
 function localProjectLayout(id){
   const project=localProjects.find(project=>project.id===id);
-  let layout=project.layout||(id==='player'?original():{version:1,canvas:{width:393,height:852,background:'#000000'},items:[]});
+  let layout=project.layout||(id==='player'?original():blankProjectLayout());
   try{const embedded=JSON.parse($('initial-layout').textContent);if(id===projectData.active&&validEditorPage(embedded))layout=embedded;}catch{}
   try{const saved=JSON.parse(localStorage.getItem(projectStorage(id))||'null');if(validEditorPage(saved))layout=saved;}catch{}
   return copy(layout);
@@ -45,6 +54,7 @@ async function readProjectLayout(id){
 }
 function renderProjects(){
   const list=document.querySelector('#editor-pages .project-page-list');
+  $('project-new').disabled=projectSwitchBusy||Boolean(imageEditSession);
   for(const row of list.querySelectorAll('[data-project-row]'))if(!localProjects.some(project=>project.id===row.dataset.projectRow))row.remove();
   for(const project of localProjects){
     let button=[...list.querySelectorAll('[data-project]')].find(button=>button.dataset.project===project.id);
@@ -79,6 +89,7 @@ function saveProjectList(){
   const saved=projectListData();
   try{localStorage.setItem(projectListKey,JSON.stringify(saved));localStorage.setItem(activeProjectKey,activeProject);}catch{}
   if(pictureDB)try{pictureDB.transaction('drafts','readwrite').objectStore('drafts').put(saved,projectListKey);}catch{}
+  spaceClient?.changed();
 }
 function openProject(id,layout,session){
   activeProject=id;STORAGE=projectStorage(id);state=layout;
@@ -97,6 +108,19 @@ function createProject(layout,fileName){
   localProjects.push({id,name,layout:copy(layout)});
   openProject(id,copy(layout));
 }
+async function createBlankProject(){
+  if(projectSwitchBusy)return;
+  if(imageEditSession){notify('Choose Done or Cancel before creating a project.');return;}
+  if(canvasViewBusy()||canvasPan||canvasPinch||drag||pictureChoice.open)return;
+  projectSwitchBusy=true;renderProjects();
+  try{
+    await projectsReady;
+    await spaceClient?.ready;
+    if(imageEditSession||canvasViewBusy()||canvasPan||canvasPinch||drag||pictureChoice.open)return;
+    createProject(blankProjectLayout(),'New Project');
+  }finally{projectSwitchBusy=false;renderProjects();}
+}
+$('project-new').onclick=createBlankProject;
 async function switchProject(id){
   if(id===activeProject||!localProjects.some(project=>project.id===id)||projectSwitchBusy)return;
   if(imageEditSession){notify('Choose Done or Cancel before switching projects.');return;}
@@ -104,6 +128,7 @@ async function switchProject(id){
   projectSwitchBusy=true;renderProjects();
   try{
     await projectsReady;
+    await spaceClient?.ready;
     if(imageEditSession||canvasViewBusy()||canvasPan||canvasPinch||drag||pictureChoice.open)return;
     save();keepProjectSession();
     const session=projectSessions.get(id),layout=session?.state||await readProjectLayout(id);
@@ -117,7 +142,7 @@ function confirmProjectDeletion(project){
   const cancel=$('project-delete-cancel'),confirm=$('project-delete-confirm');
   let finalStep=false,committing=false;
   $('project-delete-title').textContent='Delete “'+project.name+'”?';
-  $('project-delete-help').textContent='This will delete the project and its saved work from this browser. You can’t undo this.';
+  $('project-delete-help').textContent=onlineSpaceId?'This will delete the project from this Space for everyone with its link. You can’t undo this.':'This will delete the project and its saved work from this browser. You can’t undo this.';
   confirm.textContent='Continue';confirm.classList.remove('danger');cancel.disabled=confirm.disabled=false;
   return new Promise(resolve=>{
     projectDeleteDialog.addEventListener('close',()=>resolve(false),{once:true});
@@ -157,9 +182,11 @@ async function deleteProject(id){
   projectSwitchBusy=true;renderProjects();
   try{
     await projectsReady;
+    await spaceClient?.ready;
     const project=localProjects.find(project=>project.id===id);
     if(!project||imageEditSession||canvasViewBusy()||canvasPan||canvasPinch||drag||pictureChoice.open||pictureDropBusy)return;
     dialogShown=true;if(!await confirmProjectDeletion(project))return;
+    if(spaceClient)await spaceClient.remove(id);
     const remaining=localProjects.filter(project=>project.id!==id),index=localProjects.indexOf(project);
     if(!remaining.length)remaining.push(blankProject());
     const nextId=id===activeProject?remaining[Math.min(index,remaining.length-1)].id:activeProject;
