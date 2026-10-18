@@ -55,7 +55,7 @@ export async function createSpaceServer({ database = ':memory:', publicDir = fil
     let data;
     try { data = await readFile(join(publicDir, file)); }
     catch (error) { if (error.code === 'ENOENT') throw failure(404, 'Not found.');throw error; }
-    res.setHeader('Content-Type', ({ '.html':'text/html; charset=utf-8','.css':'text/css','.svg':'image/svg+xml','.jpg':'image/jpeg','.png':'image/png','.txt':'text/plain; charset=utf-8','.xml':'application/xml' })[extname(file)] || 'application/octet-stream');
+    res.setHeader('Content-Type', ({ '.html':'text/html; charset=utf-8','.css':'text/css','.svg':'image/svg+xml','.jpg':'image/jpeg','.png':'image/png','.mp4':'video/mp4','.txt':'text/plain; charset=utf-8','.xml':'application/xml' })[extname(file)] || 'application/octet-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.end(req.method === 'HEAD' ? undefined : data);
   }

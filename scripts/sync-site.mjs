@@ -1,5 +1,6 @@
 import { readFile, writeFile, mkdir, rm } from 'node:fs/promises';
 import { runInNewContext } from 'node:vm';
+import { landingProject } from '../editor/landing-project.mjs';
 
 const root = new URL('../', import.meta.url);
 const aiInstructions = (await readFile(new URL('instructions.txt', root), 'utf8')).trim().replace(/^UI Design Editor: instructions for AI assistants\s*\n+/, '');
@@ -10,8 +11,7 @@ export const pages = [
 ];
 const escape = value => value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 const header = `<a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header"><a class="brand" href="/"><img src="/assets/icon.svg" alt="" width="25" height="25">uidesigneditor.com</a><nav class="site-nav" aria-label="Main"><a href="/guide/">About</a><a class="nav-editor" href="/">Open editor</a></nav></header>`;
-const footer = `<footer class="site-footer"><span>UI Design Editor · Projects save in your Space.</span><nav aria-label="More"><a href="https://github.com/janpmz/uidesigneditor" target="_blank" rel="noopener noreferrer">GitHub</a><a href="/guide/#save">Saving &amp; privacy</a><a href="/llms.txt">LLMs.txt</a><a href="/sitemap.xml">Sitemap</a></nav></footer>`;
+<header class="site-header"><a class="brand" href="/"><img src="/assets/icon.svg" alt="" width="25" height="25">uidesigneditor.com</a><nav class="site-nav" aria-label="Main"><a class="nav-editor" href="/">Open editor</a></nav></header>`;
 function structuredData(page) {
   return {
     '@context': 'https://schema.org',
@@ -59,9 +59,8 @@ ${metadata(page, options)}
 <link rel="stylesheet" href="/assets/site.css">
 </head>
 <body>
-${page.path === '/guide/' ? header.replace(/<nav[\s\S]*?<\/nav>/, '') : header}
+${header}
 ${body.trim()}
-${page.path === '/guide/' ? '' : footer}
 </body>
 </html>
 `;
@@ -109,11 +108,14 @@ for (const [name, title, description] of drafts) {
 }
 const editorFile = new URL('index.html', root);
 let editorHome = await readFile(editorFile, 'utf8');
+const exportActions = '<div class="export-actions"><button id="screenshot" title="Save a PNG of the design">Screenshot</button><button data-copy-html>Copy HTML</button><button id="copy">Copy layout</button><button type="button" id="project-share" class="primary" title="Copy a link to this project" hidden>Copy link</button></div>';
+editorHome = editorHome.replace(/<div class="export-actions">[\s\S]*?<\/div>/, () => exportActions);
 const librarySource = await readFile(new URL('drafts/dark-library-layout/index.html', root), 'utf8');
 const libraryOriginal = librarySource.match(/function original\(\) \{[\s\S]*?\n\}/)[0];
 const libraryUpdates = librarySource.slice(librarySource.indexOf('// Update older saved drafts'), librarySource.indexOf('function remember('));
 const libraryLayout = runInNewContext(`const round=value=>Math.round(value*10)/10;\n${libraryOriginal}\nlet state=original();\n${libraryUpdates}\nJSON.stringify(state);`);
-const projects = JSON.stringify({version:1,active:'player',projects:[{id:'player',name:'Player',layout:null},{id:'library',name:'Library',layout:JSON.parse(libraryLayout)}]}).replaceAll('<', '\\u003c');
+const starterProjects = [await landingProject(), {id:'player',name:'Player',layout:null}, {id:'library',name:'Library',layout:JSON.parse(libraryLayout)}];
+const projects = JSON.stringify({version:1,active:'landing',projects:starterProjects}).replaceAll('<', '\\u003c');
 const projectData = `<script type="application/json" id="initial-projects">${projects}</script>`;
 if (editorHome.includes('id="initial-projects"')) editorHome = editorHome.replace(/<script type="application\/json" id="initial-projects">[\s\S]*?<\/script>/, () => projectData);
 else editorHome = editorHome.replace('<script type="application/json" id="initial-layout">', () => projectData + '\n<script type="application/json" id="initial-layout">');
@@ -126,7 +128,7 @@ const pageIcon = '<svg viewBox="0 0 16 18" fill="none" stroke="currentColor" str
 const deleteIcon = '<svg viewBox="0 0 16 18" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><path d="M2 4.5h12M6 4.5v-2h4v2M3.5 4.5l.7 11h7.6l.7-11M6.5 7v6M9.5 7v6"/></svg>';
 const newProjectIcon = '<svg viewBox="0 0 16 18" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M8 3v12M2 9h12"/></svg>';
 const spaceControls = (await readFile(new URL('editor/space.html', root), 'utf8')).trimEnd();
-editorHome = editorHome.replace(/<nav class="project-pages" id="editor-pages"[\s\S]*?<\/nav>/, `<nav class="project-pages" id="editor-pages" aria-labelledby="project-pages-title">\n      ${spaceControls}\n      <h2 id="project-pages-title">Projects</h2>\n      <button type="button" class="project-page project-new" id="project-new">${newProjectIcon}<span>New Project</span></button>\n      <div class="project-page-list">\n${['Player','Library'].map(name => `        <div class="project-page-row" data-project-row="${name.toLowerCase()}"><button type="button" class="project-page" data-project="${name.toLowerCase()}"${name === 'Player' ? ' aria-current="page"' : ''}>${pageIcon}<span>${name}</span></button><button type="button" class="project-delete" data-delete-project="${name.toLowerCase()}" aria-label="Delete ${name}" title="Delete ${name}">${deleteIcon}</button></div>`).join('\n')}\n      </div>\n    </nav>`);
+editorHome = editorHome.replace(/<nav class="project-pages" id="editor-pages"[\s\S]*?<\/nav>/, `<nav class="project-pages" id="editor-pages" aria-labelledby="project-pages-title">\n      ${spaceControls}\n      <h2 id="project-pages-title">Projects</h2>\n      <button type="button" class="project-page project-new" id="project-new">${newProjectIcon}<span>New Project</span></button>\n      <div class="project-page-list">\n${starterProjects.map(({id,name}) => `        <div class="project-page-row" data-project-row="${id}"><button type="button" class="project-page" data-project="${id}"${id === 'landing' ? ' aria-current="page"' : ''}>${pageIcon}<span>${name}</span></button><button type="button" class="project-delete" data-delete-project="${id}" aria-label="Delete ${name}" title="Delete ${name}">${deleteIcon}</button></div>`).join('\n')}\n      </div>\n    </nav>`);
 const projectStyles = '<style data-projects>\n' + (await readFile(new URL('editor/projects.css', root), 'utf8')).trimEnd() + '\n</style>';
 if (editorHome.includes('<style data-projects>')) editorHome = editorHome.replace(/<style data-projects>[\s\S]*?<\/style>/, () => projectStyles);
 else editorHome = editorHome.replace('</head>', projectStyles + '\n</head>');

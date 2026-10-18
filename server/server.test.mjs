@@ -10,6 +10,7 @@ import { createSpaceServer } from './index.mjs';
 
 const layout={version:1,canvas:{width:400,height:300,background:'#fff'},items:[{id:'hello',kind:'label',x:20,y:20,w:200,h:40,text:'Hello'}]};
 const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg==';
+const gif='data:image/gif;base64,'+(await readFile(new URL('../tests/fixtures/animated.gif',import.meta.url))).toString('base64');
 async function setup(t,options={}){
   const app=await createSpaceServer(options);app.server.listen(0,'127.0.0.1');await once(app.server,'listening');
   t.after(()=>app.close());const base='http://127.0.0.1:'+app.server.address().port;
@@ -88,10 +89,41 @@ test('pictures are PNG files in Space and project folders, with only names in SQ
 
 test('picture uploads reject invalid files and cannot escape a project folder',async t=>{
   const {app,request,spaceId}=await setup(t);
-  for(const src of ['not a picture','data:image/png;base64,SGVsbG8='])assert.equal((await request('/api/projects/demo/pictures','POST',{src},spaceId)).status,400);
+  for(const src of ['not a picture','data:image/png;base64,SGVsbG8=','data:image/gif;base64,SGVsbG8=',gif.replace('image/gif','image/png'),png.replace('image/png','image/gif')])assert.equal((await request('/api/projects/demo/pictures','POST',{src},spaceId)).status,400);
   assert.throws(()=>app.store.putPicture(spaceId,'../outside',png),/Invalid picture path/);
   assert.throws(()=>app.store.getPicture(spaceId,'../outside','a'.repeat(64)),/Invalid picture path/);
   assert.equal((await request('/api/projects/demo/pictures','POST',{src:png})).status,404);
+});
+test('Space saves keep the original GIF file and its type',async t=>{
+  const folder=await mkdtemp(join(tmpdir(),'ui-gif-files-'));t.after(()=>rm(folder,{recursive:true,force:true}));
+  const {request,spaceId}=await setup(t,{database:join(folder,'spaces.sqlite'),publicDir:folder});
+  const uploaded=await request('/api/projects/motion/pictures','POST',{src:gif},spaceId);
+  assert.equal(uploaded.status,200);const {id}=uploaded.data;
+  assert.deepEqual(await readFile(join(folder,'pictures',spaceId,'motion',id+'.gif')),Buffer.from(gif.split(',')[1],'base64'));
+  assert.equal((await request('/api/projects/motion/pictures/'+id,'GET',null,spaceId)).data.src,gif);
+  assert.equal((await request('/api/projects/motion/pictures','POST',{src:gif},spaceId)).data.id,id);
+  const image={id:'gif',kind:'image',x:10,y:20,w:64,h:48,src:'picture:'+id};
+  assert.equal((await request('/api/projects/motion','PUT',{version:0,name:'Motion',layout:{...layout,items:[image]}},spaceId)).status,200);
+  assert.deepEqual((await request('/api/projects/motion','GET',null,spaceId)).data.layout.items,[image]);
+  assert.equal((await request('/api/projects/other/pictures/'+id,'GET',null,spaceId)).status,404);
+});
+
+test('MP4 saves keep the clip bytes and file type within its project',async t=>{
+  const folder=await mkdtemp(join(tmpdir(),'ui-mp4-files-'));t.after(()=>rm(folder,{recursive:true,force:true}));
+  const {request,spaceId}=await setup(t,{database:join(folder,'spaces.sqlite'),publicDir:folder});
+  const bytes=await readFile(new URL('../assets/landing-screen-recording-153438-10s.mp4',import.meta.url));
+  const src='data:video/mp4;base64,'+bytes.toString('base64');
+  const uploaded=await request('/api/projects/motion/pictures','POST',{src},spaceId);
+  assert.equal(uploaded.status,200);const {id}=uploaded.data;
+  assert.deepEqual(await readFile(join(folder,'pictures',spaceId,'motion',id+'.mp4')),bytes);
+  assert.equal((await request('/api/projects/motion/pictures/'+id,'GET',null,spaceId)).data.src,src);
+  const clip={id:'clip',kind:'video',x:10,y:20,w:504,h:506,src:'picture:'+id};
+  assert.equal((await request('/api/projects/motion','PUT',{version:0,name:'Motion',layout:{...layout,items:[clip]}},spaceId)).status,200);
+  assert.deepEqual((await request('/api/projects/motion','GET',null,spaceId)).data.layout.items,[clip]);
+  assert.equal((await request('/api/projects/other/pictures/'+id,'GET',null,spaceId)).status,404);
+  for(const invalid of ['data:video/mp4;base64,SGVsbG8=',png.replace('image/png','video/mp4')]){
+    assert.equal((await request('/api/projects/motion/pictures','POST',{src:invalid},spaceId)).status,400);
+  }
 });
 
 test('saved work survives a server restart and private files never go through the site file server',async t=>{
@@ -99,11 +131,13 @@ test('saved work survives a server restart and private files never go through th
   let app=await createSpaceServer({database:join(folder,'spaces.sqlite'),publicDir:folder});
   const {spaceId}=app.store.createSpace();
   const {id}=app.store.putPicture(spaceId,'demo',png);
+  const {id:gifId}=app.store.putPicture(spaceId,'demo',gif);
   const savedLayout={...layout,items:[...layout.items,{id:'picture',kind:'image',x:0,y:0,w:10,h:10,src:'picture:'+id}]};
   app.store.save(spaceId,'demo',{version:0,name:'Demo',layout:savedLayout});await app.close();
   app=await createSpaceServer({database:join(folder,'spaces.sqlite'),publicDir:folder});t.after(()=>app.close());
   assert.equal(app.store.get(spaceId,'demo').layout.items[0].text,'Hello');
   assert.equal(app.store.getPicture(spaceId,'demo',id).src,png);
+  assert.equal(app.store.getPicture(spaceId,'demo',gifId).src,gif);
   app.server.listen(0,'127.0.0.1');await once(app.server,'listening');const base='http://127.0.0.1:'+app.server.address().port;
   for(const path of ['/spaces.sqlite','/server/index.mjs','/.git/config','/package.json','/api/projects'])assert.equal((await fetch(base+path)).status,404);
   assert.equal((await fetch(base+'/api/spaces',{method:'POST',headers:{Origin:'https://elsewhere.example'}})).status,403);

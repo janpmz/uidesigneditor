@@ -52,30 +52,36 @@ export function openStore(filename) {
     },
     putPicture,
     getPicture(spaceId, projectId, id) {
-      const file = picturePath(spaceId, projectId, id);
+      picturePath(spaceId, projectId, id);
       const row = db.prepare('SELECT filename FROM project_pictures WHERE space_id=? AND project_id=? AND id=?').get(spaceId, projectId, id);
       if (!row) throw failure(404, 'Picture not found.');
-      return { src: 'data:image/png;base64,' + readFileSync(file).toString('base64') };
+      const type = row.filename.endsWith('.mp4') ? 'mp4' : row.filename.endsWith('.gif') ? 'gif' : 'png';
+      return { src: 'data:' + (type === 'mp4' ? 'video/mp4' : 'image/' + type) + ';base64,' + readFileSync(picturePath(spaceId, projectId, id, type)).toString('base64') };
     },
   };
 
-  function picturePath(spaceId, projectId, id) {
+  function picturePath(spaceId, projectId, id, type = 'png') {
     if (!/^[a-f0-9]{64}$/.test(spaceId) || !/^[-a-zA-Z0-9]{1,200}$/.test(projectId) || !/^[a-f0-9]{64}$/.test(id)) throw failure(400, 'Invalid picture path.');
-    return join(pictureRoot, spaceId, projectId, id + '.png');
+    return join(pictureRoot, spaceId, projectId, id + '.' + type);
   }
 
   function putPicture(spaceId, projectId, src) {
-    if (typeof src !== 'string' || src.length > 40_000_000 || !/^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/.test(src)) throw failure(400, 'Use a PNG picture.');
+    if (typeof src !== 'string' || src.length > 40_000_000 || !/^data:(image\/(png|gif)|video\/mp4);base64,[A-Za-z0-9+/]+={0,2}$/.test(src)) throw failure(400, 'Use a PNG, GIF, or MP4 file.');
+    const type = src.startsWith('data:video/mp4;') ? 'mp4' : src.startsWith('data:image/gif;') ? 'gif' : 'png';
     const bytes = Buffer.from(src.split(',')[1], 'base64');
-    if (!bytes.subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10]))) throw failure(400, 'Use a PNG picture.');
+    const validHeader = type === 'png'
+      ? bytes.subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10]))
+      : type === 'gif' ? bytes.length >= 13 && /^GIF8[79]a$/.test(bytes.subarray(0, 6).toString('ascii')) && bytes.readUInt16LE(6) > 0 && bytes.readUInt16LE(8) > 0
+      : bytes.length >= 16 && bytes.subarray(4, 8).toString('ascii') === 'ftyp' && bytes.readUInt32BE(0) >= 16 && bytes.readUInt32BE(0) <= bytes.length;
+    if (!validHeader) throw failure(400, 'Use a PNG, GIF, or MP4 file.');
     const id = createHash('sha256').update(src).digest('hex');
-    const file = picturePath(spaceId, projectId, id);
+    const file = picturePath(spaceId, projectId, id, type);
     if (!db.prepare('SELECT id FROM project_pictures WHERE space_id=? AND project_id=? AND id=?').get(spaceId, projectId, id)) {
       mkdirSync(dirname(file), { recursive: true });
       const pending = file + '.' + randomBytes(8).toString('hex') + '.tmp';
       writeFileSync(pending, bytes);
       renameSync(pending, file);
-      db.prepare('INSERT INTO project_pictures VALUES (?,?,?,?)').run(spaceId, projectId, id, id + '.png');
+      db.prepare('INSERT INTO project_pictures VALUES (?,?,?,?)').run(spaceId, projectId, id, id + '.' + type);
     }
     return { id };
   }
@@ -87,9 +93,9 @@ function validateLayout(layout, hasPicture, depth = 0) {
   if (depth > 6 || layout?.version !== 1 || !canvas || ![canvas.width, canvas.height].every(n => Number.isFinite(n) && n > 0 && n <= 16000) || canvas.width * canvas.height > 24_000_000 || !Array.isArray(layout.items) || layout.items.length > 5000) throw failure(400, 'Invalid design.');
   const ids = new Set();
   for (const item of layout.items) {
-    if (typeof item.id !== 'string' || !item.id || ids.has(item.id) || !['label','icon','shape','reading','tab','button','textbox','image'].includes(item.kind) || ![item.x,item.y,item.w,item.h].every(Number.isFinite) || item.w <= 0 || item.h <= 0) throw failure(400, 'Invalid design item.');
+    if (typeof item.id !== 'string' || !item.id || ids.has(item.id) || !['label','icon','shape','reading','tab','button','textbox','image','video'].includes(item.kind) || ![item.x,item.y,item.w,item.h].every(Number.isFinite) || item.w <= 0 || item.h <= 0) throw failure(400, 'Invalid design item.');
     ids.add(item.id);
-    if (item.kind === 'image' && (typeof item.src !== 'string' || !/^picture:[a-f0-9]{64}$/.test(item.src) || !hasPicture(item.src.slice(8)))) throw failure(400, 'Picture not found in this project.');
+    if (['image','video'].includes(item.kind) && (typeof item.src !== 'string' || !/^picture:[a-f0-9]{64}$/.test(item.src) || !hasPicture(item.src.slice(8)))) throw failure(400, 'File not found in this project.');
     if (item.imageContents) validateLayout(item.imageContents, hasPicture, depth + 1);
   }
 }

@@ -6,9 +6,13 @@ Needs Node.js 24 or later. Run `npm ci` once.
 
 Run `npm start`, then open [localhost:3000](http://localhost:3000/).
 
-The main editor creates a Space on the first visit and copies any existing local projects into it. It remembers the Space in this browser and reopens it when you return to the plain site address. Opening a Space link switches to that Space and remembers it after it loads. Use **Copy Space link** to open it in another browser, including Codex. Anyone with the link can read and edit its projects. Keep the link: clearing browser data removes the remembered Space, but the server keeps its saved projects. HTML exports work on their own and stay local.
+The main editor creates a Space on the first visit and copies any existing local projects into it. It remembers the Space in this browser and reopens it when you return to the plain site address. Opening a Space link switches to that Space and remembers it after it loads. Use **Copy Space link** to open it in another browser, including Codex. Use **Copy link** in the top bar to open the chosen project. Both links let anyone read and edit all projects in the Space. Keep the link: clearing browser data removes the remembered Space, but the server keeps its saved projects. HTML exports work on their own and stay local.
 
-Space saves live in `data/spaces.sqlite`, outside the public files. Pictures are PNG files at `data/pictures/<spaceId>/<projectId>/<pictureId>.png`; SQLite keeps their IDs and file names. `DATA_DIR`, `PUBLIC_DIR` and `PORT` set the data folder, site folder and port. Keep the whole data folder across builds and server restarts, and copy it when making backups.
+Space saves live in `data/spaces.sqlite`, outside the public files. Pictures and videos live at `data/pictures/<spaceId>/<projectId>/<pictureId>.png`, `.gif`, or `.mp4`; SQLite keeps their IDs and file names. `DATA_DIR`, `PUBLIC_DIR` and `PORT` set the data folder, site folder and port. Keep the whole data folder across builds and server restarts, and copy it when making backups.
+
+Drop a GIF onto the canvas and choose **Add to project** or **New project**. GIFs keep playing in the editor, Space saves, and saved HTML. Move and resize the whole GIF; editing parts needs a still picture. Use GIFs under 30 MB. PNG exports are still pictures.
+
+Drop an MP4 onto the canvas to add a video. Videos loop with sound off. You can move, resize, copy and save them, including in HTML copies. Use MP4s under 30 MB. New visitors see four ten-second clips in a spaced 2×2 grid on the dotted canvas.
 
 The server keeps `spaceId → clientId → connection` in memory. Each connection gets a new ID. JSON messages use `{ type, payload }`: clients send `join_space`, the server replies `connected`, then sends `project_changed` after each saved change. Pages fetch the changed project over HTTP. Pictures stay separate and each page keeps loaded pictures for later edits. A version check rejects old saves; the page offers reload or save as a copy. Reconnects check the saved project list again. Each page keeps its Undo steps.
 
@@ -19,7 +23,7 @@ The server keeps `spaceId → clientId → connection` in memory. Each connectio
 
 The editor uses [shadcn/ui](https://ui.shadcn.com/)'s dark styles, fitted to its plain HTML controls. Edit `editor/shadcn.css`, then run `npm run build`. The build keeps the styles in each page, so **Copy HTML** works on its own.
 
-The editor offers [WebMCP site tools](https://learn.chatgpt.com/docs/webmcp) in a supported Codex browser. Open **Info**, copy the prompt, and add your design request in Codex. The short prompt links to [the full instructions](instructions.txt) and includes the current Space link. The page must stay open. Users need no local helper or Node.js install.
+The editor offers [WebMCP site tools](https://learn.chatgpt.com/docs/webmcp) in a supported Codex browser. Use **Connect AI** at the bottom of the sidebar to copy the prompt, then add your design request in Codex. It stays in view in both **Edit** and **Info**, open or closed. The short prompt links to [the full instructions](instructions.txt) and includes the current Space link. The page must stay open. Users need no local helper or Node.js install.
 
 An AI that receives just a project link can find the full guide in a hidden section at the start of the editor's HTML or in the **For AI assistants** section of `llms.txt`. The build takes both from `instructions.txt`. The hidden text stays out of view with or without scripts. The HTML head and the `read_design` tool's description and reply also link to the guide. No extra guide link appears in the editor. Each AI and browser decides which page details it reads. A plain page fetch does not run WebMCP tools or load the project named after `#` in the link. With only a link and no request, the guide tells the AI to read the project and ask what the user wants before changing it.
 

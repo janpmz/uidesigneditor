@@ -1,13 +1,13 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { readFileSync, readdirSync } = require('node:fs');
+const { readFileSync, readdirSync, existsSync } = require('node:fs');
 const { join } = require('node:path');
 const vm = require('node:vm');
 
 const source = readFileSync(join(__dirname, 'image-drop.js'), 'utf8');
 const helpers = source.split('// BEGIN PICTURE HELPERS')[1].split('// END PICTURE HELPERS')[0];
 const sizes = source.split('// BEGIN PAGE SIZE HELPERS')[1].split('// END PAGE SIZE HELPERS')[0];
-const reader = source.split('// BEGIN PICTURE READER')[1].split('// END PICTURE READER')[0];
+const reader = helpers + source.split('// BEGIN PICTURE READER')[1].split('// END PICTURE READER')[0];
 const context = vm.createContext({
   round: v => Math.round(v * 10) / 10,
   clamp: (v, min, max) => Math.max(min, Math.min(max, v)),
@@ -183,6 +183,16 @@ test('add to page keeps the old items', async () => {
   assert.equal(harness.sandbox.state.items[0].id, 'title');
   assert.equal(harness.sandbox.state.canvas.width, 393);
 });
+test('MP4 drops add video items with one Undo step and keep their bytes',async()=>{
+  for(const choice of ['add','new']){
+    const h=dropHarness(choice),src='data:video/mp4;base64,AAAA';
+    h.sandbox.readPicture=async()=>({kind:'video',name:'clip.mp4',width:504,height:506,src});
+    h.sandbox.event.dataTransfer.files=[{name:'clip.mp4',type:'video/mp4'}];
+    await h.drop();const clip=h.sandbox.state.items.at(-1);
+    assert.equal(clip.kind,'video');assert.equal(clip.src,src);assert.equal(clip.imageBase,undefined);
+    assert.equal(h.history.length,1);assert.deepEqual(h.history[0],h.start);
+  }
+});
 test('a picture dropped outside the page keeps that spot and one undo step', async () => {
   const h=dropHarness('add');h.sandbox.event.clientX=750;h.sandbox.event.clientY=-200;
   await h.drop();const entry=h.sandbox.state.items[1];
@@ -212,9 +222,34 @@ test('pictures keep their drop spot across page edges', () => {
 test('a very thin picture still has a width after fitting', () => {
   assert.equal(run('picturePlacement(1,16000,{width:393,height:852},{x:100,y:100})').w, .1);
 });
-test('copies accept embedded PNG pictures and reject active or remote sources', () => {
+test('copies accept embedded PNG and GIF pictures and reject active or remote sources', () => {
   assert.equal(run('safePictureSource("data:image/png;base64,AAAA")'), true);
+  assert.equal(run('safePictureSource("data:image/gif;base64,AAAA")'), true);
   for (const value of ['https://example.com/picture.png', 'javascript:alert(1)', 'data:image/svg+xml;base64,AAAA']) assert.equal(run(`safePictureSource(${JSON.stringify(value)})`), false);
+});
+test('GIF imports keep every byte and recover their page size after saving', async () => {
+  const bytes=readFileSync(join(__dirname,'../tests/fixtures/animated.gif'));
+  const src='data:image/gif;base64,'+bytes.toString('base64');
+  let reads=0;
+  const sandbox=vm.createContext({
+    Blob, file:new File([bytes],'Motion.gif',{type:'image/gif'}),
+    pictureType:()=> 'image/gif',pictureDeadline:promise=>promise,
+    loadPictureBlob:async()=>({naturalWidth:64,naturalHeight:48}),
+    FileReader:class { async readAsDataURL(blob){reads++;this.result='data:'+blob.type+';base64,'+Buffer.from(await blob.arrayBuffer()).toString('base64');this.onload();} },
+    document:{createElement(){assert.fail('GIFs must not pass through a still picture.');}},
+  });
+  vm.runInContext(reader,sandbox);
+  const picture=await vm.runInContext('readPicture(file)',sandbox);
+  assert.equal(picture.src,src);assert.equal(reads,1);
+  assert.deepEqual([picture.width,picture.height],[64,48]);
+  assert.deepEqual(run(`storedPictureSize(${JSON.stringify(src)})`),{width:64,height:48});
+  assert.deepEqual(run(`picturePageSizeFor({canvas:{width:393,height:852},items:[{imageBase:true,src:${JSON.stringify(src)}}]})`),{width:64,height:48});
+  assert.equal(run('storedPictureSize("data:image/gif;base64,AAAA")'),null);
+});
+test('oversized GIFs fail before reading the whole file', async () => {
+  const sandbox=vm.createContext({Blob,file:{type:'image/gif',size:30000000},pictureType:()=> 'image/gif',pictureDeadline:promise=>promise,loadPictureBlob:async()=>({naturalWidth:64,naturalHeight:48})});
+  vm.runInContext(reader,sandbox);
+  await assert.rejects(vm.runInContext('readPicture(file)',sandbox),/Use a GIF under 30 MB/);
 });
 test('HEIC uses the included reader when the browser cannot open it', async () => {
   const calls = [], image = { naturalWidth: 903, naturalHeight: 552 };
@@ -244,7 +279,7 @@ test('a bad HEIC file gives a clear error', async () => {
 });
 test('the main page and saved copies keep a working HEIC reader', async () => {
   const pages = ['../index.html', ...readdirSync(join(__dirname, '../drafts'), { withFileTypes: true })
-    .filter(entry => entry.isDirectory()).map(entry => '../drafts/' + entry.name + '/index.html')];
+    .filter(entry => entry.isDirectory() && existsSync(join(__dirname,'../drafts',entry.name,'index.html'))).map(entry => '../drafts/' + entry.name + '/index.html')];
   const vendor = readFileSync(join(__dirname, 'vendor/heic-to-1.6.6.js'), 'utf8').replace(/<\/script/gi, '<\\/script');
   for (const page of pages) {
     const html = readFileSync(join(__dirname, page), 'utf8');
@@ -264,7 +299,7 @@ test('the main page and saved copies keep a working HEIC reader', async () => {
     assert.ok(included === vendor, page + ': Keep the HEIC reader unchanged.');
   }
 });
-for (const page of readdirSync(join(__dirname, '../drafts'), { withFileTypes: true }).filter(entry => entry.isDirectory()).map(entry => entry.name)) {
+for (const page of readdirSync(join(__dirname, '../drafts'), { withFileTypes: true }).filter(entry => entry.isDirectory() && existsSync(join(__dirname,'../drafts',entry.name,'index.html'))).map(entry => entry.name)) {
   test(page + ': saved copies keep the drop tools and HEIC reader', () => {
     const html = readFileSync(join(__dirname, '../drafts', page, 'index.html'), 'utf8');
     assert.equal(html.split('// BEGIN PICTURE DROP\n')[1].split('// END PICTURE DROP')[0].trimEnd(), source.trimEnd());

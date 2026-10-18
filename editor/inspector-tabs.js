@@ -1,5 +1,9 @@
 let inspectorTab='info',inspectorSelection=null;
 const inspectorTabButtons=[...document.querySelectorAll('[data-inspector-tab]')];
+function setCodexPromptExpanded(expanded){
+  $('toggle-codex-prompt').setAttribute('aria-expanded',String(expanded));
+  $('codex-prompt-details').hidden=!expanded;
+}
 function inspectorSelectionKey(){return JSON.stringify([...selected].sort())+Boolean(regionSelection);}
 function syncInspectorTabs(){
   const signature=inspectorSelectionKey();
@@ -32,7 +36,8 @@ document.addEventListener('pointerdown',event=>{
   if(event.button===0&&stage.contains(event.target)&&event.target.closest('.item,.selection-overlay,.group-grip,.resize-handle'))showInspectorTab('edit');
 },true);
 const codexPrompt=$('codex-prompt');
-function codexCanvasUrl(){return location.origin+location.pathname+(/^#space=[a-f0-9]{64}$/.test(location.hash||'')?location.hash:'');}
+$('toggle-codex-prompt').onclick=()=>setCodexPromptExpanded($('codex-prompt-details').hidden);
+function codexCanvasUrl(){return location.origin+location.pathname+(/^#space=[a-f0-9]{64}(?:&project=[-a-zA-Z0-9]{1,200})?$/.test(location.hash||'')?location.hash:'');}
 function updateCodexPromptUrl(){if(['http:','https:'].includes(location.protocol))codexPrompt.value=codexPrompt.value.replace(/^My Space URL: https?:\/\/\S+$/m,'My Space URL: '+codexCanvasUrl());}
 updateCodexPromptUrl();
 $('copy-codex-prompt').onclick=async()=>{
@@ -41,9 +46,12 @@ $('copy-codex-prompt').onclick=async()=>{
     updateCodexPromptUrl();
     await navigator.clipboard.writeText(prompt.value);
     status.textContent='Prompt copied.';
+    $('copy-codex-prompt').textContent='Copied';
   }catch{
+    setCodexPromptExpanded(true);
     prompt.focus();prompt.select();
     status.textContent='Press Ctrl+C or ⌘C to copy the selected prompt.';
   }
 };
+$('copy-codex-prompt').onblur=()=>{$('copy-codex-prompt').textContent='Copy prompt';};
 syncInspectorTabs();

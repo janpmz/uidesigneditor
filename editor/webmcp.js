@@ -15,7 +15,7 @@
   const object = (properties, required = []) => ({ type: 'object', properties, required, additionalProperties: false });
   const array = (items, minItems = 0) => ({ type: 'array', items, minItems, maxItems: 5000 });
   const described = (schema, description) => ({ ...schema, description });
-  const kinds = ['label', 'icon', 'shape', 'reading', 'tab', 'button', 'textbox', 'image'];
+  const kinds = ['label', 'icon', 'shape', 'reading', 'tab', 'button', 'textbox', 'image', 'video'];
   const point = object({ x: described(number(0, 1), 'Horizontal position within the item, from 0 at the left to 1 at the right.'), y: described(number(0, 1), 'Vertical position within the item, from 0 at the top to 1 at the bottom.') }, ['x', 'y']);
   const look = {
     name: text(200), x: number(), y: number(), w: number(.1), h: number(.1),
@@ -26,7 +26,7 @@
     wrap: { type: 'boolean' }, hidden: { type: 'boolean' }, iconOffsetX: number(),
     highlightWord: text(10000), highlightColor: text(128), contentScale: number(.001, 1000),
     shape: { enum: ['rectangle', 'arrow'] }, strokeWidth: number(.5, 1000), arrowStart: point, arrowEnd: point,
-    src: { ...text(40000000), pattern: '^data:image/png;base64,[A-Za-z0-9+/=]+$' },
+    src: { ...text(40000000), pattern: '^data:(image/(png|gif)|video/mp4);base64,[A-Za-z0-9+/=]+$' },
     imageBase: { type: 'boolean' }, pictureFragment: { type: 'boolean' },
   };
   const lookHelp = {
@@ -39,7 +39,7 @@
     wrap: 'Whether text may wrap onto more than one line.', hidden: 'Hide this item without removing it.', iconOffsetX: 'Horizontal icon offset in pixels.',
     highlightWord: 'Word or text to highlight in a reading item.', highlightColor: 'Fill color behind the highlighted text.', contentScale: 'Scale the contents inside the box; 1 keeps their size.',
     shape: 'Shape type for a shape item; omit for a plain box.', strokeWidth: 'Arrow line width in pixels.', arrowStart: 'Arrow start within the item box, with each value from 0 to 1.', arrowEnd: 'Arrow end within the item box, with each value from 0 to 1.',
-    src: 'Full PNG data URL, starting data:image/png;base64,. Required for image items. Use import_image for other picture types. Replacing src clears saved inner image edits.',
+    src: 'Full PNG, GIF, or MP4 data URL. Required for image and video items. MP4 videos loop with sound off. Use import_image for other picture types. Replacing src clears saved inner image edits.',
     imageBase: 'Marks a picture as the page background; keep the value returned by read_design.', pictureFragment: 'Marks a piece moved from a picture; keep the value returned by read_design.',
   };
   for (const [key, description] of Object.entries(lookHelp)) look[key] = described(look[key], description);
@@ -82,7 +82,8 @@
     validate(values, entrySchema, 'Item');
     checkColors(values);
     if (values.icon && !Object.hasOwn(ICONS, values.icon)) throw new Error('Unknown icon. Use read_design with iconSearch to find a name.');
-    if (values.kind === 'image' && (!safePictureSource(values.src) || !storedPictureSize(values.src))) throw new Error('Images need an embedded PNG under 24 million pixels.');
+    if (values.kind === 'image' && (!safePictureSource(values.src) || !storedPictureSize(values.src))) throw new Error('Images need an embedded PNG or GIF under 24 million pixels.');
+    if (values.kind === 'video' && !safeVideoSource(values.src)) throw new Error('Videos need an MP4 under 30 MB.');
     const { id = 'item-' + crypto.randomUUID(), name = 'New ' + values.kind, kind, x, y, w, h, ...extra } = values;
     return item(id, name, kind, x, y, w, h, extra);
   }
@@ -133,7 +134,7 @@
   async function snapshot(includeImages = false) {
     const id = projectId(), serialized = serializedProject(), design = JSON.parse(serialized).design;
     const projects = typeof localProjects !== 'undefined' ? localProjects.map(({ id, name }) => ({ id, name })) : [{ id, name: 'Current page' }];
-    if (!includeImages) for (const entry of design.items) if (entry.kind === 'image') {
+    if (!includeImages) for (const entry of design.items) if (entry.kind === 'image' || entry.kind === 'video') {
       delete entry.src; delete entry.imageContents; entry.imageDataOmitted = true;
     }
     return { projectId: id, revision: await revision(serialized), projects, design, selectedIds: [...selected] };
@@ -172,7 +173,7 @@
     {
       name: 'read_design',
       description: 'Start here when you first connect to UI Design Editor. Full AI instructions: https://uidesigneditor.com/instructions.txt. Read the open design, project list, selected item ids, revision and a short usage guide. Item positions and sizes use canvas pixels. Use the latest returned projectId and revision for each edit. Image data is omitted by default. This reads saved design data, not a screenshot; use export_design with PNG to check the look.',
-      inputSchema: object({ includeImages: described({ type: 'boolean' }, 'Default false. Set true to include full PNG data URLs and saved inner image contents; results can be large.'), iconSearch: described(text(100), 'Find up to 80 icon names containing this text, such as play. An empty string lists the first 80 names.') }),
+      inputSchema: object({ includeImages: described({ type: 'boolean' }, 'Default false. Set true to include full PNG, GIF, and MP4 data URLs and saved inner image contents; results can be large.'), iconSearch: described(text(100), 'Find up to 80 icon names containing this text, such as play. An empty string lists the first 80 names.') }),
       readOnly: true,
       async run(args) {
         const result = await snapshot(args.includeImages);
@@ -296,7 +297,7 @@
     },
     {
       name: 'import_image',
-      description: 'Open a screenshot or picture from full base64 image data. mode new opens a project at the picture size; mode add fits it inside the current page, centered at x/y or the view center. Supports PNG, JPG, WebP, GIF, AVIF, BMP and HEIC. This keeps the picture as an image item; it does not turn its text into editable text. Use edit_design to add separate items over it, or move_image_region to move part of it. No links or file paths are fetched. Read the latest projectId and revision first. Returns the design, revision and addedIds.',
+      description: 'Open a screenshot or picture from full base64 image data. mode new opens a project at the picture size; mode add fits it inside the current page, centered at x/y or the view center. Supports PNG, JPG, WebP, GIF, AVIF, BMP and HEIC. GIFs keep playing and support moving and resizing the whole item; area edits skip GIFs. This keeps the picture as an image item; it does not turn its text into editable text. Use edit_design to add separate items over it, or move_image_region to move part of a still picture. No links or file paths are fetched. Read the latest projectId and revision first. Returns the design, revision and addedIds.',
       inputSchema: object({ ...target, name: described({ ...text(200), minLength: 1 }, 'Picture file name; also names the new project in mode new.'),
         dataUrl: described({ ...text(40000000), pattern: '^data:image/(png|jpeg|webp|gif|avif|bmp|heic|heif);base64,[A-Za-z0-9+/=]+$' }, 'Full image data URL including its type and base64 bytes. Example start: data:image/png;base64,. Maximum 40 million characters.'),
         mode: described({ enum: ['add', 'new'] }, 'add places the picture on this page; new opens it in a new project at its own size.'),

@@ -9,6 +9,10 @@
 .phone.editing .item,.phone.editing .item.selected{cursor:default}
 .phone.editing .item.page-image:hover,.phone.editing .item.page-image.selected{outline:none}
 .pixel-selection{position:absolute;z-index:9998;outline:1px solid #d0baff;outline-offset:0;pointer-events:none}
+.make-item-action{position:absolute;left:0;top:100%;margin-top:8px;transform:scale(var(--action-scale,1));transform-origin:top left;pointer-events:auto;white-space:nowrap;padding:5px 10px;border:1px solid #52525b;border-radius:6px;background:#27272a;color:#fafafa;font:500 12px/20px system-ui;box-shadow:0 2px 8px #0005;cursor:pointer}
+.make-item-action:hover{background:#3f3f46}
+.make-item-action:focus-visible{outline:2px solid #a1a1aa;outline-offset:2px}
+.make-item-action:disabled{opacity:.5;cursor:default}
 .canvas-edit-menu{position:fixed;z-index:20001;min-width:140px;padding:5px;border:1px solid #49424f;border-radius:9px;background:#252529;box-shadow:0 8px 30px #0007}
 .canvas-edit-menu[hidden],.canvas-edit-menu button[hidden]{display:none}
 .canvas-edit-menu button{display:block;width:100%;border:0;background:transparent;text-align:left;white-space:nowrap}

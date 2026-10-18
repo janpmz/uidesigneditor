@@ -4,3 +4,4 @@ node_modules/
 dist/
 .site-build-*/
 data/
+exports/

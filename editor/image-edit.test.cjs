@@ -28,7 +28,7 @@ function harness(){
     canvasView:{x:150,y:-50,width:800,height:600,page:"parent",mode:"1"},scale:1,resetCanvasView:()=>{get("zoom").value="fit";},
     pictureChoice:{open:false},pictureDropBusy:false,picturesReady:Promise.resolve(),$:get,
     document:{documentElement:{clientWidth:1200,clientHeight:800},addEventListener:(type,fn)=>on('document',type,fn),createElement:node},
-    window:{innerWidth:1200,innerHeight:800},navigator:{clipboard:{writeText:async()=>{}}},setTimeout,
+    window:{innerWidth:1200,innerHeight:800,addEventListener(){}},navigator:{clipboard:{writeText:async()=>{}}},setTimeout,
     crypto:{randomUUID:()=>String(Math.random())},copy:value=>JSON.parse(JSON.stringify(value)),
     item:(id,name,kind,x,y,w,h,extra)=>({id,name,kind,x,y,w,h,...extra}),
     notify:text=>messages.push(text),renderPhone(){},renderLayers(){},renderInspector(){},refreshSelection(){},renderNativeSelection(){},styleItem(){},
@@ -39,7 +39,7 @@ function harness(){
   sandbox.render=()=>{vm.runInContext('renderImageEditStatus()',sandbox);if(!vm.runInContext('Boolean(imageEditSession)',sandbox))saved.push(JSON.stringify(sandbox.state));};
   sandbox.remember=before=>{sandbox.history.push(before);sandbox.future=[];};
   sandbox.change=fn=>{sandbox.remember(JSON.stringify(sandbox.state));fn();sandbox.render();};
-  vm.runInContext(helpers+sizes+validation+geometry+read('annotation-shapes.js')+read('pixel-tools.js')+read('fit-content.js')+controller+editor,sandbox);
+  vm.runInContext(helpers+sizes+validation+geometry+read('annotation-shapes.js')+read('pixel-tools.js')+read('fit-content.js')+controller+read('text-edit.js')+editor,sandbox);
   sandbox.selectionImage=async()=>({naturalWidth:1000,naturalHeight:600});
   sandbox.html2canvas=async(phone,options)=>{h.options=options;return {toDataURL:()=> 'data:image/png;base64,BBBB'};};
   const run=code=>vm.runInContext(code,sandbox),json=code=>JSON.parse(JSON.stringify(run(code)));
@@ -56,6 +56,14 @@ test('Edit image appears for one added image in its settings and right-click men
   h.sandbox.selected=new Set(['title','image']);assert.equal(h.run('pictureToEdit()'),null);
   h.sandbox.selected=new Set(['image']);h.sandbox.state.items[1].imageBase=true;
   assert.equal(h.run('pictureToEdit()'),null);
+});
+test('GIFs keep their animation instead of opening the still image editor',async()=>{
+  const h=harness();h.sandbox.state.items[1].src='data:image/gif;base64,R0lGODlh';
+  assert.equal(h.run('pictureToEdit()'),null);
+  await h.open();assert.equal(h.run('imageEditSession'),null);
+  h.send('stage','contextmenu',h.event());assert.equal(h.get('canvas-menu-edit-image').hidden,true);
+  assert.equal(h.sandbox.state.items[1].src,'data:image/gif;base64,R0lGODlh');
+  assert.deepEqual(h.sandbox.history,['older']);
 });
 test('Edit image opens at its full size and uses picture area selection',async()=>{
   const h=harness();await h.open();

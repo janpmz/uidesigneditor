@@ -1,5 +1,5 @@
 let imageEditSession=null,imageEditSaving=false;
-function editablePicture(entry){return !imageEditSession&&entry&&!entry.hidden&&entry.kind==='image'&&!isPagePicture(entry)&&safePictureSource(entry.src);}
+function editablePicture(entry){return !imageEditSession&&entry&&!entry.hidden&&entry.kind==='image'&&!isPagePicture(entry)&&safePictureSource(entry.src)&&!/^data:image\/gif;/i.test(entry.src);}
 function pictureToEdit(){const entries=selectedItems();return !regionSelection&&entries.length===1&&editablePicture(entries[0])?entries[0]:null;}
 function renderImageEditStatus(){
   const bar=$('image-edit-bar');if(!bar)return;
@@ -10,6 +10,9 @@ function renderImageEditStatus(){
   $('image-edit-cancel').disabled=imageEditSaving;
 }
 function renderImageEditAction(heading,entry){
+  if(entry.kind==='image'&&/^data:image\/gif;/i.test(entry.src)){
+    const note=document.createElement('p');note.className='note';note.textContent='GIFs keep playing. Move or resize the whole GIF; editing parts needs a still picture.';heading.append(note);return;
+  }
   if(!editablePicture(entry))return;
   const button=document.createElement('button');button.textContent='Edit image';button.className='primary image-edit-action';
   button.onclick=()=>openImageEditor(entry.id);

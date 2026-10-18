@@ -1,6 +1,6 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
-const {readFileSync,readdirSync}=require('node:fs');
+const {readFileSync,readdirSync,existsSync}=require('node:fs');
 const {join}=require('node:path');
 const vm=require('node:vm');
 const source=readFileSync(join(__dirname,'canvas-view.js'),'utf8');
@@ -88,6 +88,20 @@ test('Command and Ctrl wheel zoom use small steps, even with large wheel deltas'
   h.send('stage','wheel',{metaKey:true,deltaY:-5});
   assert.ok(h.read('scale')/before-1<.01,'small wheel steps change zoom by less than 1%');
 });
+test('small trackpad pinch steps zoom at the pointer and reverse smoothly',()=>{
+  const h=harness(),before=h.read('scale'),anchor=h.read('canvasViewPoint(340,220)');
+  const pinch=deltaY=>h.send('stage','wheel',{ctrlKey:true,deltaY,clientX:340,clientY:220});
+  pinch(-.5);
+  const small=h.read('scale')/before-1;
+  assert.ok(small>.004&&small<.006,'a small pinch step changes zoom by about half a percent');
+  pinch(.5);near(h.read('scale'),before);
+  for(let step=0;step<70;step++)assert.equal(pinch(-1).prevented,true);
+  const increase=h.read('scale')/before;
+  assert.ok(increase>1.9&&increase<2.1,'a pinch made of small steps roughly doubles the view');
+  const after=h.read('canvasViewPoint(340,220)');near(after.x,anchor.x);near(after.y,anchor.y);
+  for(let step=0;step<70;step++)pinch(1);
+  near(h.read('scale'),before);
+});
 test('two touches pan and zoom, cancel a pending selection, and end after both fingers lift',()=>{
   const h=harness();h.sandbox.canvasGesture={pointer:1};
   h.send('stage','pointerdown',{pointerType:'touch',pointerId:1,clientX:300,clientY:250});
@@ -103,7 +117,7 @@ test('two touches pan and zoom, cancel a pending selection, and end after both f
 });
 test('each saved editor includes the same view tools and code',()=>{
   const tools=readFileSync(join(__dirname,'canvas-view-tools.html'),'utf8').trim();
-  for(const entry of readdirSync(join(__dirname,'../drafts'),{withFileTypes:true}).filter(entry=>entry.isDirectory())){
+  for(const entry of readdirSync(join(__dirname,'../drafts'),{withFileTypes:true}).filter(entry=>entry.isDirectory()&&existsSync(join(__dirname,'../drafts',entry.name,'index.html')))){
     const html=readFileSync(join(__dirname,'../drafts',entry.name,'index.html'),'utf8');
     assert.equal(html.split('// BEGIN CANVAS VIEW\n')[1].split('// END CANVAS VIEW')[0].trimEnd(),source.split('// BEGIN CANVAS VIEW\n')[1].split('// END CANVAS VIEW')[0].trimEnd());
     assert.equal(html.split('<!-- BEGIN CANVAS VIEW TOOLS -->\n')[1].split('<!-- END CANVAS VIEW TOOLS -->')[0].trim(),tools);

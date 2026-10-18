@@ -92,7 +92,8 @@ function harness({ stored = new Map(), database = new Map(), pathname = '/', dat
     stage: { focus() {} }, canvasView: { x: 0, y: 0 }, canvasViewBusy: () => false,
     clearCanvasRegion() {}, closeCanvasMenu() {}, closeItemMenu() {}, resetCanvasView: () => { get('zoom').value = 'fit'; },
     ...(spaceUrl?{WebSocket,fetch:(path,options)=>fetch(new URL(path,spaceUrl),options),setTimeout,clearTimeout,
-      window:{addEventListener(){},history:{replaceState(_state,_title,hash){sandbox.location.hash=hash;}}}}:{}),
+      navigator:{clipboard:{writeText:async value=>{sandbox.copied=value;}}},
+      window:{addEventListener(type,fn){listeners.set('window:'+type,fn);},history:{replaceState(_state,_title,hash){sandbox.location.hash=hash;}}}}:{}),
   });
   function $(id) { return get(id); }
   vm.runInContext(`
@@ -615,12 +616,15 @@ test('keys, file drops and pasted pictures cannot change the page while a delete
   await done;
 });
 
-test('the home page contains both projects and the same project code', () => {
+test('the home page starts with the four videos and keeps the same project code', () => {
   assert.equal(page.split('// BEGIN LOCAL PROJECTS\n')[1].split('// END LOCAL PROJECTS')[0].trim(), code.trim());
   assert.match(page, /<button type="button" class="project-page project-new" id="project-new"><svg[^>]*aria-hidden="true"[\s\S]*?<\/svg><span>New Project<\/span><\/button>/);
   const data = JSON.parse(page.match(/id="initial-projects">([\s\S]*?)<\/script>/)[1]);
-  assert.deepEqual(data.projects.map(project => project.name), ['Player', 'Library']);
-  assert.ok(data.projects[1].layout.items.some(item => item.id === 'page-title' && item.text === 'Library'));
+  assert.deepEqual(data.projects.map(project => project.name), ['Landing page', 'Player', 'Library']);
+  assert.ok(data.projects[2].layout.items.some(item => item.id === 'page-title' && item.text === 'Library'));
+  const actions = page.match(/<div class="export-actions">([\s\S]*?)<\/div>/)[1];
+  assert.match(actions, /<button id="copy">Copy layout<\/button><button type="button" id="project-share" class="primary"[^>]*>Copy link<\/button>/);
+  assert.equal(page.split('id="project-share"').length - 1, 1);
 });
 
 test('separate browser stores share a Space, keep Undo, preserve conflicts, and save copies', async t => {
@@ -632,7 +636,9 @@ test('separate browser stores share a Space, keep Undo, preserve conflicts, and 
   t.after(async()=>{for(const h of browsers)h.run('spaceClient.close()');await app.close();});
   const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg==';
   const image={id:'picture',kind:'image',x:0,y:0,w:20,h:20,src:png};
-  const design={version:1,canvas:{width:400,height:300,background:'#fff'},items:[{id:'hello',kind:'label',x:10,y:10,w:200,h:30,text:'Local work'},{...image,imageContents:{version:1,canvas:{width:20,height:20,background:'#fff'},items:[image]}}]};
+  const mp4='data:video/mp4;base64,'+readFileSync(join(__dirname,'../assets/landing-screen-recording-153438-10s.mp4')).toString('base64');
+  const clip={id:'clip',kind:'video',x:40,y:40,w:200,h:200,src:mp4};
+  const design={version:1,canvas:{width:400,height:300,background:'#fff'},items:[{id:'hello',kind:'label',x:10,y:10,w:200,h:30,text:'Local work'},{...image,imageContents:{version:1,canvas:{width:20,height:20,background:'#fff'},items:[image]}},clip]};
   const data={version:1,active:'demo',projects:[{id:'demo',name:'Demo',layout:design}]};
   const open=async(url,stored=new Map(),database=new Map())=>{
     const h=harness({spaceUrl:url,data:structuredClone(data),stored,database});browsers.push(h);await h.ready;
@@ -649,6 +655,8 @@ test('separate browser stores share a Space, keep Undo, preserve conflicts, and 
   assert.notEqual(first.stored,second.stored);
   assert.equal(second.run('state.items[1].src'),png);
   assert.equal(second.run('state.items[1].imageContents.items[0].src'),png);
+  assert.equal(second.run('state.items[2].src'),mp4);
+  assert.match(app.store.get(spaceId,'demo').layout.items[2].src,/^picture:/);
   assert.match(app.store.get(spaceId,'demo').layout.items[1].src,/^picture:/);
   await waitFor(()=>app.clients.get(spaceId)?.size===2);
   first.run('renameProject("Shared name")');await first.run('spaceClient.saved()');
@@ -676,6 +684,8 @@ test('separate browser stores share a Space, keep Undo, preserve conflicts, and 
   assert.equal(app.store.get(spaceId,copiedId).layout.items[0].text,'Unsaved work');
   const pictureId=app.store.get(spaceId,copiedId).layout.items[1].src.slice(8);
   assert.equal(app.store.getPicture(spaceId,copiedId,pictureId).src,png);
+  const clipId=app.store.get(spaceId,copiedId).layout.items[2].src.slice(8);
+  assert.equal(app.store.getPicture(spaceId,copiedId,clipId).src,mp4);
   await waitFor(()=>first.run('localProjects.length')===2);
 
   // A dirty local page survives reopening with a newer server copy.
@@ -709,6 +719,60 @@ test('separate browser stores share a Space, keep Undo, preserve conflicts, and 
   assert.match(missing.get('space-status').textContent,/Space not found/);
 });
 
+test('project links open the chosen project across browsers and saved choices',async t=>{
+  const {createSpaceServer}=await import('../server/index.mjs');
+  const {once}=require('node:events');
+  const app=await createSpaceServer();app.server.listen(0,'127.0.0.1');await once(app.server,'listening');
+  const base='http://127.0.0.1:'+app.server.address().port;
+  const {spaceId}=app.store.createSpace(),spaceUrl=base+'/#space='+spaceId;
+  const browsers=[];
+  t.after(async()=>{for(const h of browsers)h.run('spaceClient.close()');await app.close();});
+  for(const id of ['player','library','project-123'])app.store.save(spaceId,id,{name:id,version:0,layout:{version:1,canvas:{width:400,height:300},items:[{id:'title',kind:'label',x:0,y:0,w:100,h:30,text:id}]}});
+  const open=async(url,stored=new Map(),database=new Map())=>{
+    const h=harness({spaceUrl:url,stored,database});browsers.push(h);await h.ready;
+    h.run(spaceCode);await h.run('spaceClient.ready');return h;
+  };
+  const first=await open(spaceUrl);
+  assert.equal(first.get('project-share').hidden,false);
+  await first.run('switchProject("library")');
+  await first.get('project-share').onclick();
+  assert.equal(first.sandbox.copied,spaceUrl+'&project=library');
+  assert.equal(first.get('project-share').textContent,'Copied');
+  first.get('project-share').onblur();
+  assert.equal(first.get('project-share').textContent,'Copy link');
+  const fresh=await open(first.sandbox.copied);
+  assert.equal(fresh.run('onlineSpaceId'),spaceId);
+  assert.equal(fresh.run('activeProject'),'library');
+  assert.equal(fresh.run('state.items[0].text'),'library');
+  await fresh.get('space-share').onclick();
+  assert.equal(fresh.sandbox.copied,spaceUrl);
+
+  const linked=await open(spaceUrl+'&project=project-123',first.stored,first.database);
+  assert.equal(linked.run('activeProject'),'project-123');
+  assert.equal(linked.run('state.items[0].text'),'project-123');
+  await linked.run('switchProject("player")');
+  await linked.get('project-share').onclick();
+  assert.equal(linked.sandbox.copied,spaceUrl+'&project=player');
+
+  first.run('createProject(blankProjectLayout(),"From link")');
+  const newId=first.run('activeProject');
+  await first.get('project-share').onclick();
+  assert.equal(first.sandbox.copied,spaceUrl+'&project='+newId);
+  assert.equal(app.store.get(spaceId,newId).name,'From link');
+  const created=await open(first.sandbox.copied);
+  assert.equal(created.run('activeProject'),newId);
+  assert.deepEqual(created.json('state'),first.json('state'));
+
+  let reloads=0;created.sandbox.location.reload=()=>{reloads++;};
+  created.listeners.get('window:hashchange')();assert.equal(reloads,0);
+  created.sandbox.location.hash='#space='+spaceId+'&project=library';
+  created.listeners.get('window:hashchange')();assert.equal(reloads,1);
+  const missing=await open(spaceUrl+'&project=project-gone');
+  assert.equal(missing.run('onlineSpaceId'),spaceId);
+  assert.equal(missing.run('localProjects.some(project=>project.id==="project-gone")'),false);
+  assert.equal(missing.sandbox.message,'Project not found in this Space.');
+});
+
 test('saved HTML files stay local even when the browser remembers a Space',async()=>{
   const stored=new Map([['ui-design-editor-last-space-v1','a'.repeat(64)]]);
   const h=harness({spaceUrl:'file:///tmp/saved-design.html',stored});await h.ready;
@@ -717,4 +781,5 @@ test('saved HTML files stay local even when the browser remembers a Space',async
   assert.equal(h.run('onlineSpaceId'),null);
   assert.equal(requests,0);
   assert.equal(h.get('space-status').textContent,'Local projects');
+  assert.equal(h.get('project-share').hidden,true);
 });

@@ -13,6 +13,7 @@ function harness(url = 'https://uidesigneditor.com/') {
       setAttribute(name, value) { this.attributes[name] = value; },
       getAttribute(name) { return this.attributes[name]; },
       focus() { this.focused = true; },
+      select() { this.selected = true; },
     });
     return nodes.get(id);
   };
@@ -38,6 +39,24 @@ test('Info opens first, and selecting an item opens Edit', () => {
   assert.equal(h.get('quick-edit').textContent, 'Edit');
 });
 
+test('the AI prompt keeps its size when the user switches tabs', () => {
+  const h = harness();
+  assert.equal(h.get('codex-prompt-details').hidden, false);
+  h.get('toggle-codex-prompt').onclick();
+  assert.equal(h.get('codex-prompt-details').hidden, true);
+  assert.equal(h.get('inspector-info').hidden, false);
+  h.get('inspector-tab-edit').onclick();
+  h.get('inspector-tab-info').onclick();
+  assert.equal(h.get('codex-prompt-details').hidden, true);
+  h.get('toggle-codex-prompt').onclick();
+  assert.equal(h.get('toggle-codex-prompt').attributes['aria-expanded'], 'true');
+  h.sandbox.selected.add('title');h.run('syncInspectorTabs()');
+  assert.equal(h.get('codex-prompt-details').hidden, false);
+  assert.equal(h.get('inspector').hidden, false);
+  h.get('inspector-tab-info').onclick();
+  assert.equal(h.get('codex-prompt-details').hidden, false);
+});
+
 test('the copied prompt stays short, includes the current site and ends with the guide', async () => {
   const h = harness('http://127.0.0.1:3000/drafts/dark-player-layout/?key=private#selection');
   let copied;
@@ -48,6 +67,31 @@ test('the copied prompt stays short, includes the current site and ends with the
   assert.match(copied, /\n\nMy Space URL: http:\/\/127\.0\.0\.1:3000\/drafts\/dark-player-layout\/\n\nRead the instructions:/);
   assert.doesNotMatch(copied, /key=private|#selection|read_design|projectId|revision/);
   assert.ok(copied.trim().split(/\s+/).length < 40);
+});
+
+test('Copy works while the AI panel is small and shows that the prompt was copied', async () => {
+  const h = harness();let copied;
+  h.sandbox.navigator = { clipboard: { writeText: async text => { copied = text; } } };
+  h.get('toggle-codex-prompt').onclick();
+  await h.get('copy-codex-prompt').onclick();
+  assert.equal(copied, h.get('codex-prompt').value);
+  assert.equal(h.get('codex-prompt-details').hidden, true);
+  assert.equal(h.get('copy-codex-prompt').textContent, 'Copied');
+  h.get('copy-codex-prompt').onblur();
+  assert.equal(h.get('copy-codex-prompt').textContent, 'Copy prompt');
+});
+
+test('a failed copy opens the AI panel so the user can copy the selected text', async () => {
+  const h = harness();
+  h.sandbox.navigator = { clipboard: { writeText: async () => { throw new Error('Copy blocked'); } } };
+  h.get('inspector-tab-edit').onclick();
+  await h.get('copy-codex-prompt').onclick();
+  assert.equal(h.get('codex-prompt-details').hidden, false);
+  assert.equal(h.get('codex-prompt').focused, true);
+  assert.equal(h.get('codex-prompt').selected, true);
+  assert.equal(h.get('inspector-info').hidden, true);
+  assert.equal(h.get('inspector').hidden, false);
+  assert.match(h.get('codex-prompt-status').textContent, /Press Ctrl\+C/);
 });
 
 test('copied prompts keep the Space link when it changes after the page opens',async()=>{
@@ -62,6 +106,9 @@ test('copied prompts keep the Space link when it changes after the page opens',a
   assert.ok(copied.split('\n').includes('My Space URL: https://uidesigneditor.com/#space='+'b'.repeat(64)));
   assert.match(copied,/Read the instructions: https:\/\/uidesigneditor\.com\/instructions\.txt/);
   assert.equal(copied.split('My Space URL:').length-1,1);
+  h.sandbox.location.hash='space='+'b'.repeat(64)+'&project=project-123';
+  await h.get('copy-codex-prompt').onclick();
+  assert.ok(copied.split('\n').includes('My Space URL: https://uidesigneditor.com/#space='+'b'.repeat(64)+'&project=project-123'));
 });
 
 test('saved files keep the public site address in their prompt', () => {
@@ -95,14 +142,16 @@ test('the root is the working editor and each sidebar keeps the Info text', () =
     const html = readFileSync(join(root, file), 'utf8');
     new vm.Script(html.match(/<script>\s*([\s\S]*?)<\/script>/)[1]);
     const content = html.match(/<section class="inspector-info"[^>]*>([\s\S]*?)<\/section>/)[1];
-    const facts = content.slice(0, content.indexOf('<div class="codex-prompt">'));
-    assert.deepEqual(facts.replace(/<[^>]+>/g, ' ').trim().split(/\s{2,}/).map(text => text.trim()), info);
+    assert.deepEqual(content.replace(/<[^>]+>/g, ' ').trim().split(/\s{2,}/).map(text => text.trim()), info);
+    assert.doesNotMatch(content, /id="copy-codex-prompt"/);
+    assert.match(html, /<\/section>\s*<section class="codex-prompt"[^>]*>[\s\S]*?id="copy-codex-prompt"[\s\S]*?<\/section>\s*<footer class="inspector-credit">/);
+    assert.equal(html.split('id="copy-codex-prompt"').length - 1, 1);
     assert.equal(html.split('id="editor-inspector"').length - 1, 1);
     assert.equal(html.split('// BEGIN INSPECTOR TABS\n').length - 1, 1);
     if (html.includes('const toolLocations=')) assert.match(html, /\['editor-inspector','home-inspector','tools-edit'\]/);
     const projects = html.match(/<nav class="project-pages" id="editor-pages"[\s\S]*?<\/nav>/)[0];
     if (file === 'index.html') {
-      assert.deepEqual([...projects.matchAll(/data-project="([^"]+)"/g)].map(([, id]) => id), ['player', 'library']);
+      assert.deepEqual([...projects.matchAll(/data-project="([^"]+)"/g)].map(([, id]) => id), ['landing', 'player', 'library']);
       assert.match(projects, />Projects<\/h2>/);
       assert.doesNotMatch(projects, /href=/);
     }

@@ -11,7 +11,7 @@ const orderCode = canvasCode.slice(canvasCode.indexOf('function orderedCanvasIte
 const pictureCheck = canvasCode.slice(canvasCode.indexOf('function isPagePicture('), canvasCode.indexOf('function regionSources('));
 const regionSourcesCode = canvasCode.slice(canvasCode.indexOf('function regionSources('), canvasCode.indexOf('function clearCanvasRegion('));
 const rememberRegionCode = canvasCode.slice(canvasCode.indexOf('function rememberRegion('), canvasCode.indexOf('function canvasSurface('));
-const applyRegionCode = canvasCode.slice(canvasCode.indexOf('function applyRegionPatches('), canvasCode.indexOf('function prepareRegion('));
+const applyRegionCode = canvasCode.slice(canvasCode.indexOf('function applyRegionPatches('), canvasCode.indexOf('async function makeItemFromRegion('));
 const mergeCode = canvasCode.slice(canvasCode.indexOf('function backgroundMergeForItems('), canvasCode.indexOf('async function mergeSelectionIntoBackground('));
 const pixelCode = readFileSync(join(__dirname, 'pixel-tools.js'), 'utf8');
 const fitCode = readFileSync(join(__dirname, 'fit-content.js'), 'utf8');
@@ -25,6 +25,7 @@ const pngHeader = Buffer.alloc(24);
 Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]).copy(pngHeader);
 pngHeader.write('IHDR', 12); pngHeader.writeUInt32BE(640, 16); pngHeader.writeUInt32BE(480, 20);
 const png = 'data:image/png;base64,' + pngHeader.toString('base64');
+const gif = 'data:image/gif;base64,' + readFileSync(join(__dirname,'../tests/fixtures/animated.gif')).toString('base64');
 const plain = value => JSON.parse(JSON.stringify(value));
 
 async function harness(options = {}) {
@@ -228,6 +229,22 @@ test('a batch edits items in one Undo step, and Undo and Redo restore it', async
   assert.equal((await h.call('undo_design', { ...await h.target(), direction: 'redo' })).design.items[0].text, 'Changed');
 });
 
+test('video items support edits, Undo and HTML imports without returning clip bytes by default',async()=>{
+  const h=await harness(),src='data:video/mp4;base64,'+readFileSync(join(__dirname,'../assets/landing-screen-recording-153438-10s.mp4')).toString('base64');
+  const added=await h.call('edit_design',{...await h.target(),addItems:[{id:'clip',kind:'video',name:'Clip',x:20,y:30,w:504,h:506,src}]});
+  assert.equal(added.ok,true);assert.equal(added.design.items.at(-1).src,undefined);
+  assert.equal((await h.call('read_design',{includeImages:true})).design.items.at(-1).src,src);
+  const resized=await h.call('edit_design',{...await h.target(),updates:[{id:'clip',changes:{x:100,w:252,h:253}}]});
+  assert.equal(resized.design.items.at(-1).w,252);
+  const undone=await h.call('undo_design',{...await h.target(),direction:'undo'});
+  assert.equal(undone.design.items.at(-1).w,504);
+  const html='<script type="application/json" id="initial-layout">'+JSON.stringify(h.sandbox.state)+'</script>';
+  const imported=await h.call('import_html',{...await h.target(),name:'Video.html',html,mode:'new'});
+  assert.equal(imported.ok,true);assert.equal(h.sandbox.state.items.at(-1).src,src);
+  const invalid=await h.call('edit_design',{...await h.target(),addItems:[{kind:'video',x:0,y:0,w:20,h:20,src:png}]});
+  assert.equal(invalid.ok,false);
+});
+
 test('stale edits and edits to a different project cannot overwrite user work', async () => {
   const h = await harness(), old = await h.target();
   h.sandbox.state.items[0].text = 'User edit';
@@ -312,6 +329,24 @@ test('picture areas move in one Undo step and reject boxes outside the page', as
   assert.equal(moved.design.items.at(-1).pictureFragment, true);
   assert.equal(h.sandbox.history.length, 1);
   assert.equal((await h.call('move_image_region', { ...await h.target(), box: { x: 390, y: 20, w: 50, h: 40 }, x: 100, y: 200 })).ok, false);
+});
+test('GIFs survive import, resizing, Undo and a saved HTML round trip',async()=>{
+  const h=await harness({readPicture:async()=>({name:'Motion.gif',src:gif,width:64,height:48})});
+  const added=await h.call('import_image',{...await h.target(),name:'Motion.gif',dataUrl:gif,mode:'add'});
+  assert.equal(added.ok,true);const id=added.addedIds[0];
+  assert.equal((await h.call('read_design',{includeImages:true})).design.items.at(-1).src,gif);
+  const resized=await h.call('edit_design',{...await h.target(),updates:[{id,changes:{w:128,h:96}}]});
+  assert.equal(resized.ok,true);assert.equal(h.sandbox.state.items.at(-1).src,gif);
+  await h.call('undo_design',{...await h.target(),direction:'undo'});
+  assert.equal(h.sandbox.state.items.at(-1).w,64);
+  const exported=await h.call('export_design',{...await h.target(),format:'html',delivery:'inline'});
+  const imported=await h.call('import_html',{...await h.target(),name:'Motion copy',html:exported.content,mode:'new'});
+  assert.equal(imported.ok,true);assert.equal(h.sandbox.state.items.at(-1).src,gif);
+  const before=plain(h.sandbox.state);
+  for(const name of ['move_image_region','erase_image_region']){
+    const result=await h.call(name,{...await h.target(),box:{x:170,y:410,w:10,h:10},...(name==='move_image_region'?{x:0,y:0}:{})});
+    assert.equal(result.ok,false);assert.deepEqual(plain(h.sandbox.state),before);
+  }
 });
 
 function pictureScene(h) {

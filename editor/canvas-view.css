@@ -2,6 +2,9 @@
 .phone-mount{position:absolute}
 .phone.editing{overflow:visible}
 .phone.free-page{border-radius:0;box-shadow:0 0 0 1px #434348,0 15px 40px #0005}
+.phone.free-page.clear-page,.phone.picture-page.clear-page{border-radius:0;box-shadow:none}
+.item.kind-video{overflow:hidden;line-height:0}
+.item.kind-video video{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none}
 .canvas-size-dialog{width:min(400px,calc(100vw - 24px))}
 .canvas-size-dialog p{font-size:12px;line-height:1.6;color:var(--muted-foreground,#aaaab3)}
 .canvas-size-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:20px 0}

@@ -14,11 +14,11 @@ $('select-rectangle').onclick=()=>{
 };
 setRectangleSelectionTool(false);
 function isPagePicture(entry){
-  if(entry.kind!=='image'||entry.pictureFragment)return false;
+  if(entry.kind!=='image'||entry.pictureFragment||/^data:image\/gif;/i.test(entry.src))return false;
   if(entry.imageBase)return true;
   return Boolean(state.canvas.picturePage&&entry===state.items.find(item=>!item.hidden&&item.kind==='image')&&entry.x===0&&entry.y===0&&entry.w===state.canvas.width&&entry.h===state.canvas.height);
 }
-function regionSources(box){return state.items.filter(entry=>!entry.hidden&&entry.kind==='image'&&boxesOverlap(entry,box));}
+function regionSources(box){return state.items.filter(entry=>!entry.hidden&&entry.kind==='image'&&!/^data:image\/gif;/i.test(entry.src)&&boxesOverlap(entry,box));}
 function regionIsCurrent(region){
   const current=regionSources(region.box);
   return region.state===state&&region.sources.length===current.length&&region.sources.every((source,index)=>['id','src','x','y','w','h','opacity'].every(key=>current[index][key]===source[key]));
@@ -32,7 +32,13 @@ function renderSelection(){
   if(regionSelection&&editing){
     const box=canvasGesture?.preview||regionSelection.box,outline=document.createElement('div');outline.className='pixel-selection';
     outline.setAttribute('aria-label','Selected picture area');
-    Object.assign(outline.style,{left:box.x+'px',top:box.y+'px',width:box.w+'px',height:box.h+'px'});phone.append(outline);return;
+    Object.assign(outline.style,{left:box.x+'px',top:box.y+'px',width:box.w+'px',height:box.h+'px'});
+    if(!canvasGesture){
+      const button=document.createElement('button');button.type='button';button.className='make-item-action';button.textContent='Make item';
+      button.disabled=canvasEditBusy;button.style.setProperty('--action-scale',1/(typeof scale==='number'?scale:1));
+      button.onclick=()=>makeItemFromRegion();outline.append(button);
+    }
+    phone.append(outline);return;
   }
   if(selectedItems().length&&selectedItems().every(isPagePicture))return;
   renderNativeSelection();
@@ -78,7 +84,20 @@ async function makeRegionPlan(region){
   return region.pending;
 }
 function applyRegionPatches(plan){for(const patch of plan.patches){const entry=state.items.find(item=>item.id===patch.id);if(entry){Object.assign(entry,patch);delete entry.imageContents;}}}
-function prepareRegion(region){makeRegionPlan(region).catch(error=>{if(regionSelection===region)notify(error.message);});}
+async function makeItemFromRegion(){
+  if(!editing||canvasGesture||canvasEditBusy||pictureDropBusy||pictureChoice.open||!regionSelection)return;
+  const region=regionSelection;canvasEditBusy=true;closeCanvasMenu();renderSelection();
+  try{
+    const plan=await makeRegionPlan(region);
+    if(regionSelection!==region||!regionIsCurrent(region))return;
+    change(()=>{
+      applyRegionPatches(plan);const entry=copy(plan.entry);state.items.push(entry);
+      selected=new Set([entry.id]);regionSelection=null;
+    });
+    stage.focus({preventScroll:true});
+  }catch(error){notify(error.message||'Could not make this item.');}
+  finally{canvasEditBusy=false;renderSelection();}
+}
 function closeCanvasMenu(){canvasMenu.hidden=true;}
 function selectionOrder(position){
   if(regionSelection)return null;
@@ -111,7 +130,7 @@ function backgroundMergeSelection(){
 }
 function backgroundMergeForItems(entries){
   const bases=state.items.filter(entry=>!entry.hidden&&isPagePicture(entry));
-  if(!entries.length||!bases.length||entries.some(entry=>entry.hidden||entry.kind!=='image'||!entry.pictureFragment))return null;
+  if(!entries.length||!bases.length||entries.some(entry=>entry.hidden||entry.kind!=='image'||!entry.pictureFragment||/^data:image\/gif;/i.test(entry.src)))return null;
   return {entries,bases};
 }
 async function makeBackgroundMergePlan(selection){
@@ -160,7 +179,7 @@ function endCanvasGesture(cancel=false){
   if(stage.hasPointerCapture(gesture.pointer))stage.releasePointerCapture(gesture.pointer);
   if(cancel){if(gesture.changed)state=JSON.parse(gesture.before);selected=new Set(gesture.selectionBefore);regionSelection=gesture.regionBefore?rememberRegion(gesture.regionBefore.box):null;}
   else if(gesture.changed){remember(gesture.before);regionSelection=null;}
-  render();
+  if(gesture.changed||cancel)render();else refreshSelection();
 }
 function moveGestureItems(gesture,point,event){
   let dx=point.x-gesture.start.x,dy=point.y-gesture.start.y;
@@ -174,28 +193,23 @@ function moveGestureItems(gesture,point,event){
   for(const entry of gesture.items){const node=[...$('phone').querySelectorAll('.item')].find(node=>node.dataset.id===entry.id);if(node)styleItem(node,entry);}
   renderSelection();
 }
-function applyPixelGesture(gesture){
-  if(gesture.cancelled||!gesture.plan||!gesture.moved)return;
-  if(!gesture.lifted){
-    if(!regionIsCurrent(gesture.regionBefore)){endCanvasGesture(true);return;}
-    applyRegionPatches(gesture.plan);const entry=copy(gesture.plan.entry);state.items.push(entry);
-    selected=new Set([entry.id]);regionSelection=null;gesture.items=[entry];gesture.starts=[copy(entry)];gesture.lifted=true;gesture.changed=true;renderPhone();renderLayers();renderInspector();
-  }
-  moveGestureItems(gesture,gesture.latest,gesture.event);
-}
 function beginCanvasBox(common,event,point,entry,id){
   regionSelection=null;
-  canvasGesture={...common,type:'box',pixels:Boolean(state.canvas.picturePage&&pointInArea(point,{x:0,y:0,w:state.canvas.width,h:state.canvas.height})&&(!entry||entry.kind==='image')),hitId:entry&&!isPagePicture(entry)?id:null,base:event.shiftKey?[...selected]:[],startX:event.clientX,startY:event.clientY};
-  if(canvasGesture.pixels||!event.shiftKey)selected.clear();drawBox(canvasGesture,event);refreshSelection();
+  canvasGesture={...common,type:'box',pixels:Boolean(state.canvas.picturePage&&state.items.some(item=>!item.hidden&&isPagePicture(item))&&pointInArea(point,{x:0,y:0,w:state.canvas.width,h:state.canvas.height})&&(!entry||entry.kind==='image'&&!/^data:image\/gif;/i.test(entry.src))),hitId:entry&&!isPagePicture(entry)?id:null,base:event.shiftKey?[...selected]:[],startX:event.clientX,startY:event.clientY};
+  if(!event.shiftKey)selected.clear();drawBox(canvasGesture,event);refreshSelection();
 }
 stage.addEventListener('pointerdown',event=>{
   if(!editing||event.button!==0)return;
+  if(event.target.closest('.make-item-action')){event.stopImmediatePropagation();return;}
+  if(canvasTextTarget(event.target)){event.stopImmediatePropagation();return;}
   event.preventDefault();event.stopImmediatePropagation();
   if(canvasGesture||canvasEditBusy||pictureDropBusy||pictureChoice.open)return;
   closeCanvasMenu();stage.focus({preventScroll:true});
   const point=phonePoint(event),hit=event.target.closest('.item,.selection-overlay'),id=hit?.dataset.id;
   const entry=state.items.find(item=>item.id===id),items=selectedItems().filter(item=>!isPagePicture(item));
-  const common={pointer:event.pointerId,start:point,latest:point,selectionBefore:[...selected],regionBefore:regionSelection,before:JSON.stringify(state),changed:false,moved:false,rectangleTool:rectangleSelectionArmed};
+  if(tryCanvasTextEdit(event,entry))return;
+  const textId=canEditItemText(entry)&&!rectangleSelectionArmed&&!event.shiftKey&&!event.ctrlKey&&!event.metaKey&&!event.altKey?id:null;
+  const common={pointer:event.pointerId,start:point,latest:point,selectionBefore:[...selected],regionBefore:regionSelection,before:JSON.stringify(state),changed:false,moved:false,rectangleTool:rectangleSelectionArmed,textId};
   const rectangleHandle=event.target.closest('[data-rectangle-resize]');
   if(rectangleSelectionArmed){
     beginCanvasBox(common,event,point,entry,id);
@@ -207,9 +221,6 @@ stage.addEventListener('pointerdown',event=>{
     regionSelection=null;const moving=selected.has(entry.id)?items:[entry];
     selected=new Set(moving.map(item=>item.id));refreshSelection();
     canvasGesture={...common,type:'move',items:moving,starts:moving.map(copy)};
-  }else if(regionSelection&&pointInArea(point,regionSelection.box)){
-    const gesture=canvasGesture={...common,type:'pixels'};
-    gesture.ready=makeRegionPlan(regionSelection).then(plan=>{gesture.plan=plan;if(canvasGesture===gesture)applyPixelGesture(gesture);}).catch(error=>{notify(error.message);if(canvasGesture===gesture)endCanvasGesture(true);});
   }else if(!event.shiftKey&&items.length===1&&event.target.closest('[data-arrow-end]')){
     regionSelection=null;canvasGesture={...common,type:'arrow-end',end:event.target.closest('[data-arrow-end]').dataset.arrowEnd,items,starts:items.map(copy)};
   }else if(!event.shiftKey&&items.length&&(pointInArea(point,boundsOf(items))||event.target.closest('.group-grip,.resize-handle'))){
@@ -226,33 +237,17 @@ stage.addEventListener('pointermove',event=>{
   if(distance>.1)gesture.moved=true;
   if(gesture.type==='box'){
     drawBox(gesture,event);const box=boxBetween(gesture.start,gesture.latest);
-    if(gesture.pixels){regionSelection=rememberRegion(box);renderSelection();}
-    else{selected=new Set([...gesture.base,...itemIdsInSelection(state.items.filter(entry=>!isPagePicture(entry)),box)]);refreshSelection();}
-  }else if(gesture.type==='pixels'){
-    const box=gesture.regionBefore.box;gesture.preview={...box,x:box.x+gesture.latest.x-gesture.start.x,y:box.y+gesture.latest.y-gesture.start.y};
-    applyPixelGesture(gesture);renderSelection();
+    selected=new Set([...gesture.base,...itemIdsInSelection(state.items.filter(entry=>!isPagePicture(entry)),box)]);
+    regionSelection=gesture.pixels&&!selected.size?rememberRegion(box):null;refreshSelection();
   }else if(gesture.moved)moveGestureItems(gesture,gesture.latest,gesture.event);
 },true);
-stage.addEventListener('pointerup',async event=>{
+stage.addEventListener('pointerup',event=>{
   const gesture=canvasGesture;if(!gesture||event.pointerId!==gesture.pointer)return;
   event.preventDefault();event.stopImmediatePropagation();
-  if(gesture.type==='pixels'&&gesture.moved){gesture.finishing=true;await gesture.ready;if(canvasGesture!==gesture)return;applyPixelGesture(gesture);}
   if(gesture.type==='box'){
     if(!gesture.moved&&gesture.hitId){selected=new Set(event.shiftKey?gesture.base.includes(gesture.hitId)?gesture.base.filter(id=>id!==gesture.hitId):[...gesture.base,gesture.hitId]:[gesture.hitId]);regionSelection=null;}
-    else if(gesture.pixels&&regionSelection){
-      const region=regionSelection;gesture.finishing=true;
-      try{
-        const plan=await makeRegionPlan(region);if(canvasGesture!==gesture)return;
-        if(regionSelection!==region||!regionIsCurrent(region)){endCanvasGesture(true);return;}
-        applyRegionPatches(plan);const entry=copy(plan.entry);state.items.push(entry);
-        selected=new Set([entry.id]);regionSelection=null;gesture.changed=true;
-      }catch(error){
-        if(canvasGesture!==gesture)return;
-        notify(error.message);endCanvasGesture(true);return;
-      }
-    }
   }
-  endCanvasGesture();
+  rememberCanvasTextClick(gesture,event);endCanvasGesture();
 },true);
 for(const type of ['pointercancel','lostpointercapture'])stage.addEventListener(type,event=>{if(canvasGesture?.pointer===event.pointerId){event.stopImmediatePropagation();if(type!=='lostpointercapture'||!canvasGesture.finishing)endCanvasGesture(true);}},true);
 
@@ -319,11 +314,14 @@ document.addEventListener('keydown',event=>{
   if(event.key==='Escape'&&!canvasMenu.hidden){event.preventDefault();event.stopImmediatePropagation();closeCanvasMenu();return;}
   if(canvasGesture){event.preventDefault();event.stopImmediatePropagation();if(event.key==='Escape')endCanvasGesture(true);return;}
   if(event.key==='Escape'&&rectangleSelectionArmed){event.preventDefault();event.stopImmediatePropagation();setRectangleSelectionTool(false);return;}
+  if(event.key==='Escape'&&regionSelection){event.preventDefault();event.stopImmediatePropagation();regionSelection=null;render();return;}
   if(!editing||canvasEditBusy||$('editor-tools')?.open)return;
   const command=event.metaKey||event.ctrlKey,key=event.key.toLowerCase();
   if(command&&(key==='c'||key==='x')&&(regionSelection||selectedItems().length)){event.preventDefault();event.stopImmediatePropagation();void copyCanvasSelection(key==='x');return;}
-  if(command&&key==='a'&&state.canvas.picturePage){event.preventDefault();event.stopImmediatePropagation();selected.clear();regionSelection=rememberRegion({x:0,y:0,w:state.canvas.width,h:state.canvas.height});renderSelection();prepareRegion(regionSelection);return;}
-  if(event.key==='Escape'&&regionSelection){event.preventDefault();event.stopImmediatePropagation();regionSelection=null;render();return;}
+  if(command&&key==='a'&&state.canvas.picturePage){
+    event.preventDefault();event.stopImmediatePropagation();selected=new Set(state.items.filter(entry=>!entry.hidden&&!isPagePicture(entry)).map(entry=>entry.id));
+    regionSelection=selected.size?null:rememberRegion({x:0,y:0,w:state.canvas.width,h:state.canvas.height});refreshSelection();return;
+  }
   if(regionSelection&&(event.key==='Delete'||event.key==='Backspace')){
     event.preventDefault();event.stopImmediatePropagation();canvasEditBusy=true;
     void (async()=>{const region=regionSelection;try{const plan=await makeRegionPlan(region);if(regionSelection===region&&regionIsCurrent(region))change(()=>{applyRegionPatches(plan);regionSelection=null;});}catch(error){notify(error.message);}finally{canvasEditBusy=false;}})();
@@ -343,13 +341,14 @@ function showCanvasMenu(event,fromList=false){
   $('item-menu')?.setAttribute('hidden','');
   const menuParent=$('editor-tools')?.open?$('editor-tools'):document.body;
   if(canvasMenu.parentElement!==menuParent)menuParent?.append(canvasMenu);
+  $('canvas-menu-make-item').hidden=!regionSelection;
   $('canvas-menu-edit-image').hidden=!pictureToEdit();
   $('canvas-menu-fit-content').disabled=Boolean(regionSelection)||!selectedItems().some(canFitContent);
   $('canvas-menu-bring-front').disabled=!selectionOrder('front');
   $('canvas-menu-bring-back').disabled=!selectionOrder('back');
   $('canvas-menu-no-item').hidden=!backgroundMergeSelection();
   canvasMenu.style.left=clamp(event.clientX,8,Math.max(8,window.innerWidth-canvasMenu.offsetWidth-8))+'px';canvasMenu.style.top=clamp(event.clientY,8,Math.max(8,window.innerHeight-canvasMenu.offsetHeight-8))+'px';
-  $('canvas-menu-paste').disabled=!canvasClipboard;$('canvas-menu-cut').focus({preventScroll:true});
+  $('canvas-menu-paste').disabled=!canvasClipboard;$(regionSelection?'canvas-menu-make-item':'canvas-menu-cut').focus({preventScroll:true});
 }
 stage.addEventListener('contextmenu',event=>showCanvasMenu(event),true);
 $('layers')?.addEventListener?.('contextmenu',event=>showCanvasMenu(event,true));
@@ -359,6 +358,7 @@ $('layers')?.addEventListener?.('keydown',event=>{
   const rect=row.getBoundingClientRect();
   showCanvasMenu({target:event.target,clientX:rect.left+rect.width/2,clientY:rect.top+rect.height/2,preventDefault:()=>event.preventDefault(),stopImmediatePropagation:()=>event.stopImmediatePropagation()},true);
 });
+$('canvas-menu-make-item').onclick=()=>makeItemFromRegion();
 $('canvas-menu-cut').onclick=()=>{closeCanvasMenu();void copyCanvasSelection(true);};
 $('canvas-menu-copy').onclick=()=>{closeCanvasMenu();void copyCanvasSelection();};
 $('canvas-menu-paste').onclick=()=>{closeCanvasMenu();pasteCanvasClipboard();};

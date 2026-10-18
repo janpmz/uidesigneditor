@@ -155,6 +155,7 @@
 .history-actions button { border-color: transparent; color: var(--muted-foreground); box-shadow: none; }
 .top-actions { gap: 8px; flex-wrap: nowrap; }
 .export-actions { gap: 6px; }
+#project-share { white-space: nowrap; }
 #screenshot { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 #screenshot::before {
   content: '';

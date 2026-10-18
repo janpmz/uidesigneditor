@@ -4,7 +4,9 @@ const localProjects=projectData.projects;
 const projectHome=['/','/index.html','/drafts/dark-player-layout/','/drafts/dark-player-layout/index.html'].includes(location.pathname);
 let spaceClient=null;
 const lastSpaceKey='ui-design-editor-last-space-v1';
-let onlineSpaceId=location.protocol==='file:'?null:(location.hash||'').match(/^#space=([a-f0-9]{64})$/)?.[1]||null;
+const spaceLink=(location.hash||'').match(/^#space=([a-f0-9]{64})(?:&project=([-a-zA-Z0-9]{1,200}))?$/);
+let onlineSpaceId=location.protocol==='file:'?null:spaceLink?.[1]||null;
+const linkedProject=onlineSpaceId?spaceLink?.[2]||null:null;
 if(['http:','https:'].includes(location.protocol)&&!onlineSpaceId){
   try{const saved=localStorage.getItem(lastSpaceKey);if(/^[a-f0-9]{64}$/.test(saved||''))onlineSpaceId=saved;}catch{}
   if(onlineSpaceId)window.history.replaceState(null,'','#space='+onlineSpaceId);
@@ -36,6 +38,24 @@ function projectStorage(id){return 'dark-'+id+'-layout-v2:'+(onlineSpaceId?'spac
 let STORAGE=projectStorage(activeProject);
 const projectSessions=new Map();
 let projectSwitchBusy=false;
+const projectVideoLoads=new Map();
+async function inlineProjectVideos(layout){
+  for(const entry of layout.items){
+    if(entry.kind==='video'&&/^\/assets\/landing-[a-z0-9-]+\.mp4$/.test(entry.src)){
+      const src=entry.src;
+      if(!projectVideoLoads.has(src))projectVideoLoads.set(src,(async()=>{
+        const response=await fetch(src);if(!response.ok)throw new Error('Could not open a sample video.');
+        const blob=await response.blob();
+        return new Promise((resolve,reject)=>{
+          const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error('Could not open a sample video.'));reader.readAsDataURL(new Blob([blob],{type:'video/mp4'}));
+        });
+      })());
+      try{entry.src=await projectVideoLoads.get(src);}catch(error){projectVideoLoads.delete(src);throw error;}
+    }
+    if(entry.imageContents)await inlineProjectVideos(entry.imageContents);
+  }
+  return layout;
+}
 function localProjectLayout(id){
   const project=localProjects.find(project=>project.id===id);
   let layout=project.layout||(id==='player'?original():blankProjectLayout());
@@ -52,7 +72,7 @@ async function readProjectLayout(id){
     });
     if(validEditorPage(saved))layout=saved;
   }catch{}
-  return layout;
+  return inlineProjectVideos(layout);
 }
 function renderProjects(){
   const list=document.querySelector('#editor-pages .project-page-list');
@@ -221,6 +241,8 @@ function initializeProjects(){
   renderProjects();
   return (async()=>{
     await picturesReady;
+    await inlineProjectVideos(state);
+    for(const project of localProjects)if(project.layout)await inlineProjectVideos(project.layout);
     let saved;
     if(pictureDB)try{
       saved=await new Promise((resolve,reject)=>{

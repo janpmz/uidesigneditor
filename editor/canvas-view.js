@@ -107,8 +107,9 @@ stage.addEventListener('wheel',event=>{
   event.preventDefault();if(canvasViewBusy())return;
   const unit=event.deltaMode===1?16:event.deltaMode===2?stage.clientHeight:1;
   if(event.ctrlKey||event.metaKey){
-    const delta=clamp(event.deltaY*unit,-50,50);
-    setCanvasZoom(scale*Math.exp(-delta*.001),{x:event.clientX,y:event.clientY});
+    const speed=event.ctrlKey&&event.deltaMode===0?.01:.001;
+    const delta=clamp(event.deltaY*unit*speed,-.05,.05);
+    setCanvasZoom(scale*Math.exp(-delta),{x:event.clientX,y:event.clientY});
   }
   else{holdCanvasView();canvasView.x-=(event.shiftKey?event.deltaY:event.deltaX)*unit;canvasView.y-=(event.shiftKey?event.deltaX:event.deltaY)*unit;drawCanvasView();}
 },{passive:false});

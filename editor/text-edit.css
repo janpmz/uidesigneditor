@@ -1,0 +1,4 @@
+.phone.editing .item.text-editing,.phone.editing .item.text-editing *{cursor:text;user-select:text;touch-action:auto}
+.item.text-editing .content{pointer-events:auto}
+.item.text-editing .canvas-text-input{outline:none;white-space:inherit;min-width:1px;min-height:1em}
+.phone:has(.text-editing) .selection-overlay{display:none}

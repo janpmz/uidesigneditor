@@ -6,16 +6,17 @@ const escapeText = value => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;
 const aiInstructionsHtml = '<!-- BEGIN AI INSTRUCTIONS -->\n<section id="ai-instructions" hidden style="display:none!important">\n<h2>' + escapeText(aiInstructions[0]) + '</h2>\n'
   + aiInstructions.slice(1).map(paragraph => '<p>' + escapeText(paragraph) + '</p>').join('\n') + '\n</section>\n<!-- END AI INSTRUCTIONS -->';
 const code = await readFile(new URL('editor/image-drop.js', root), 'utf8');
-const selection = (await Promise.all(['annotation-shapes.js', 'pixel-tools.js', 'fit-content.js', 'canvas-selection.js', 'image-edit.js'].map(name => readFile(new URL(`editor/${name}`, root), 'utf8')))).join('\n');
+const selection = (await Promise.all(['annotation-shapes.js', 'pixel-tools.js', 'fit-content.js', 'canvas-selection.js', 'text-edit.js', 'image-edit.js'].map(name => readFile(new URL(`editor/${name}`, root), 'utf8')))).join('\n');
 const dialog = await readFile(new URL('editor/image-drop-dialog.html', root), 'utf8');
 const menu = await readFile(new URL('editor/canvas-edit-menu.html', root), 'utf8');
 const imageEditBar = await readFile(new URL('editor/image-edit-bar.html', root), 'utf8');
 const selectTools = (await readFile(new URL('editor/select-tools.html', root), 'utf8')).trimEnd();
 const inspectorMarkup = (await readFile(new URL('editor/inspector-tabs.html', root), 'utf8')).trimEnd();
 const inspectorCode = (await readFile(new URL('editor/inspector-tabs.js', root), 'utf8')).trimEnd();
+const itemInspector = (await readFile(new URL('editor/item-inspector.js', root), 'utf8')).trimEnd();
 const webmcpCode = (await readFile(new URL('editor/webmcp.js', root), 'utf8')).trimEnd();
 const webmcp = '<!-- BEGIN WEBMCP -->\n<script data-editor-webmcp>\n' + webmcpCode.replace(/<\/script/gi, '<\\/script') + '\n</script>\n<!-- END WEBMCP -->';
-const styles = (await Promise.all(['image-drop.css', 'canvas-view.css', 'sidebar-tabs.css', 'inspector-tabs.css', 'annotation-shapes.css'].map(name => readFile(new URL(`editor/${name}`, root), 'utf8')))).join('\n');
+const styles = (await Promise.all(['image-drop.css', 'canvas-view.css', 'sidebar-tabs.css', 'inspector-tabs.css', 'annotation-shapes.css', 'item-inspector.css', 'text-edit.css'].map(name => readFile(new URL(`editor/${name}`, root), 'utf8')))).join('\n');
 const view = await readFile(new URL('editor/canvas-view.js', root), 'utf8');
 const viewTools = (await readFile(new URL('editor/canvas-view-tools.html', root), 'utf8')).trimEnd();
 const sizeDialog = (await readFile(new URL('editor/canvas-size-dialog.html', root), 'utf8')).trimEnd();
@@ -32,7 +33,9 @@ const editorFiles = ['index.html', ...(await readdir(new URL('drafts/', root), {
   .filter(entry => entry.isDirectory()).map(entry => `drafts/${entry.name}/index.html`)];
 for (const file of editorFiles) {
   const path = new URL(file, root);
-  let html = await readFile(path, 'utf8');
+  let html;
+  try { html = await readFile(path, 'utf8'); }
+  catch (error) { if (error.code === 'ENOENT') continue; throw error; }
   if (!html.includes('// BEGIN PICTURE DROP\n')) continue;
   html = html.replace(/<!-- BEGIN AI INSTRUCTIONS -->[\s\S]*?<!-- END AI INSTRUCTIONS -->\n?/g, '');
   html = html.replace(/<body\b[^>]*>/, body => body + '\n' + aiInstructionsHtml);
@@ -44,6 +47,9 @@ for (const file of editorFiles) {
   html = html.replace("['fontSize','iconSize','radius','borderWidth','iconOffsetX']", "['fontSize','iconSize','radius','borderWidth','iconOffsetX','strokeWidth']");
   if (!html.includes('styleArrowShape(el,item);')) html = html.replace("  if(item.kind==='reading'){el.style.fontFamily=", "  styleArrowShape(el,item);\n  if(item.kind==='reading'){el.style.fontFamily=");
   if (!html.includes('renderArrowShape(content,item);')) html = html.replace("if(item.kind==='image'){renderPicture(content,item);}", "if(isArrowShape(item)){renderArrowShape(content,item);} else if(item.kind==='image'){renderPicture(content,item);}");
+  if (!html.includes('const previousVideos=')) html = html.replace("const phone=$('phone');phone.replaceChildren();", "const phone=$('phone');const previousVideos=new Map([...phone.querySelectorAll('.kind-video')].map(el=>[el.dataset.id,el.querySelector('video')]));phone.replaceChildren();");
+  if (!html.includes("phone.classList.toggle('clear-page'")) html = html.replace("phone.style.background=state.canvas.background;", "phone.classList.toggle('clear-page',state.canvas.background==='transparent');phone.style.background=state.canvas.background;");
+  if (!html.includes('renderVideo(content,item,previousVideos)')) html = html.replace("else if(item.kind==='image'){renderPicture(content,item);}", "else if(item.kind==='video'){renderVideo(content,item,previousVideos);} else if(item.kind==='image'){renderPicture(content,item);}");
   if (!html.includes('renderArrowHandles(overlay,items[0]);')) html = html.replace("    const handle=document.createElement('span');handle.className='resize-handle';", "    if(isArrowShape(items[0]))renderArrowHandles(overlay,items[0]);\n    else {\n    const handle=document.createElement('span');handle.className='resize-handle';").replace("overlay.append(handle);\n  } else {", "overlay.append(handle);\n    }\n  } else {");
   html = html.replace(/    else if\(isRectangleShape\(items\[0\]\)\)renderRectangleHandles\(overlay(?:,items\[0\])?\);\n/g, '');
   html = html.replace(/    else if\(isTextBox\(items\[0\]\)\)render(?:TextBox|Rectangle)Handles\(overlay,items\[0\]\);\n/g, '');
@@ -102,6 +108,11 @@ for (const file of editorFiles) {
   if (!html.includes('renderOrderActions(actions);')) html = html.replace("actions.className='action-grid';actions.style.marginTop='12px';", "actions.className='action-grid';actions.style.marginTop='12px';renderOrderActions(actions);");
   html = html.replace("note.textContent='Changes save in this browser.", "note.textContent=imageEditSession?'Choose Done to save the image and return to the page. Cancel discards these edits.':'Changes save in this browser.");
   if (!html.includes('Changes save to this Space.')) html = html.replace("':'Changes save in this browser.", "':typeof onlineSpaceId!=='undefined'&&onlineSpaceId?'Changes save to this Space. Open its link in another browser to share work.':'Changes save in this browser.");
+  const itemInspectorBlock = '// BEGIN ITEM INSPECTOR\n' + itemInspector + '\n// END ITEM INSPECTOR';
+  if (html.includes('// BEGIN ITEM INSPECTOR\n')) html = html.replace(/\/\/ BEGIN ITEM INSPECTOR\n[\s\S]*?\/\/ END ITEM INSPECTOR/, () => itemInspectorBlock);
+  else html = html.replace(/function renderLayers\(\) \{[\s\S]*?\n(?=function render\(\))/, () => itemInspectorBlock + '\n');
+  html = html.replace("querySelector('[data-field=\"name\"]')", "querySelector('[data-field=\"text\"],.icon-choice,.image-edit-action,[data-field]')");
+  if (!html.includes('function renderPhone() {\n  finishCanvasTextEdit(true,false,false);')) html = html.replace('function renderPhone() {', 'function renderPhone() {\n  finishCanvasTextEdit(true,false,false);');
   html = html.replace(/<!-- BEGIN HEIC READER -->[\s\S]*?<!-- END HEIC READER -->\n?/, '');
   html = html.replace(/<!-- BEGIN WEBMCP -->[\s\S]*?<!-- END WEBMCP -->\n?/g, '');
   if (html.includes('<style data-picture-drop>')) html = html.replace(/<style data-picture-drop>[\s\S]*?<\/style>\n?/, pictureStyles);
@@ -140,14 +151,15 @@ for (const file of editorFiles) {
   if (!html.includes('cleanPictureExport(doc);')) html = html.replace('const doc=document.documentElement.cloneNode(true);', 'const doc=document.documentElement.cloneNode(true);cleanPictureExport(doc);');
   html = html.replace('function renderSelection() {', 'function renderNativeSelection() {');
   if (!html.includes("el.classList.toggle('page-image'")) html = html.replace('styleItem(el,item);', "styleItem(el,item);el.classList.toggle('page-image',isPagePicture(item));");
-  html = html.replace("empty.textContent='Drag across", "empty.textContent=regionSelection?'Drag inside the selection to move it. Cut, copy and paste work with the usual keys or a right-click.':'Drag across");
+  html = html.replace("empty.textContent='Drag across", "empty.textContent=regionSelection?'Choose Make item to move or resize this part. You can also right-click and choose Make item.':'Drag across");
   const selectionHelp='Draw a box to select items it touches. Drag inside to move them. Shift-click to add or remove an item.';
   for (const message of [
     'Drag across empty space. The box selects every item it touches. Drag any selected item to move them together. Shift-click to add or remove items.',
     'Drag across empty space to select items. Drag any selected item to move them together. Shift-click to add or remove items.',
     'Draw a box around items, then drag inside it to move them. Shift-click to add or remove an item.',
   ]) html = html.replaceAll(message, selectionHelp);
-  const pictureHelp='Draw a box to select part of the image. Drag inside the box to move it.';
+  const pictureHelp='Draw a box to select part of the image, then choose Make item. The box selects any items it touches.';
+  html = html.replaceAll('Draw a box to select part of the image. Drag inside the box to move it.', pictureHelp);
   html = html.replaceAll('Click the main image to resize it. Drag to select part of the image.', pictureHelp);
   if (!html.includes("state.canvas.picturePage?'" + pictureHelp + "'")) html = html.replace("':'" + selectionHelp + "'", "':state.canvas.picturePage?'" + pictureHelp + "':'" + selectionHelp + "'");
   html = html.replaceAll('Drag any selected item or the count above the box to move them together.', 'Drag inside the box to move the selected items.');

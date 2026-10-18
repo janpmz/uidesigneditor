@@ -16,6 +16,8 @@ Use edit_design to add, move, resize, restyle, hide or remove items. Use create_
 
 For an attached screenshot, call import_image with its bytes as a base64 image data URL. Use mode "new" to open it at its own size, or "add" to place it in the current design. Use move_image_region to move part of a screenshot, and edit_design to add or change items over it. Use erase_image_region to erase a box in canvas pixels: it fills page backgrounds from nearby colors and clears added pictures to transparent. Use merge_image_items with moved picture piece ids to make those pieces part of the page background again. Both actions support Undo.
 
+GIFs keep their animation when added, saved to a Space, or saved as HTML. Move or resize the whole GIF with edit_design. Picture area edits skip GIFs, and PNG exports are still pictures.
+
 For HTML saved by this editor, extract its initial-layout JSON and send import_html a small HTML document containing only that application/json script. For other HTML, rebuild its visible design as items with create_design or edit_design.
 
 Check the result with read_design and a PNG from export_design. Refresh the site's tool list if the browser reports a stale tool. Use export_design to save the editable HTML. Tell the user what changed.

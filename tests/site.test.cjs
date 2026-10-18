@@ -38,7 +38,7 @@ test('public pages have readable content and one matching title, canonical and s
     assert.ok(meta(html, 'og:image:alt'));
     assert.doesNotMatch(html, /http-equiv="refresh"/);
     if (path === '/') assert.match(html, /Free design editor/);
-    else assert.match(html, /saves projects and pictures on the server/);
+    else assert.match(html, /This is a free design tool/);
     const image = readFileSync(join(root, new URL(meta(html, 'og:image')).pathname));
     assert.equal(image.readUInt16BE(0), 0xffd8);
   }
@@ -106,9 +106,9 @@ test('one LLM file holds the text from Info and About without extra copies', () 
   const text = read('llms.txt');
   assert.match(text, /^# UI Design Editor\n\nSource: https:\/\/uidesigneditor.com\//);
   assert.match(text, /Free design editor/);
-  assert.match(text, /saves projects and pictures on the server/);
-  assert.match(text, /Copy HTML/);
-  assert.match(text, /Clearing browser data removes the remembered Space and local drafts/);
+  assert.match(text, /This is a free design tool/);
+  assert.match(text, /Copy the prompt from the editor into your AI terminal/);
+  assert.match(text, /When you first visit the website, it creates and saves a "space" for you/);
   assert.doesNotMatch(text, /<script|<style|<main|<div|\)\[|llms-full\.txt|index\.md/);
   for (const file of ['llms-full.txt', 'index.md', 'guide/index.md']) assert.equal(existsSync(join(root, file)), false);
 });

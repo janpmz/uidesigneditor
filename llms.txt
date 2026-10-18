@@ -48,6 +48,8 @@ Use edit_design to add, move, resize, restyle, hide or remove items. Use create_
 
 For an attached screenshot, call import_image with its bytes as a base64 image data URL. Use mode "new" to open it at its own size, or "add" to place it in the current design. Use move_image_region to move part of a screenshot, and edit_design to add or change items over it. Use erase_image_region to erase a box in canvas pixels: it fills page backgrounds from nearby colors and clears added pictures to transparent. Use merge_image_items with moved picture piece ids to make those pieces part of the page background again. Both actions support Undo.
 
+GIFs keep their animation when added, saved to a Space, or saved as HTML. Move or resize the whole GIF with edit_design. Picture area edits skip GIFs, and PNG exports are still pictures.
+
 For HTML saved by this editor, extract its initial-layout JSON and send import_html a small HTML document containing only that application/json script. For other HTML, rebuild its visible design as items with create_design or edit_design.
 
 Check the result with read_design and a PNG from export_design. Refresh the site's tool list if the browser reports a stale tool. Use export_design to save the editable HTML. Tell the user what changed.
@@ -56,18 +58,24 @@ Check the result with read_design and a PNG from export_design. Refresh the site
 
 # About
 
-Move and resize text, shapes, icons and pictures in your browser.
+This is a free design tool to quickly move elements around in your screenshot or HTML design.
 
-The main editor opens your Space and saves projects and pictures on the server. On the first visit it creates a Space and brings in any existing local projects. This browser remembers it for your next visit.
+You can paste a screenshot or picture into it, select items, move them around and resize them.
 
-Use **Copy Space link** and open the same link in each browser. Anyone with that link can read and edit every project in the Space. Keep the link private.
+This is amazing for some quick prototyping.
 
-Space changes appear in other open pages. If another page saved a newer version, reload the saved project or save your work as a copy.
+Copy the prompt from the editor into your AI terminal and you can tell it to add HTML designs to the editor.
 
-Player and Library are the first sample projects. Use **Projects** to switch between them. Each keeps its own edits.
+You can use this editor like a canvas together with your AI. For example, the AI makes a design proposal, you edit it, and the AI takes it from there.
 
-Use **Copy HTML** to keep a file that works on its own. Clearing browser data removes the remembered Space and local drafts. Saved Space projects stay on the server; keep the Space link to open them again.
+When you first visit the website, it creates and saves a "space" for you. This is where all of your projects live.
 
-Free to use. [View the code on GitHub](https://github.com/janpmz/uidesigneditor).
+You can share the space with other people or your AI, and then they can see the projects there.
+
+For example, you could have a project for every page of your website or app.
+
+You can also share the link to a specific project with your AI or other people and ask them to make changes.
+
+This editor is open source. If you find something you want to improve, don't hesitate to fork the [repository](https://github.com/janpmz/uidesigneditor) and make the changes. You can then make a pull request, and I will merge it if I like it.
 
 [Open editor](https://uidesigneditor.com/)

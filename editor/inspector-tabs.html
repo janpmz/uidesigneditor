@@ -12,11 +12,13 @@
       <li>Share your space</li>
       <li><a href="https://github.com/janpmz/uidesigneditor" target="_blank" rel="noopener noreferrer">Open source on GitHub</a></li>
     </ul>
-    <div class="codex-prompt">
-      <div class="codex-prompt-heading">
-        <h3 id="codex-prompt-title">Connect AI</h3>
-        <button type="button" id="copy-codex-prompt">Copy prompt</button>
-      </div>
+  </section>
+  <section class="codex-prompt" aria-labelledby="codex-prompt-title">
+    <div class="codex-prompt-heading">
+      <h3 id="codex-prompt-title"><button type="button" id="toggle-codex-prompt" aria-expanded="true" aria-controls="codex-prompt-details"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>Connect AI</button></h3>
+      <button type="button" id="copy-codex-prompt">Copy prompt</button>
+    </div>
+    <div class="codex-prompt-details" id="codex-prompt-details">
       <p id="codex-tools-status" role="status">Paste this into Codex, Claude, etc:</p>
       <textarea id="codex-prompt" rows="12" readonly spellcheck="false" aria-labelledby="codex-prompt-title">Help me design this project.
 
@@ -27,8 +29,8 @@ The user can view and edit designs. So can the AI.
 My Space URL: https://uidesigneditor.com/
 
 Read the instructions: https://uidesigneditor.com/instructions.txt</textarea>
-      <p id="codex-prompt-status" class="codex-prompt-status" role="status"></p>
     </div>
+    <p id="codex-prompt-status" class="codex-prompt-status" role="status"></p>
   </section>
   <footer class="inspector-credit">
     <span>Made with <span class="inspector-credit-icons"><span role="img" aria-label="love">❤️</span><span role="img" aria-label="coffee">☕</span><span role="img" aria-label="artist">🧑‍🎨</span><span role="img" aria-label="eyes">👀</span></span> <span class="inspector-credit-author">by <a href="https://x.com/janxpm" target="_blank" rel="noopener noreferrer">@janxpm</a></span></span>

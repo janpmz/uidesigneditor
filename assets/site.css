@@ -3,5 +3,5 @@
 @media(min-width:1500px){.hero{padding-top:100px}}
 @media(max-width:700px){.site-header,.site-footer,main{width:calc(100% - 36px)}.site-header{height:76px}.brand{font-size:14px;gap:7px}.site-nav{gap:16px;font-size:13px}.site-nav .nav-editor{padding:6px 10px}.hero{padding-top:55px}.eyebrow{font-size:10px;margin-bottom:18px}.intro{font-size:17px}.editor-preview{margin-top:38px}.editor-preview img{border-radius:6px}.editor-preview figcaption{font-size:11px}.features{grid-template-columns:1fr;gap:34px;padding:45px 0}.feature-number{margin-bottom:10px}.features p{margin-top:10px}.privacy-note{grid-template-columns:1fr;gap:20px;padding:40px 0}.privacy-note>a{grid-column:auto}.site-footer{flex-direction:column;gap:16px}.guide{padding-top:45px}.keys div{grid-template-columns:1fr;gap:4px}}
 @media(prefers-reduced-motion:no-preference){a{transition:color .15s,background .15s}}
-@media(max-width:420px){.site-nav>a:first-child{display:none}.brand{font-size:13px}.site-header{gap:12px}}
+@media(max-width:420px){.site-nav>a:first-child:not(.nav-editor){display:none}.brand{font-size:13px}.site-header{gap:12px}}
 .about{max-width:560px;padding:70px 0}.about h1{font-size:34px;margin-bottom:24px;letter-spacing:-.03em}.about p{font-size:16px;line-height:1.65}.about p+p{margin-top:20px}.about strong{font-weight:500;color:var(--text)}.about .button{margin-top:30px}

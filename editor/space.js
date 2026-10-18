@@ -7,6 +7,8 @@
   const snapshot=id=>JSON.stringify({name:localProjects.find(project=>project.id===id).name,layout:copy(id===activeProject?state:projectSessions.get(id)?.state||localProjectLayout(id))});
   const dirty=record=>record.local!==record.saved;
   const busy=()=>Boolean(drag||fieldEdit||imageEditSession||canvasViewBusy()||canvasPan||canvasPinch||projectSwitchBusy||pictureDropBusy||pictureChoice.open);
+  const shareHash=projectId=>'#space='+onlineSpaceId+(projectId?'&project='+projectId:'');
+  const shareUrl=projectId=>location.origin+location.pathname+shareHash(projectId);
 
   spaceClient={changed,remove,ready:Promise.resolve(),flush,async saved(){
     if(!onlineSpaceId)return;
@@ -14,7 +16,14 @@
     await flush();
     if(records.get(activeProject)?.conflict)throw new Error('A newer version exists. Reload or save as a copy. Your edit stays in this browser.');
   },close(){stopped=true;clearTimeout(saveTimer);clearTimeout(reconnectTimer);ws?.close();showStatus();}};
-  $('space-share').onclick=()=>run(async()=>{await navigator.clipboard.writeText(location.href);notify('Space link copied. Anyone with this link can edit.');});
+  $('space-share').onclick=()=>run(async()=>{await navigator.clipboard.writeText(shareUrl());notify('Space link copied. Anyone with this link can edit.');});
+  $('project-share').onclick=()=>run(async()=>{
+    if(busy())throw new Error('Finish the current edit first.');
+    const url=shareUrl(activeProject);
+    await spaceClient.saved();
+    await navigator.clipboard.writeText(url);$('project-share').textContent='Copied';notify('Project link copied. Anyone with this link can edit this Space.');
+  });
+  $('project-share').onblur=()=>{$('project-share').textContent='Copy link';};
   $('space-retry').onclick=()=>spaceClient.ready=run(async()=>{problem='';if(!onlineSpaceId)await createSpace();else if(!enabled)await start();else{await refresh();await flush();}if(!ws||ws.readyState===WebSocket.CLOSED)connect();});
   $('space-reload').onclick=()=>run(async()=>{
     if(busy())throw new Error('Finish the current edit first.');
@@ -30,7 +39,7 @@
     createProject(local.layout,local.name+' (copy)');
     await refreshProject(conflictId,true);await flush();showStatus();
   });
-  window.addEventListener('hashchange',()=>{if((location.hash||'')!==(onlineSpaceId?'#space='+onlineSpaceId:''))location.reload();});
+  window.addEventListener('hashchange',()=>{if((location.hash||'')!==(onlineSpaceId?shareHash(linkedProject):''))location.reload();});
   window.addEventListener('beforeunload',event=>{
     if(enabled&&[...records.values()].some(dirty)){event.preventDefault();event.returnValue='';}
   });
@@ -49,7 +58,15 @@
         const local=snapshot(project.id);
         records.set(project.id,{version:saved.version,local,saved:saved.dirty?null:local,conflict:false});
       }
-      await refresh();enabled=true;problem='';rememberSpace();
+      await refresh();
+      if(linkedProject){
+        const project=localProjects.find(project=>project.id===linkedProject);
+        if(project&&project.id!==activeProject){
+          const session=projectSessions.get(project.id);
+          openProject(project.id,copy(session?.state||project.layout),session);
+        }else if(!project)notify('Project not found in this Space.');
+      }
+      enabled=true;problem='';rememberSpace();
       changed();connect();
     }finally{setLoading(false);}
   }
@@ -227,7 +244,7 @@
   async function encodePictures(source,spaceId,projectId){
     const layout=copy(source);
     for(const item of layout.items){
-      if(item.kind==='image'){
+      if(item.kind==='image'||item.kind==='video'){
         const key=spaceId+':'+projectId+':'+item.src;
         let id=pictureIds.get(key);
         if(!id){({id}=await request('/api/projects/'+projectId+'/pictures',{method:'POST',body:{src:item.src}},spaceId));pictureIds.set(key,id);pictures.set(spaceId+':'+projectId+':'+id,item.src);}
@@ -240,7 +257,7 @@
   async function decodePictures(source,projectId){
     const layout=copy(source);
     for(const item of layout.items){
-      if(item.kind==='image'){
+      if(item.kind==='image'||item.kind==='video'){
         const id=item.src.slice(8),key=onlineSpaceId+':'+projectId+':'+id;
         if(!pictures.has(key)){const {src}=await request('/api/projects/'+projectId+'/pictures/'+id);pictures.set(key,src);pictureIds.set(onlineSpaceId+':'+projectId+':'+src,id);}
         item.src=pictures.get(key);
@@ -264,7 +281,7 @@
     connection.title=connection.dataset.state==='local'?'Local file':connected?'Connected':connection.dataset.state==='disconnected'?'Disconnected':spaceClient.clientId?'Reconnecting…':'Connecting…';
     connection.setAttribute('aria-label',connection.title);
     conflictId=[...records].find(([,record])=>record.conflict)?.[0]||null;
-    $('space-share').hidden=!enabled;$('space-retry').hidden=!problem;
+    $('space-share').hidden=!enabled;$('project-share').hidden=!enabled;$('space-retry').hidden=!problem;
     $('space-help').hidden=Boolean(onlineSpaceId);
     $('space-conflict').hidden=!conflictId;
     if(conflictId)$('space-conflict-message').textContent='“'+(localProjects.find(p=>p.id===conflictId)?.name||'Project')+'”: A newer version exists. Reload or save as a copy.';

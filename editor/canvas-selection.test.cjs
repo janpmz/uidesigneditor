@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { readFileSync, readdirSync } = require('node:fs');
+const { readFileSync, readdirSync, existsSync } = require('node:fs');
 const { join } = require('node:path');
 const vm = require('node:vm');
 
@@ -8,6 +8,7 @@ const helpers = readFileSync(join(__dirname, 'pixel-tools.js'), 'utf8');
 const shapes = readFileSync(join(__dirname, 'annotation-shapes.js'), 'utf8');
 const fitContent = readFileSync(join(__dirname, 'fit-content.js'), 'utf8');
 const controller = readFileSync(join(__dirname, 'canvas-selection.js'), 'utf8');
+const textEditor = readFileSync(join(__dirname, 'text-edit.js'), 'utf8');
 const imageEditor = readFileSync(join(__dirname, 'image-edit.js'), 'utf8');
 const draft = readFileSync(join(__dirname, '../index.html'), 'utf8');
 const geometry = draft.split('// BEGIN SELECTION GEOMETRY')[1].split('// END SELECTION GEOMETRY')[0];
@@ -72,19 +73,19 @@ function harness(picturePage = false) {
     state:structuredClone(start),selected:new Set(),editing:true,stage,canvasTextTarget:()=>false,
     pictureChoice:{open:false},pictureDropBusy:false,$:get,
     document:{documentElement:{clientWidth:1200,clientHeight:800},addEventListener:(type,fn)=>documentListeners.set(type,fn),createElement:node},
-    window:{innerWidth:1200,innerHeight:800},
+    window:{innerWidth:1200,innerHeight:800,addEventListener(){}},
     item:(id,name,kind,x,y,w,h,extra)=>({id,name,kind,x,y,w,h,...extra}),
     copy:value=>JSON.parse(JSON.stringify(value)),notify(){},render(){},renderPhone(){},renderLayers(){},renderInspector(){},renderNativeSelection(){},refreshSelection(){},styleItem(){},
     phonePoint:event=>({x:event.clientX,y:event.clientY}),drawBox:gesture=>{gesture.box=node();},
     navigator:{clipboard:{writeText:async()=>{}}},setTimeout,crypto:{randomUUID:()=>String(Math.random())},
-    safePictureSource:src=>/^data:image\/png;base64,/.test(src),
+    safePictureSource:src=>/^data:image\/(png|gif);base64,/.test(src),
     pictureToEdit:()=>null,
   });
   sandbox.selectedItems=()=>sandbox.state.items.filter(item=>sandbox.selected.has(item.id)&&!item.hidden);
   sandbox.remember=before=>undo.push(before);
   sandbox.change=fn=>{undo.push(JSON.stringify(sandbox.state));fn();};
   sandbox.deleteSelected=()=>sandbox.change(()=>{sandbox.state.items.forEach(item=>{if(sandbox.selected.has(item.id))item.hidden=true;});sandbox.selected.clear();});
-  vm.runInContext(defaults + geometry + scaling + shapes + helpers + fitContent + controller, sandbox);
+  vm.runInContext(defaults + geometry + scaling + shapes + helpers + fitContent + controller + textEditor, sandbox);
   const read=code=>JSON.parse(JSON.stringify(vm.runInContext(code,sandbox)));
   const event=(x,y,options={})=>({button:0,pointerId:1,clientX:x,clientY:y,target:{closest:()=>null},preventDefault(){this.prevented=true;},stopImmediatePropagation(){this.stopped=true;},...options});
   return {sandbox,start,undo,read,event,get,send:(type,event)=>stageListeners.get(type)(event),list:(type,event)=>layerListeners.get(type)(event),key:event=>documentListeners.get('keydown')(event)};
@@ -95,6 +96,18 @@ function mockPictureCrop(h){
     patches:[{id:'base',src:'filled'}],
   });
 }
+test('clicks in editable text leave browser selection alone and cannot start a canvas move',()=>{
+  const h=harness(),event=h.event(110,110,{target:{closest:selector=>selector.includes('contenteditable')?{}:null}});
+  h.sandbox.selected.add('a');h.send('pointerdown',event);
+  assert.equal(event.prevented,undefined);assert.equal(event.stopped,true);assert.equal(h.read('canvasGesture'),null);
+  assert.deepEqual([...h.sandbox.selected],['a']);assert.equal(h.undo.length,0);
+});
+test('clicking a text item keeps its page node in place for the next click',async()=>{
+  const h=harness();let redraws=0;h.sandbox.render=()=>redraws++;
+  const target={closest:selector=>selector==='.item,.selection-overlay'?{dataset:{id:'a'}}:null};
+  h.send('pointerdown',h.event(110,110,{target}));await h.send('pointerup',h.event(110,110));
+  assert.deepEqual([...h.sandbox.selected],['a']);assert.equal(redraws,0);assert.equal(h.undo.length,0);
+});
 test('the rectangle tool draws over a selected shape, then lets the group move',async()=>{
   const h=harness();
   h.sandbox.state.items=[{id:'a',kind:'shape',shape:'rectangle',x:100,y:100,w:100,h:40},{id:'b',kind:'label',x:100,y:170,w:100,h:40}];
@@ -123,14 +136,13 @@ test('Escape cancels the rectangle tool before or during a draw and keeps the ol
     assert.deepEqual([...h.sandbox.selected],['a']);assert.deepEqual(h.read('state'),h.start);assert.equal(h.undo.length,0);
   }
 });
-test('the rectangle tool makes a fresh picture item from inside an old area',async()=>{
+test('the rectangle tool draws a fresh area without making an item',async()=>{
   const h=harness(true);mockPictureCrop(h);vm.runInContext('regionSelection=rememberRegion({x:100,y:100,w:200,h:100});',h.sandbox);
   h.get('select-rectangle').onclick();h.send('pointerdown',h.event(120,120));
   assert.equal(h.read('canvasGesture.type'),'box');assert.equal(h.read('canvasGesture.pixels'),true);
   h.send('pointermove',h.event(160,150));await h.send('pointerup',h.event(160,150));
-  assert.equal(h.read('regionSelection'),null);assert.deepEqual([...h.sandbox.selected],['piece']);
-  assert.deepEqual(h.read('state.items.slice(1).map(({x,y,w,h})=>({x,y,w,h}))'),[{x:120,y:120,w:40,h:30}]);
-  assert.equal(h.undo.length,1);assert.deepEqual(JSON.parse(h.undo[0]),h.start);
+  assert.deepEqual(h.read('regionSelection.box'),{x:120,y:120,w:40,h:30});assert.equal(h.sandbox.selected.size,0);
+  assert.deepEqual(h.read('state'),h.start);assert.equal(h.undo.length,0);
 });
 test('choosing the rectangle tool closes the small-screen tools panel',()=>{
   const h=harness(),panel=h.get('editor-tools');panel.open=true;panel.close=()=>{panel.open=false;};
@@ -256,6 +268,20 @@ test('the main image stays fixed and shows no resize handles when clicked or sel
   assert.equal(h.get('phone').children.length,0);
   assert.deepEqual(h.read('state'),h.start);assert.equal(h.undo.length,0);
 });
+test('GIF pages select, move and resize the whole GIF, preserving it through Undo',async()=>{
+  const h=harness(true),entry=h.sandbox.state.items[0];entry.src='data:image/gif;base64,R0lGODlh';
+  const target={closest:selector=>selector==='.item,.selection-overlay'?{dataset:{id:entry.id}}:null};
+  assert.equal(vm.runInContext('isPagePicture(state.items[0])',h.sandbox),false);
+  assert.deepEqual(h.read('regionSources({x:0,y:0,w:800,h:500})'),[]);
+  h.send('pointerdown',h.event(20,20,{target}));assert.equal(h.read('canvasGesture.pixels'),false);
+  await h.send('pointerup',h.event(20,20));assert.deepEqual([...h.sandbox.selected],['base']);
+  h.send('pointerdown',h.event(20,20,{target}));h.send('pointermove',h.event(30,30));await h.send('pointerup',h.event(30,30));
+  assert.equal(entry.src,'data:image/gif;base64,R0lGODlh');assert.equal(h.undo.length,1);
+  const handle={closest:selector=>selector==='[data-rectangle-resize]'?{dataset:{rectangleResize:'e'}}:target.closest(selector)};
+  h.send('pointerdown',h.event(800,250,{target:handle}));h.send('pointermove',h.event(780,250));await h.send('pointerup',h.event(780,250));
+  assert.equal(entry.src,'data:image/gif;base64,R0lGODlh');assert.equal(h.undo.length,2);
+  h.sandbox.state=JSON.parse(h.undo.pop());assert.equal(h.read('state.items[0].src'),entry.src);
+});
 test('the main image ignores side and scale handles, including in older projects',async()=>{
   for(const legacy of [false,true])for(const side of ['n','e','s','w','scale']){
     const h=harness(true);if(legacy)delete h.sandbox.state.items[0].imageBase;
@@ -269,7 +295,7 @@ test('the main image ignores side and scale handles, including in older projects
     assert.deepEqual(h.read('state'),before);assert.deepEqual([...h.sandbox.selected],['base']);assert.equal(h.undo.length,0);
   }
 });
-test('dragging inside the fixed main image still makes a picture piece',async()=>{
+test('dragging inside the fixed main image keeps an area until Make item',async()=>{
   const h=harness(true);h.sandbox.selected.add('base');mockPictureCrop(h);
   const imageTarget={closest:selector=>selector==='.item,.selection-overlay'?{dataset:{id:'base'}}:null};
   h.send('pointerdown',h.event(100,100,{target:imageTarget}));assert.equal(h.read('canvasGesture.type'),'box');assert.equal(h.read('canvasGesture.pixels'),true);
@@ -279,6 +305,8 @@ test('dragging inside the fixed main image still makes a picture piece',async()=
   assert.deepEqual(h.read('sourcePixelArea(regionSelection.box,state.items[0],800,500)'),{x:100,y:100,w:180,h:100});
   assert.deepEqual(h.read('state'),h.start);assert.equal(h.undo.length,0);
   await h.send('pointerup',h.event(280,200,{target:imageTarget}));
+  assert.deepEqual(h.read('state'),h.start);assert.equal(h.undo.length,0);
+  await h.get('canvas-menu-make-item').onclick();
   assert.equal(h.read('regionSelection'),null);assert.deepEqual([...h.sandbox.selected],['piece']);assert.equal(h.undo.length,1);
   assert.deepEqual(h.read('state.items.slice(1).map(({x,y,w,h})=>({x,y,w,h}))'),[{x:100,y:100,w:180,h:100}]);
   assert.deepEqual(h.read('state.canvas'),h.start.canvas);
@@ -347,8 +375,42 @@ test('a right-click inside a picture area keeps the area selected and disables o
   h.send('contextmenu',h.event(30,30,{target}));
   assert.deepEqual(h.read('regionSelection.box'),{x:10,y:10,w:50,h:50});
   assert.equal(h.sandbox.selected.size,0);assert.equal(h.get('canvas-edit-menu').hidden,false);
+  assert.equal(h.get('canvas-menu-make-item').hidden,false);
   assert.equal(h.get('canvas-menu-bring-front').disabled,true);
   assert.equal(h.get('canvas-menu-bring-back').disabled,true);
+});
+test('picture boxes select existing items at an edge or corner and return to an area when clear',async()=>{
+  for(const kind of ['image','icon','label','shape'])for(const rectangleTool of [false,true]){
+    const h=harness(true),entry={id:'existing',kind,x:100,y:100,w:100,h:60,src:'data:image/png;base64,BBBB',pictureFragment:true};
+    h.sandbox.state.items.push(entry,{...entry,id:'hidden',hidden:true,x:50,y:50});
+    const before=structuredClone(h.sandbox.state);
+    if(rectangleTool)h.get('select-rectangle').onclick();
+    h.send('pointerdown',h.event(80,80));h.send('pointermove',h.event(99.9,100));
+    assert.equal(h.sandbox.selected.size,0);assert.ok(h.read('regionSelection'));
+    h.send('pointermove',h.event(100,100));
+    assert.deepEqual([...h.sandbox.selected],['existing']);assert.equal(h.read('regionSelection'),null);
+    h.send('pointermove',h.event(99.9,100));
+    assert.equal(h.sandbox.selected.size,0);assert.ok(h.read('regionSelection'));
+    h.send('pointermove',h.event(110,110));await h.send('pointerup',h.event(110,110));
+    assert.deepEqual([...h.sandbox.selected],['existing']);assert.equal(h.read('regionSelection'),null);
+    h.send('contextmenu',h.event(110,110));assert.equal(h.get('canvas-menu-make-item').hidden,true);
+    assert.deepEqual(h.read('state'),before);assert.equal(h.undo.length,0);
+  }
+});
+test('picture boxes keep Shift selections and select several pieces without making another item',async()=>{
+  const h=harness(true);
+  h.sandbox.state.items.push({id:'a',kind:'image',x:100,y:100,w:40,h:40,pictureFragment:true},{id:'b',kind:'icon',x:180,y:100,w:40,h:40},{id:'c',kind:'image',x:400,y:300,w:40,h:40,pictureFragment:true});
+  h.sandbox.selected.add('c');
+  h.send('pointerdown',h.event(80,80,{shiftKey:true}));h.send('pointermove',h.event(180,100,{shiftKey:true}));await h.send('pointerup',h.event(180,100,{shiftKey:true}));
+  assert.deepEqual([...h.sandbox.selected],['c','a','b']);assert.equal(h.read('regionSelection'),null);
+  assert.equal(h.sandbox.state.items.length,4);assert.equal(h.undo.length,0);
+});
+test('Select all picks existing picture items, or leaves an unmade area when there are none',()=>{
+  const h=harness(true);h.key(h.event(0,0,{key:'a',metaKey:true}));
+  assert.deepEqual(h.read('regionSelection.box'),{x:0,y:0,w:800,h:500});assert.deepEqual(h.read('state'),h.start);
+  h.sandbox.state.items.push({id:'piece',kind:'image',x:100,y:100,w:40,h:40,pictureFragment:true});
+  h.key(h.event(0,0,{key:'a',metaKey:true}));
+  assert.deepEqual([...h.sandbox.selected],['piece']);assert.equal(h.read('regionSelection'),null);assert.equal(h.undo.length,0);
 });
 test('press and drag draws a box right away without changing the picture or undo history', async () => {
   const h=harness(true);h.send('pointerdown',h.event(80,80));
@@ -361,13 +423,21 @@ test('press and drag draws a box right away without changing the picture or undo
   h.send('pointercancel',h.event(280,180));
   assert.equal(h.read('regionSelection'),null);
 });
-test('releasing a picture area makes an item with side and corner handles, ready to move and resize',async()=>{
+test('Make item turns the drawn area into an item with move and resize handles in one Undo step',async()=>{
   for(const rectangleTool of [false,true]){
     const h=harness(true);mockPictureCrop(h);
     const nativeSelection=draft.slice(draft.indexOf('function renderNativeSelection()'),draft.indexOf('function fit()',draft.indexOf('function renderNativeSelection()')));
     vm.runInContext(nativeSelection,h.sandbox);h.sandbox.render=()=>vm.runInContext('renderSelection()',h.sandbox);
     if(rectangleTool)h.get('select-rectangle').onclick();
     h.send('pointerdown',h.event(280,180));h.send('pointermove',h.event(80,80));await h.send('pointerup',h.event(80,80));
+    assert.deepEqual(h.read('regionSelection.box'),{x:80,y:80,w:200,h:100});
+    assert.deepEqual(h.read('state'),h.start);assert.equal(h.undo.length,0);
+    vm.runInContext('renderSelection()',h.sandbox);
+    const button=h.get('phone').children.at(-1).children.at(-1);
+    assert.equal(button.textContent,'Make item');assert.equal(button.className,'make-item-action');
+    const press=h.event(80,180,{target:{closest:selector=>selector==='.make-item-action'?button:null}});
+    h.send('pointerdown',press);assert.equal(press.prevented,undefined);assert.equal(h.read('canvasGesture'),null);
+    await button.onclick();
     assert.equal(h.read('regionSelection'),null);assert.deepEqual([...h.sandbox.selected],['piece']);
     assert.deepEqual(h.read('state.items[1]'),{id:'piece',name:'Picture selection',kind:'image',src:'data:image/png;base64,BBBB',x:80,y:80,w:200,h:100,pictureFragment:true});
     assert.equal(h.sandbox.state.items[0].src,'filled');assert.equal(h.sandbox.stage.dataset.selectTool,'');
@@ -384,22 +454,25 @@ test('releasing a picture area makes an item with side and corner handles, ready
     assert.equal(h.undo.length,5);h.sandbox.state=JSON.parse(h.undo[0]);assert.deepEqual(h.read('state'),h.start);
   }
 });
-test('release waits for the picture, keeps the drawn bounds, and allows Escape or cancel',async()=>{
-  for(const cancel of [null,'Escape','pointercancel']){
+test('Make item waits for the picture, keeps the drawn bounds, and allows Escape',async()=>{
+  for(const cancel of [false,true]){
     const h=harness(true);mockPictureCrop(h);const makePlan=h.sandbox.makeRegionPlan;
     let finish;h.sandbox.makeRegionPlan=region=>new Promise(resolve=>{finish=async()=>resolve(await makePlan(region));});
     h.send('pointerdown',h.event(80,80));h.send('pointermove',h.event(280,180));
-    const released=h.send('pointerup',h.event(280,180));
-    h.send('lostpointercapture',h.event(280,180));h.send('pointermove',h.event(500,400));
+    await h.send('pointerup',h.event(280,180));
+    assert.equal(finish,undefined);
+    const making=h.get('canvas-menu-make-item').onclick();
+    assert.equal(h.read('canvasEditBusy'),true);
+    h.send('pointerdown',h.event(500,400));h.send('pointermove',h.event(500,400));
     assert.deepEqual(h.read('regionSelection.box'),{x:80,y:80,w:200,h:100});assert.deepEqual(h.read('state'),h.start);
-    if(cancel==='Escape')h.key(h.event(0,0,{key:cancel}));else if(cancel)h.send(cancel,h.event(280,180));
-    await finish();await released;
+    if(cancel)h.key(h.event(0,0,{key:'Escape'}));
+    await finish();await making;
     assert.equal(h.read('canvasGesture'),null);assert.equal(h.read('regionSelection'),null);
     if(cancel){assert.deepEqual(h.read('state'),h.start);assert.equal(h.undo.length,0);}
     else{assert.deepEqual([...h.sandbox.selected],['piece']);assert.equal(h.undo.length,1);assert.equal(h.sandbox.state.items[1].w,200);}
   }
 });
-test('a failed picture or changed source cannot leave a new item after release',async()=>{
+test('a failed picture or changed source cannot leave a new item after Make item',async()=>{
   for(const changed of [false,true]){
     const h=harness(true);mockPictureCrop(h);const makePlan=h.sandbox.makeRegionPlan,messages=[];
     h.sandbox.notify=message=>messages.push(message);
@@ -408,6 +481,7 @@ test('a failed picture or changed source cannot leave a new item after release',
       h.sandbox.state.items[0].src='changed';return makePlan(region);
     };
     h.send('pointerdown',h.event(80,80));h.send('pointermove',h.event(280,180));await h.send('pointerup',h.event(280,180));
+    await h.get('canvas-menu-make-item').onclick();
     assert.equal(h.sandbox.state.items.length,1);assert.equal(h.undo.length,0);assert.equal(h.read('canvasGesture'),null);
     assert.equal(h.sandbox.state.items[0].src,changed?'changed':h.start.items[0].src);
     if(!changed)assert.deepEqual(messages,['Could not read this picture.']);
@@ -435,22 +509,12 @@ test('the HTML drag keeps a small gap until the box actually touches the item', 
   h.send('pointermove',h.event(100,110));
   assert.deepEqual([...h.sandbox.selected],['background','a']);
 });
-test('Escape stops a picture move while its crop is still being read', async () => {
-  const h=harness(true);h.sandbox.pendingPlan=new Promise(resolve=>{h.sandbox.finishPlan=resolve;});
-  vm.runInContext('regionSelection=rememberRegion({x:80,y:80,w:200,h:100});makeRegionPlan=()=>pendingPlan;',h.sandbox);
-  h.send('pointerdown',h.event(120,120));h.send('pointermove',h.event(320,220));
-  h.key(h.event(0,0,{key:'Escape'}));h.sandbox.finishPlan({entry:{id:'piece',kind:'image',x:80,y:80,w:200,h:100},patches:[]});
-  await h.sandbox.pendingPlan;
-  assert.deepEqual(JSON.parse(JSON.stringify(h.sandbox.state)),h.start);assert.equal(h.undo.length,0);
-});
-test('a quick picture move waits for the crop and then saves one filled move', async () => {
-  const h=harness(true);h.sandbox.pendingPlan=new Promise(resolve=>{h.sandbox.finishPlan=resolve;});
-  vm.runInContext('regionSelection=rememberRegion({x:80,y:80,w:200,h:100});makeRegionPlan=()=>pendingPlan;',h.sandbox);
-  h.send('pointerdown',h.event(120,120));h.send('pointermove',h.event(320,220));
-  const finished=h.send('pointerup',h.event(320,220));h.send('lostpointercapture',h.event(320,220));
-  h.sandbox.finishPlan({entry:{id:'piece',kind:'image',x:80,y:80,w:200,h:100},patches:[{id:'base',src:'filled'}]});await finished;
-  assert.equal(h.sandbox.state.items[0].src,'filled');assert.deepEqual(h.read('state.items[1]'),{id:'piece',kind:'image',x:280,y:180,w:200,h:100});
-  assert.equal(h.undo.length,1);assert.deepEqual(JSON.parse(h.undo[0]),h.start);
+test('dragging inside an unmade area draws a new selection without reading or changing the picture', async () => {
+  const h=harness(true);h.sandbox.makeRegionPlan=()=>{throw new Error('Must choose Make item first');};
+  vm.runInContext('regionSelection=rememberRegion({x:80,y:80,w:200,h:100});',h.sandbox);
+  h.send('pointerdown',h.event(120,120));h.send('pointermove',h.event(320,220));await h.send('pointerup',h.event(320,220));
+  assert.deepEqual(h.read('regionSelection.box'),{x:120,y:120,w:200,h:100});
+  assert.deepEqual(h.read('state'),h.start);assert.equal(h.undo.length,0);
 });
 test('cut fills the old spot and waits for paste before adding the new item', async () => {
   const h=harness(true);
@@ -464,11 +528,11 @@ test('cut fills the old spot and waits for paste before adding the new item', as
 test('a lifted picture area can move beyond the page and undo restores its source', async () => {
   const h=harness(true);
   vm.runInContext('regionSelection=rememberRegion({x:80,y:80,w:200,h:100});makeRegionPlan=async()=>({entry:{id:"piece",kind:"image",x:80,y:80,w:200,h:100},patches:[{id:"base",src:"filled"}]});',h.sandbox);
+  await h.get('canvas-menu-make-item').onclick();
   h.send('pointerdown',h.event(120,120));h.send('pointermove',h.event(-320,-220));
-  assert.deepEqual(h.read('canvasGesture.preview'),{x:-360,y:-260,w:200,h:100});
   await h.send('pointerup',h.event(-320,-220));
   assert.deepEqual(h.read('state.items[1]'),{id:'piece',kind:'image',x:-360,y:-260,w:200,h:100});
-  assert.equal(h.undo.length,1);assert.deepEqual(JSON.parse(h.undo[0]),h.start);
+  assert.equal(h.undo.length,2);assert.deepEqual(JSON.parse(h.undo[0]),h.start);
 });
 test('a box outside a picture page selects and moves parked items', async () => {
   const h=harness(true);
@@ -564,10 +628,11 @@ test('No item leaves HTML items, the screenshot itself, and an area selection al
   assert.deepEqual(html.read('state'),html.start);assert.equal(html.undo.length,0);
 });
 test('new page tools stay in all saved standalone editors', () => {
-  for(const entry of readdirSync(join(__dirname,'../drafts'),{withFileTypes:true}).filter(entry=>entry.isDirectory())){
+  for(const entry of readdirSync(join(__dirname,'../drafts'),{withFileTypes:true}).filter(entry=>entry.isDirectory()&&existsSync(join(__dirname,'../drafts',entry.name,'index.html')))){
     const html=readFileSync(join(__dirname,'../drafts',entry.name,'index.html'),'utf8');
-    assert.equal(html.split('// BEGIN CANVAS EDITOR\n')[1].split('// END CANVAS EDITOR')[0].trimEnd(),(shapes+'\n'+helpers+'\n'+fitContent+'\n'+controller+'\n'+imageEditor).trimEnd());
+    assert.equal(html.split('// BEGIN CANVAS EDITOR\n')[1].split('// END CANVAS EDITOR')[0].trimEnd(),(shapes+'\n'+helpers+'\n'+fitContent+'\n'+controller+'\n'+textEditor+'\n'+imageEditor).trimEnd());
     assert.equal(html.split('id="canvas-edit-menu"').length-1,1);
+    assert.match(html,/<div id="canvas-edit-menu"[^>]*>\s*<button id="canvas-menu-make-item" role="menuitem" hidden>Make item<\/button>/);
     assert.match(html, /id="canvas-menu-no-item" role="menuitem" hidden>No item<\/button>/);
     assert.equal(html.split('id="image-edit-bar"').length-1,1);
     assert.match(html,/renderImageEditAction\(heading,item\);/);

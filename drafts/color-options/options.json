@@ -1,0 +1,50 @@
+[
+  {
+    "name": "01 — Sand and red",
+    "slug": "01-sand-red",
+    "projectId": "project-3eb27414-208f-44e9-aec4-914c3aa2702c",
+    "revision": "2b70e2d1ffe402f86d662c7b7ba072e558d0cd7433b1f17f0707ff44d02910c7",
+    "canvas": {
+      "background": "#F3EAD8",
+      "height": 512,
+      "width": 512
+    },
+    "items": 12
+  },
+  {
+    "name": "02 — Dark blue and peach",
+    "slug": "02-dark-blue-peach",
+    "projectId": "project-cfaa7a06-31f4-44ff-8e21-1b94b4e99e13",
+    "revision": "567bd41139bc785635bbeaa9b92aa5fe6d65fbdef1ad9c996f0e3061e84be122",
+    "canvas": {
+      "background": "#101A2C",
+      "height": 512,
+      "width": 512
+    },
+    "items": 12
+  },
+  {
+    "name": "03 — Lilac and plum",
+    "slug": "03-lilac-plum",
+    "projectId": "project-a70adea9-929c-4128-8896-ec8cef276b7f",
+    "revision": "505c2a7dd4126ef4efeca4a02081255fb27ccb4f788bcf53ec57e862da4c832e",
+    "canvas": {
+      "background": "#E9E1F5",
+      "height": 512,
+      "width": 512
+    },
+    "items": 12
+  },
+  {
+    "name": "04 — Blue and yellow",
+    "slug": "04-blue-yellow",
+    "projectId": "project-160fc72e-1230-4cd1-a097-e5faaf49f391",
+    "revision": "cde2d45bb89a8b8f7006674774fffff78c5ef268c23f70213147eebce6311049",
+    "canvas": {
+      "background": "#2448DB",
+      "height": 512,
+      "width": 512
+    },
+    "items": 12
+  }
+]
