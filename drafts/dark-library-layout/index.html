@@ -892,7 +892,7 @@ function original() {
 }
 const STORAGE='dark-library-layout-v2:'+location.pathname;
 const compactViewport=window.matchMedia('(max-width:900px)');
-let state=original(),selected=new Set(),editing=true,scale=1,drag=null,history=[],future=[],toastTimer,fieldEdit=null;
+let state=original(),selected=new Set(),editing=true,scale=1,drag=null,undoHistory=[],future=[],toastTimer,fieldEdit=null;
 try { const saved=JSON.parse(localStorage.getItem(STORAGE)||'null'); const embedded=JSON.parse($('initial-layout').textContent); if(saved?.version===1)state=saved;else if(embedded?.version===1)state=embedded; } catch {}
 // Update older saved drafts without changing the positions the user chose.
 function updateDateOrder(layout) {
@@ -970,8 +970,8 @@ function matchLibraryAppSpacing(layout) {
 }
 matchLibraryAppSpacing(state);
 // END LIBRARY APP SPACING
-function remember(before=JSON.stringify(state)) { history.push(before); if(history.length>80)history.shift(); future=[]; }
-function save() { if(imageEditSession){$('undo').disabled=!history.length;$('redo').disabled=!future.length;return;} let stored=true;try{localStorage.setItem(STORAGE,JSON.stringify(state));}catch{stored=false;}savePictureDraft(stored); $('undo').disabled=!history.length; $('redo').disabled=!future.length; }
+function remember(before=JSON.stringify(state)) { undoHistory.push(before); if(undoHistory.length>80)undoHistory.shift(); future=[]; }
+function save() { if(imageEditSession){$('undo').disabled=!undoHistory.length;$('redo').disabled=!future.length;return;} let stored=true;try{localStorage.setItem(STORAGE,JSON.stringify(state));}catch{stored=false;}savePictureDraft(stored); $('undo').disabled=!undoHistory.length; $('redo').disabled=!future.length; }
 function notify(text) { $('toast').textContent=text;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),2100); }
 function change(fn,full=true) { remember();fn();save();if(full)render();else{renderPhone();renderLayers();} }
 // Selection geometry is kept apart from pointer events so each drag uses the same rules.
@@ -1306,8 +1306,8 @@ function endDrag(event,cancel=false){
 stage.addEventListener('pointerup',event=>endDrag(event));
 stage.addEventListener('pointercancel',event=>endDrag(event,true));
 stage.addEventListener('lostpointercapture',event=>endDrag(event,true));
-$('undo').onclick=()=>{if(!history.length)return;future.push(JSON.stringify(state));state=JSON.parse(history.pop());render();};
-$('redo').onclick=()=>{if(!future.length)return;history.push(JSON.stringify(state));state=JSON.parse(future.pop());render();};
+$('undo').onclick=()=>{if(!undoHistory.length)return;future.push(JSON.stringify(state));state=JSON.parse(undoHistory.pop());render();};
+$('redo').onclick=()=>{if(!future.length)return;undoHistory.push(JSON.stringify(state));state=JSON.parse(future.pop());render();};
 $('zoom').onchange=fit;new ResizeObserver(fit).observe($('stage'));
 const toolLocations=[
   ['editor-topbar','home-topbar','tools-actions'],
@@ -2748,8 +2748,8 @@ async function openImageEditor(id){
       items:[item('item-'+crypto.randomUUID(),entry.name,'image',0,0,width,height,{src:entry.src,imageBase:true})],
     };
     layout.canvas.picturePage=true;
-    imageEditSession={parent,id,name:entry.name,history,future,selected:[...selected],zoom:$('zoom').value,customZoom:$('zoom-custom').value,view:{...canvasView},viewScale:scale,initial:JSON.stringify(layout)};
-    state=layout;history=[];future=[];selected.clear();clearCanvasRegion();fieldEdit=null;
+    imageEditSession={parent,id,name:entry.name,history:undoHistory,future,selected:[...selected],zoom:$('zoom').value,customZoom:$('zoom-custom').value,view:{...canvasView},viewScale:scale,initial:JSON.stringify(layout)};
+    state=layout;undoHistory=[];future=[];selected.clear();clearCanvasRegion();fieldEdit=null;
     resetCanvasView();closeCanvasMenu();
     if($('editor-tools')?.open)$('editor-tools').close();
     render();stage.focus({preventScroll:true});notify('Edit image. Choose Done to save your changes.');
@@ -2757,7 +2757,7 @@ async function openImageEditor(id){
   finally{canvasEditBusy=false;}
 }
 function restoreImagePage(session){
-  state=session.parent;history=session.history;future=session.future;selected=new Set(session.selected);
+  state=session.parent;undoHistory=session.history;future=session.future;selected=new Set(session.selected);
   imageEditSession=null;imageEditSaving=false;editing=true;clearCanvasRegion();fieldEdit=null;
   Object.assign(canvasView,session.view);scale=session.viewScale;
   $('zoom-custom').value=session.customZoom;$('zoom').value=session.zoom;closeCanvasMenu();
@@ -3253,7 +3253,7 @@ syncToolLayout();render();
       inputSchema: object({ ...target, direction: described({ enum: ['undo', 'redo'] }, 'undo restores the previous canvas state; redo reapplies the last undone step.') }, ['projectId', 'revision', 'direction']),
       async run(args) {
         await checkTarget(args);
-        if (!(args.direction === 'undo' ? history : future).length) throw new Error('There is no edit to ' + args.direction + '.');
+        if (!(args.direction === 'undo' ? undoHistory : future).length) throw new Error('There is no edit to ' + args.direction + '.');
         clearCanvasRegion(); $(args.direction).onclick();
         return snapshot();
       },

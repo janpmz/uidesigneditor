@@ -35,8 +35,8 @@ async function openImageEditor(id){
       items:[item('item-'+crypto.randomUUID(),entry.name,'image',0,0,width,height,{src:entry.src,imageBase:true})],
     };
     layout.canvas.picturePage=true;
-    imageEditSession={parent,id,name:entry.name,history,future,selected:[...selected],zoom:$('zoom').value,customZoom:$('zoom-custom').value,view:{...canvasView},viewScale:scale,initial:JSON.stringify(layout)};
-    state=layout;history=[];future=[];selected.clear();clearCanvasRegion();fieldEdit=null;
+    imageEditSession={parent,id,name:entry.name,history:undoHistory,future,selected:[...selected],zoom:$('zoom').value,customZoom:$('zoom-custom').value,view:{...canvasView},viewScale:scale,initial:JSON.stringify(layout)};
+    state=layout;undoHistory=[];future=[];selected.clear();clearCanvasRegion();fieldEdit=null;
     resetCanvasView();closeCanvasMenu();
     if($('editor-tools')?.open)$('editor-tools').close();
     render();stage.focus({preventScroll:true});notify('Edit image. Choose Done to save your changes.');
@@ -44,7 +44,7 @@ async function openImageEditor(id){
   finally{canvasEditBusy=false;}
 }
 function restoreImagePage(session){
-  state=session.parent;history=session.history;future=session.future;selected=new Set(session.selected);
+  state=session.parent;undoHistory=session.history;future=session.future;selected=new Set(session.selected);
   imageEditSession=null;imageEditSaving=false;editing=true;clearCanvasRegion();fieldEdit=null;
   Object.assign(canvasView,session.view);scale=session.viewScale;
   $('zoom-custom').value=session.customZoom;$('zoom').value=session.zoom;closeCanvasMenu();

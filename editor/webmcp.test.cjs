@@ -46,7 +46,7 @@ async function harness(options = {}) {
     navigator: options.navigator ? { modelContext: registry } : {},
     CSS: { supports: (_, value) => /^(#[0-9a-f]{3,8}|transparent|black|white)$/i.test(value) },
     state: initial, activeProject: 'player', localProjects: [{ id: 'player', name: 'Player' }, { id: 'library', name: 'Library' }],
-    selected: new Set(), editing: true, history: [], future: [], drag: null, fieldEdit: null,
+    selected: new Set(), editing: true, undoHistory: [], future: [], drag: null, fieldEdit: null,
     canvasGesture: null, canvasEditBusy: false, canvasPan: null, canvasPinch: null,
     pictureDropBusy: false, imageEditSession: null, projectSwitchBusy: false,
     picturesReady: options.ready || Promise.resolve(), projectsReady: Promise.resolve(),
@@ -57,8 +57,8 @@ async function harness(options = {}) {
     saveProjectList() { sandbox.savedProjects = plain(sandbox.localProjects); },
     measureContentBox: options.measure || (entry => ({ x: entry.x + 5, y: entry.y + 5, w: 60, h: 20 })),
     item: (id, name, kind, x, y, w, h, extra = {}) => ({ id, name, kind, x, y, w, h, fontSize: 11, iconSize: 18, color: '#999999', background: 'transparent', borderColor: '#666666', borderWidth: 0, radius: 0, align: 'center', opacity: 1, text: '', icon: '', hidden: false, ...extra }),
-    change(fn) { sandbox.history.push(JSON.stringify(sandbox.state)); sandbox.future.length = 0; fn(); },
-    createProject(layout, name) { scenes.set(sandbox.activeProject, sandbox.state); sandbox.activeProject = 'new-' + sandbox.localProjects.length; sandbox.localProjects.push({ id: sandbox.activeProject, name }); sandbox.state = layout; sandbox.selected.clear(); sandbox.history = []; sandbox.future = []; },
+    change(fn) { sandbox.undoHistory.push(JSON.stringify(sandbox.state)); sandbox.future.length = 0; fn(); },
+    createProject(layout, name) { scenes.set(sandbox.activeProject, sandbox.state); sandbox.activeProject = 'new-' + sandbox.localProjects.length; sandbox.localProjects.push({ id: sandbox.activeProject, name }); sandbox.state = layout; sandbox.selected.clear(); sandbox.undoHistory = []; sandbox.future = []; },
     async switchProject(id) { scenes.set(sandbox.activeProject, sandbox.state); sandbox.activeProject = id; sandbox.state = scenes.get(id); },
     async readPicture(file) { return options.readPicture ? options.readPicture(file) : { name: file.name, src: png, width: 640, height: 480 }; },
     DOMParser: class { parseFromString(html) { return { getElementById: id => id === 'initial-layout' ? { textContent: html.match(/id="initial-layout">([\s\S]*?)<\/script>/)?.[1] || 'null' } : null }; } },
@@ -69,8 +69,8 @@ async function harness(options = {}) {
     makeRegionPlan: options.makeRegionPlan || (async region => ({ entry: { id: 'fragment', name: 'Picture selection', kind: 'image', x: region.box.x, y: region.box.y, w: region.box.w, h: region.box.h, src: png, pictureFragment: true }, patches: [{ id: 'picture', src: png }] })),
     spaceClient: options.spaceClient,
   };
-  get('undo').onclick = () => { sandbox.future.push(JSON.stringify(sandbox.state)); sandbox.state = JSON.parse(sandbox.history.pop()); };
-  get('redo').onclick = () => { sandbox.history.push(JSON.stringify(sandbox.state)); sandbox.state = JSON.parse(sandbox.future.pop()); };
+  get('undo').onclick = () => { sandbox.future.push(JSON.stringify(sandbox.state)); sandbox.state = JSON.parse(sandbox.undoHistory.pop()); };
+  get('redo').onclick = () => { sandbox.undoHistory.push(JSON.stringify(sandbox.state)); sandbox.state = JSON.parse(sandbox.future.pop()); };
   const context = vm.createContext(sandbox);
   if (options.frame) sandbox.window = { self: {}, top: {} };
   vm.runInContext(pictureHelpers + pageReader + pictureCheck + pixelCode + regionSourcesCode + rememberRegionCode + applyRegionCode + mergeCode + orderCode + fitCode + renameCode + code, context);
@@ -133,13 +133,13 @@ test('item order changes one step, keeps chosen items in order and holds the pic
   assert.equal(result.changed, true);
   assert.deepEqual(result.design.items.map(entry => entry.id), ['base', 'b', 'a', 'd', 'c']);
   assert.deepEqual(result.selectedIds, ['b']);
-  assert.equal(h.sandbox.history.length, 1);
+  assert.equal(h.sandbox.undoHistory.length, 1);
   result = await h.call('undo_design', { ...await h.target(), direction: 'undo' });
   assert.equal(result.ok, true);
   assert.deepEqual(plain(h.sandbox.state), before);
   result = await h.call('arrange_items', { ...await h.target(), itemIds: ['a'], direction: 'backward' });
   assert.equal(result.changed, false);
-  assert.equal(h.sandbox.history.length, 0);
+  assert.equal(h.sandbox.undoHistory.length, 0);
   result = await h.call('arrange_items', { ...await h.target(), itemIds: ['base'], direction: 'forward' });
   assert.equal(result.changed, false);
   result = await h.call('arrange_items', { ...await h.target(), itemIds: ['c', 'd'], direction: 'backward' });
@@ -161,7 +161,7 @@ test('fit uses canvas measurements, skips other item types and shares one Undo s
   assert.deepEqual(result.unchangedIds, ['shape', 'hidden']);
   assert.equal(result.design.items[0].text, 'Hello');
   assert.equal(result.design.items[0].w, 60);
-  assert.equal(h.sandbox.history.length, 1);
+  assert.equal(h.sandbox.undoHistory.length, 1);
   assert.deepEqual((await h.call('undo_design', { ...await h.target(), direction: 'undo' })).design, before);
 });
 
@@ -170,7 +170,7 @@ test('fit makes no Undo step when boxes already fit and rejects edits made while
   const result = await unchanged.call('fit_items_to_content', { ...await unchanged.target(), itemIds: ['title'] });
   assert.deepEqual(result.fittedIds, []);
   assert.deepEqual(result.unchangedIds, ['title']);
-  assert.equal(unchanged.sandbox.history.length, 0);
+  assert.equal(unchanged.sandbox.undoHistory.length, 0);
   let finish, started;
   const fonts = new Promise(resolve => { finish = resolve; }), waiting = new Promise(resolve => { started = resolve; });
   const h = await harness({ fonts: { then(resolve, reject) { started(); return fonts.then(resolve, reject); } } });
@@ -178,20 +178,20 @@ test('fit makes no Undo step when boxes already fit and rejects edits made while
   await waiting;
   h.sandbox.state.items[0].text = 'User edit';finish();
   assert.equal((await pending).ok, false);
-  assert.equal(h.sandbox.history.length, 0);
+  assert.equal(h.sandbox.undoHistory.length, 0);
   assert.equal(h.sandbox.state.items[0].text, 'User edit');
 });
 
 test('rename saves the name, keeps the design and Undo history, and changes the revision', async () => {
   const h = await harness(), before = plain(h.sandbox.state), old = await h.target();
-  h.sandbox.history.push('older canvas step');
+  h.sandbox.undoHistory.push('older canvas step');
   const result = await h.call('rename_project', { ...old, name: '  New name  ' });
   assert.equal(result.ok, true);
   assert.equal(result.projectId, 'player');
   assert.equal(result.projects[0].name, 'New name');
   assert.equal(h.sandbox.savedProjects[0].name, 'New name');
   assert.deepEqual(result.design, before);
-  assert.deepEqual(h.sandbox.history, ['older canvas step']);
+  assert.deepEqual(h.sandbox.undoHistory, ['older canvas step']);
   assert.notEqual(result.revision, old.revision);
   assert.equal((await h.call('rename_project', { ...old, name: 'Old request' })).ok, false);
   assert.equal(h.sandbox.localProjects[0].name, 'New name');
@@ -212,7 +212,7 @@ test('new item tools reject duplicate or missing ids and old revisions without m
     assert.equal((await h.call(name, { ...old, ...args, itemIds: ['title'] })).ok, false);
     h.sandbox.state.items[0].text = before.items[0].text;
     assert.deepEqual(plain(h.sandbox.state), before);
-    assert.equal(h.sandbox.history.length, 0);
+    assert.equal(h.sandbox.undoHistory.length, 0);
   }
 });
 
@@ -223,7 +223,7 @@ test('a batch edits items in one Undo step, and Undo and Redo restore it', async
   assert.equal(result.design.items[0].text, 'Changed');
   assert.equal(result.design.items[0].w, 120);
   assert.equal(result.addedIds.length, 1);
-  assert.equal(h.sandbox.history.length, 1);
+  assert.equal(h.sandbox.undoHistory.length, 1);
   assert.equal(result.design.items[1].opacity, 1);
   assert.deepEqual((await h.call('undo_design', { ...await h.target(), direction: 'undo' })).design, before);
   assert.equal((await h.call('undo_design', { ...await h.target(), direction: 'redo' })).design.items[0].text, 'Changed');
@@ -251,7 +251,7 @@ test('stale edits and edits to a different project cannot overwrite user work', 
   assert.equal((await h.call('edit_design', { ...old, removeIds: ['title'] })).ok, false);
   assert.equal((await h.call('edit_design', { ...await h.target(), projectId: 'library', removeIds: ['title'] })).ok, false);
   assert.equal(h.sandbox.state.items[0].text, 'User edit');
-  assert.equal(h.sandbox.history.length, 0);
+  assert.equal(h.sandbox.undoHistory.length, 0);
 });
 
 test('invalid batches make no partial edit and reject unknown fields, ids, colors and unsafe pictures', async () => {
@@ -267,7 +267,7 @@ test('invalid batches make no partial edit and reject unknown fields, ids, color
   ];
   for (const input of inputs) assert.equal((await h.call('edit_design', { ...await h.target(), ...input })).ok, false);
   assert.deepEqual(plain(h.sandbox.state), before);
-  assert.equal(h.sandbox.history.length, 0);
+  assert.equal(h.sandbox.undoHistory.length, 0);
 });
 
 test('new designs keep existing projects and project ids can select them again', async () => {
@@ -305,7 +305,7 @@ test('a picture that finishes reading after a user edit makes no change, and bus
   finish({ src: png, width: 640, height: 480 });
   assert.equal((await pending).ok, false);
   assert.equal(h.sandbox.state.items.length, 1);
-  assert.equal(h.sandbox.history.length, 0);
+  assert.equal(h.sandbox.undoHistory.length, 0);
   assert.equal((await h.call('read_design')).design.items[0].text, 'User edit');
 });
 
@@ -327,7 +327,7 @@ test('picture areas move in one Undo step and reject boxes outside the page', as
   assert.equal(moved.ok, true);
   assert.equal(moved.design.items.at(-1).x, 100);
   assert.equal(moved.design.items.at(-1).pictureFragment, true);
-  assert.equal(h.sandbox.history.length, 1);
+  assert.equal(h.sandbox.undoHistory.length, 1);
   assert.equal((await h.call('move_image_region', { ...await h.target(), box: { x: 390, y: 20, w: 50, h: 40 }, x: 100, y: 200 })).ok, false);
 });
 test('GIFs survive import, resizing, Undo and a saved HTML round trip',async()=>{
@@ -370,7 +370,7 @@ test('erase applies the canvas picture patches, keeps other items and supports U
   assert.equal(h.sandbox.state.items[2].hidden, true);
   assert.deepEqual(plain(h.sandbox.state.items[1]), before.items[1]);
   assert.deepEqual(result.selectedIds, ['title']);
-  assert.equal(h.sandbox.history.length, 1);
+  assert.equal(h.sandbox.undoHistory.length, 1);
   const erased = plain(h.sandbox.state);
   await h.call('undo_design', { ...await h.target(), direction: 'undo' });
   assert.deepEqual(plain(h.sandbox.state), before);
@@ -389,7 +389,7 @@ test('erase rejects boxes outside the page, empty areas, hidden pictures and old
   assert.equal((await h.call('erase_image_region', { ...await h.target(), box: { x: 50, y: 60, w: 40, h: 30 } })).ok, false);
   h.sandbox.state.items[1].hidden = false;
   assert.equal((await h.call('erase_image_region', { ...await h.target(), box: { x: 150, y: 160, w: 40, h: 30 } })).ok, false);
-  assert.equal(h.sandbox.history.length, 0);
+  assert.equal(h.sandbox.undoHistory.length, 0);
 });
 
 test('erase leaves the page alone if the picture read fails or a user edit happens during the read', async () => {
@@ -397,7 +397,7 @@ test('erase leaves the page alone if the picture read fails or a user edit happe
   const before = plain(failed.sandbox.state);
   assert.equal((await failed.call('erase_image_region', { ...await failed.target(), box: { x: 0, y: 0, w: 20, h: 20 } })).ok, false);
   assert.deepEqual(plain(failed.sandbox.state), before);
-  assert.equal(failed.sandbox.history.length, 0);
+  assert.equal(failed.sandbox.undoHistory.length, 0);
   let finish, started;
   const waiting = new Promise(resolve => { started = resolve; });
   const changed = await harness({ makeRegionPlan: () => { started(); return new Promise(resolve => { finish = resolve; }); } });pictureScene(changed);
@@ -407,7 +407,7 @@ test('erase leaves the page alone if the picture read fails or a user edit happe
   assert.equal((await pending).ok, false);
   assert.equal(changed.sandbox.state.items[0].hidden, undefined);
   assert.equal(changed.sandbox.state.items[1].text, 'User edit');
-  assert.equal(changed.sandbox.history.length, 0);
+  assert.equal(changed.sandbox.undoHistory.length, 0);
 });
 
 test('merge combines the requested pieces and backgrounds, keeps other items and supports Undo and Redo', async () => {
@@ -430,7 +430,7 @@ test('merge combines the requested pieces and backgrounds, keeps other items and
   assert.deepEqual(plain(h.sandbox.state.items[1]), before.items[1]);
   assert.deepEqual(plain(h.sandbox.state.items[2]), before.items.at(-1));
   assert.deepEqual(result.selectedIds, ['title']);
-  assert.equal(h.sandbox.history.length, 1);
+  assert.equal(h.sandbox.undoHistory.length, 1);
   assert.equal(h.loadedPictures.length, 4);
   const render = h.renders[0], element = (id, className = 'item') => ({ dataset: { id }, classList: { contains: name => name === className } });
   for (const id of ['piece', 'piece-2', 'picture', 'background-2']) assert.equal(render.ignoreElements(element(id)), false);
@@ -456,7 +456,7 @@ test('merge rejects mixed, missing, repeated or hidden items, missing background
   h.sandbox.state = plain(before);
   const old = await h.target();h.sandbox.state.items[1].text = 'User edit';
   assert.equal((await h.call('merge_image_items', { ...old, itemIds: ['piece'] })).ok, false);
-  assert.equal(h.sandbox.history.length, 0);
+  assert.equal(h.sandbox.undoHistory.length, 0);
   assert.equal(h.loadedPictures.length, 0);
   assert.equal(h.renders.length, 0);
 });
@@ -467,7 +467,7 @@ test('merge leaves the page alone after a picture failure or an edit during eith
     const before = plain(failed.sandbox.state);
     assert.equal((await failed.call('merge_image_items', { ...await failed.target(), itemIds: ['piece'] })).ok, false);
     assert.deepEqual(plain(failed.sandbox.state), before);
-    assert.equal(failed.sandbox.history.length, 0);
+    assert.equal(failed.sandbox.undoHistory.length, 0);
     let finish, started;
     const waiting = new Promise(resolve => { started = resolve; });
     const gate = new Promise(resolve => { finish = resolve; });
@@ -478,7 +478,7 @@ test('merge leaves the page alone after a picture failure or an edit during eith
     assert.equal((await pending).ok, false);
     assert.equal(changed.sandbox.state.items.length, 3);
     assert.equal(changed.sandbox.state.items[1].text, 'User edit');
-    assert.equal(changed.sandbox.history.length, 0);
+    assert.equal(changed.sandbox.undoHistory.length, 0);
   }
 });
 
@@ -491,7 +491,7 @@ test('erase and merge wait for the shared save before reporting success', async 
     const pending = h.call(name, { ...await h.target(), ...args }).then(result => { done = true; return result; });
     await waiting;assert.equal(done, false);finish();
     assert.equal((await pending).ok, true);
-    assert.equal(h.sandbox.history.length, 1);
+    assert.equal(h.sandbox.undoHistory.length, 1);
   }
 });
 
@@ -523,7 +523,7 @@ test('exports return editable data or download a file without changing the desig
   assert.equal((await h.call('export_design', { ...current, format: 'html', delivery: 'download' })).downloaded, true);
   assert.equal(h.downloads[0].filename, 'design.html');
   assert.deepEqual(plain(h.sandbox.state), before);
-  assert.equal(h.sandbox.history.length, 0);
+  assert.equal(h.sandbox.undoHistory.length, 0);
 });
 
 test('built pages and editable exports include the same tools and the new prompt', () => {

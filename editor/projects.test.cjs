@@ -8,6 +8,7 @@ const code = readFileSync(join(__dirname, 'projects.js'), 'utf8');
 const page = readFileSync(join(__dirname, '../index.html'), 'utf8');
 const pictureCode = readFileSync(join(__dirname, 'image-drop.js'), 'utf8');
 const saveCode = page.match(/^function save\(\)[^\n]+/m)[0];
+const stateCode = page.match(/^let state=localProjectLayout\(activeProject\)[^\n]+/m)[0];
 const pictureHelpers = pictureCode.split('// BEGIN PICTURE HELPERS')[1].split('// END PICTURE HELPERS')[0];
 const dropCode = pictureCode.split('// BEGIN DROP ACTION')[1].split('// END DROP ACTION')[0];
 const pictureStoreCode = pictureCode.slice(pictureCode.indexOf('// Keep large pictures'));
@@ -18,7 +19,7 @@ const listKey = 'ui-design-editor-projects-v1:/';
 const spaceCode = readFileSync(join(__dirname,'space.js'),'utf8');
 let nextId = 0;
 
-function harness({ stored = new Map(), database = new Map(), pathname = '/', data, embedded = null, blocked = false, full = false, noDatabase = false, spaceUrl } = {}) {
+function harness({ stored = new Map(), database = new Map(), pathname = '/', data, embedded = null, blocked = false, full = false, noDatabase = false, spaceUrl, browserHistoryBridge = false } = {}) {
   let focused;
   const listeners = new Map();
   function node(tag = 'div') {
@@ -80,6 +81,10 @@ function harness({ stored = new Map(), database = new Map(), pathname = '/', dat
     } };
     connections.push(db);return db;
   }
+  const browserHistory={replaceState(_state,_title,hash){
+    if(this!==browserHistory)throw new TypeError('Can only call History.replaceState on instances of History');
+    sandbox.location.hash=hash;
+  }};
   const sandbox = vm.createContext({ $, document: {
     querySelectorAll: selector => list.querySelectorAll(selector),
     querySelector: selector => selector === '#editor-pages .project-page-list' ? list : selector.startsWith('[data-') ? list.querySelector(selector) : get('canvas'),
@@ -97,19 +102,21 @@ function harness({ stored = new Map(), database = new Map(), pathname = '/', dat
     notify: message => { sandbox.message = message; },
     stage: { focus() {} }, canvasView: { x: 0, y: 0 }, canvasViewBusy: () => false,
     clearCanvasRegion() {}, closeCanvasMenu() {}, closeItemMenu() {}, resetCanvasView: () => { get('zoom').value = 'fit'; },
-    ...(spaceUrl?{WebSocket,fetch:(path,options)=>fetch(new URL(path,spaceUrl),options),setTimeout,clearTimeout,
+    ...(spaceUrl?{WebSocket,fetch:(path,options)=>fetch(new URL(path,spaceUrl),options),setTimeout,clearTimeout,history:browserHistory,
       navigator:{clipboard:{writeText:async value=>{sandbox.copied=value;}}},
-      window:{addEventListener(type,fn){listeners.set('window:'+type,fn);},history:{replaceState(_state,_title,hash){sandbox.location.hash=hash;}}}}:{}),
+      window:{addEventListener(type,fn){listeners.set('window:'+type,fn);},history:browserHistory}}:{}),
   });
   function $(id) { return get(id); }
   vm.runInContext(`
+    ${browserHistoryBridge?`const nativeReplaceState=window.history.replaceState;
+    window.history.replaceState=function(state,title,url){return nativeReplaceState.call(history,state,title,url);};`:''}
     const copy=value=>JSON.parse(JSON.stringify(value));
     ${code}
-    let state=localProjectLayout(activeProject),history=[],future=[],selected=new Set(),scale=1,editing=true,fieldEdit=null;
-    let imageEditSession=null,canvasPan=null,canvasPinch=null,drag=null,pictureChoice={open:false};
+    ${stateCode}
+    let imageEditSession=null,canvasPan=null,canvasPinch=null,pictureChoice={open:false};
     ${saveCode}
-    function change(fn){history.push(JSON.stringify(state));fn();render();}
-    function remember(){history.push(JSON.stringify(state));future=[];}
+    function change(fn){undoHistory.push(JSON.stringify(state));fn();render();}
+    function remember(){undoHistory.push(JSON.stringify(state));future=[];}
     function render(){save();renderProjects();}
     ${pictureHelpers}
     ${dropCode}
@@ -143,21 +150,21 @@ test('both projects start in the browser and use the old draft keys', async () =
 
 test('switching keeps each project’s edits, undo steps, selection and view', async () => {
   const h = harness();await h.ready;
-  h.run('state.items[0].text="My player";history.push("player undo");future.push("player redo");selected.add("text");canvasView.x=123;save();');
+  h.run('state.items[0].text="My player";undoHistory.push("player undo");future.push("player redo");selected.add("text");canvasView.x=123;save();');
   await h.run('switchProject("library")');
   assert.equal(h.run('state.items[0].text'), 'Library');
-  assert.deepEqual(h.json('history'), []);
+  assert.deepEqual(h.json('undoHistory'), []);
   assert.equal(h.get('project-library').attributes['aria-current'], 'page');
-  h.run('state.items[0].text="My library";history.push("library undo");save();');
+  h.run('state.items[0].text="My library";undoHistory.push("library undo");save();');
   await h.run('switchProject("player")');
   assert.equal(h.run('state.items[0].text'), 'My player');
-  assert.deepEqual(h.json('history'), ['player undo']);
+  assert.deepEqual(h.json('undoHistory'), ['player undo']);
   assert.deepEqual(h.json('future'), ['player redo']);
   assert.deepEqual(h.json('[...selected]'), ['text']);
   assert.equal(h.run('canvasView.x'), 123);
   await h.run('switchProject("library")');
   assert.equal(h.run('state.items[0].text'), 'My library');
-  assert.deepEqual(h.json('history'), ['library undo']);
+  assert.deepEqual(h.json('undoHistory'), ['library undo']);
   assert.equal(h.database.get(playerKey).items[0].text, 'My player');
   assert.equal(h.database.get(libraryKey).items[0].text, 'My library');
 });
@@ -173,12 +180,12 @@ test('reload opens the last project and keeps edits from the old library page', 
 
 test('renaming keeps the design and Undo steps and survives reload in both browser stores', async () => {
   const h = harness();await h.ready;
-  const before=h.json('state');h.run('history.push("canvas edit");renameProject("  My player  ")');
+  const before=h.json('state');h.run('undoHistory.push("canvas edit");renameProject("  My player  ")');
   assert.equal(h.run('localProjects[0].name'),'My player');
   assert.equal(h.get('project-player').children[0].textContent,'My player');
   assert.equal(h.get('delete-player').attributes['aria-label'],'Delete My player');
   assert.deepEqual(h.json('state'),before);
-  assert.deepEqual(h.json('history'),['canvas edit']);
+  assert.deepEqual(h.json('undoHistory'),['canvas edit']);
   const next=harness({stored:h.stored});await next.ready;
   assert.equal(next.run('localProjects[0].name'),'My player');
   const databaseOnly=harness({database:h.database});await databaseOnly.ready;
@@ -274,21 +281,21 @@ test('browser store failures stop after one retry and keep failed writes open fo
 
 test('New Project opens a blank canvas and keeps the current project’s work and undo steps', async () => {
   const h = harness();await h.ready;
-  h.run('state.items[0].text="My player";history.push("player undo");future.push("player redo");selected.add("text");canvasView.x=123;');
+  h.run('state.items[0].text="My player";undoHistory.push("player undo");future.push("player redo");selected.add("text");canvasView.x=123;');
   await h.get('project-new').onclick();
   const id = h.run('activeProject');
   assert.notEqual(id, 'player');
   assert.equal(h.buttons[2].querySelector('span').textContent, 'New Project');
   assert.equal(h.buttons[2].attributes['aria-current'], 'page');
   assert.deepEqual(h.json('state'), { version: 1, canvas: { width: 393, height: 852, background: '#000000' }, items: [] });
-  assert.deepEqual(h.json('history'), []);
+  assert.deepEqual(h.json('undoHistory'), []);
   assert.deepEqual(h.json('future'), []);
   assert.deepEqual(h.json('[...selected]'), []);
   assert.equal(h.get('zoom').value, 'fit');
   assert.equal(h.database.get(playerKey).items[0].text, 'My player');
   await h.get('project-player').onclick();
   assert.equal(h.run('state.items[0].text'), 'My player');
-  assert.deepEqual(h.json('history'), ['player undo']);
+  assert.deepEqual(h.json('undoHistory'), ['player undo']);
   assert.deepEqual(h.json('future'), ['player redo']);
   assert.deepEqual(h.json('[...selected]'), ['text']);
   assert.equal(h.run('canvasView.x'), 123);
@@ -332,7 +339,7 @@ test('New Project waits for saved work, ignores repeated clicks and stops during
 
 test('a screenshot opened as a new page adds and selects a project, keeping Player’s work', async () => {
   const h = harness();await h.ready;
-  h.run('state.items[0].text="My player";history.push("player undo");future.push("player redo");selected.add("text");');
+  h.run('state.items[0].text="My player";undoHistory.push("player undo");future.push("player redo");selected.add("text");');
   await h.drop();
   const id = h.run('activeProject');
   assert.notEqual(id, 'player');
@@ -343,13 +350,13 @@ test('a screenshot opened as a new page adds and selects a project, keeping Play
   assert.deepEqual(h.json('[state.canvas.width,state.canvas.height]'), [903, 552]);
   assert.equal(h.run('state.items.length'), 1);
   assert.equal(h.run('state.items[0].imageBase'), true);
-  assert.deepEqual(h.json('history'), []);
+  assert.deepEqual(h.json('undoHistory'), []);
   assert.deepEqual(h.json('future'), []);
   assert.deepEqual(h.json('[...selected]'), []);
   assert.equal(h.database.get(playerKey).items[0].text, 'My player');
   await h.get('project-player').onclick();
   assert.equal(h.run('state.items[0].text'), 'My player');
-  assert.deepEqual(h.json('history'), ['player undo']);
+  assert.deepEqual(h.json('undoHistory'), ['player undo']);
   assert.deepEqual(h.json('future'), ['player redo']);
   assert.deepEqual(h.json('[...selected]'), ['text']);
   await h.buttons[2].onclick();
@@ -412,14 +419,14 @@ test('adding a screenshot, canceling, or failing to read a file leaves the proje
   h.sandbox.choosePictureDrop = async () => 'add';await h.drop();
   assert.equal(h.run('activeProject'), 'player');
   assert.equal(h.run('state.items.length'), 2);
-  assert.equal(h.run('history.length'), 1);
+  assert.equal(h.run('undoHistory.length'), 1);
   h.sandbox.choosePictureDrop = async () => null;await h.drop();
   h.sandbox.choosePictureDrop = async () => 'new';
   h.sandbox.readPicture = async () => { throw Error('Could not open this picture.'); };await h.drop();
   assert.equal(h.run('localProjects.length'), 2);
   assert.equal(h.run('activeProject'), 'player');
   assert.equal(h.run('state.items.length'), 2);
-  assert.equal(h.run('history.length'), 1);
+  assert.equal(h.run('undoHistory.length'), 1);
 });
 
 test('an HTML page opened as new also creates a project', async () => {
@@ -501,13 +508,13 @@ test('Cancel or Escape at either step keeps the project and its saved work', asy
 
 test('deleting the open project removes its saved work and undo steps, then opens a neighbor', async () => {
   const h = harness();await h.ready;
-  h.run('state.items[0].text="Saved player";history.push("player undo");future.push("player redo");selected.add("text");');
+  h.run('state.items[0].text="Saved player";undoHistory.push("player undo");future.push("player redo");selected.add("text");');
   await h.run('switchProject("library")');
-  h.run('state.items[0].text="My library";history.push("library undo");');
+  h.run('state.items[0].text="My library";undoHistory.push("library undo");');
   await h.remove('library');
   assert.equal(h.run('activeProject'), 'player');
   assert.equal(h.run('state.items[0].text'), 'Saved player');
-  assert.deepEqual(h.json('history'), ['player undo']);
+  assert.deepEqual(h.json('undoHistory'), ['player undo']);
   assert.deepEqual(h.json('future'), ['player redo']);
   assert.deepEqual(h.json('[...selected]'), ['text']);
   assert.equal(h.run('projectSessions.has("library")'), false);
@@ -523,11 +530,11 @@ test('deleting the open project removes its saved work and undo steps, then open
 
 test('deleting a closed project leaves the open project, undo steps and view alone', async () => {
   const h = harness();await h.ready;
-  h.run('state.items[0].text="My player";history.push("undo");selected.add("text");canvasView.x=145;save();');
+  h.run('state.items[0].text="My player";undoHistory.push("undo");selected.add("text");canvasView.x=145;save();');
   const before = h.json('state');await h.remove('library');
   assert.equal(h.run('activeProject'), 'player');
   assert.deepEqual(h.json('state'), before);
-  assert.deepEqual(h.json('history'), ['undo']);
+  assert.deepEqual(h.json('undoHistory'), ['undo']);
   assert.deepEqual(h.json('[...selected]'), ['text']);
   assert.equal(h.run('canvasView.x'), 145);
 });
@@ -570,7 +577,7 @@ test('deleting the last project opens a blank project and keeps both examples go
   assert.equal(h.run('localProjects.length'), 1);
   assert.equal(h.run('localProjects[0].name'), 'New project');
   assert.deepEqual(h.json('state.items'), []);
-  assert.deepEqual(h.json('history'), []);
+  assert.deepEqual(h.json('undoHistory'), []);
   assert.deepEqual(h.json('future'), []);
   assert.deepEqual(h.json('[...selected]'), []);
   assert.equal(h.database.has(playerKey), false);
@@ -673,6 +680,28 @@ test('the home page starts with the four videos and keeps the same project code'
   assert.equal(page.split('id="project-share"').length - 1, 1);
 });
 
+test('browser address updates work when a Space first opens and when it reopens',async t=>{
+  const {createSpaceServer}=await import('../server/index.mjs');
+  const {once}=require('node:events');
+  const app=await createSpaceServer();app.server.listen(0,'127.0.0.1');await once(app.server,'listening');
+  const base='http://127.0.0.1:'+app.server.address().port,browsers=[];
+  const data={version:1,active:'demo',projects:[{id:'demo',name:'Demo',layout:{version:1,canvas:{width:400,height:300,background:'#fff'},items:[]}}]};
+  t.after(async()=>{for(const h of browsers)h.run('spaceClient.close()');await app.close();});
+  const open=async(stored=new Map(),database=new Map())=>{
+    const h=harness({spaceUrl:base+'/',data:structuredClone(data),stored,database,browserHistoryBridge:true});browsers.push(h);
+    await h.ready;h.run(spaceCode);await h.run('spaceClient.ready');return h;
+  };
+  const first=await open(),spaceId=first.run('onlineSpaceId');
+  assert.equal(first.sandbox.location.hash,'#space='+spaceId,first.get('space-status').textContent);
+  assert.equal(first.get('space-share').hidden,false);assert.equal(first.get('space-retry').hidden,true);
+  assert.equal(first.run('history===window.history'),true);
+  first.run('spaceClient.close()');
+  const reopened=await open(first.stored,first.database);
+  assert.equal(reopened.run('onlineSpaceId'),spaceId);assert.equal(reopened.sandbox.location.hash,'#space='+spaceId);
+  assert.equal(reopened.get('space-share').hidden,false);assert.equal(reopened.get('space-retry').hidden,true);
+  assert.equal(app.store.list(spaceId).length,1);
+});
+
 test('separate browser stores share a Space, keep Undo, preserve conflicts, and save copies', async t => {
   const {createSpaceServer}=await import('../server/index.mjs');
   const {once}=require('node:events');
@@ -708,12 +737,12 @@ test('separate browser stores share a Space, keep Undo, preserve conflicts, and 
   first.run('renameProject("Shared name")');await first.run('spaceClient.saved()');
   await waitFor(()=>second.run('localProjects[0].name')==='Shared name');
   assert.equal(app.store.get(spaceId,'demo').name,'Shared name');
-  assert.equal(first.run('history.length'),0);
-  assert.equal(second.run('history.length'),0);
+  assert.equal(first.run('undoHistory.length'),0);
+  assert.equal(second.run('undoHistory.length'),0);
   first.run("change(()=>state.items[0].text='Shared edit')");await first.run('spaceClient.saved()');
   await waitFor(()=>second.run('state.items[0].text')==='Shared edit');
-  assert.ok(second.run('history.length')>0);
-  assert.equal(first.run('history.length'),1);
+  assert.ok(second.run('undoHistory.length')>0);
+  assert.equal(first.run('undoHistory.length'),1);
   assert.equal(JSON.parse(first.stored.get('dark-demo-layout-v2:/drafts/dark-demo-layout/')).items[0].text,'Local work');
 
   // Hold the second page in an edit so a remote notice cannot replace its work.

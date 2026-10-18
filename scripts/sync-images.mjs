@@ -101,7 +101,7 @@ for (const file of editorFiles) {
     if (imageEditEnd < 0) throw new Error('Missing image edit bar end mark.');
     html = html.slice(0, imageEditStart) + imageEditBlock + html.slice(imageEditEnd + '<!-- END IMAGE EDIT BAR -->'.length);
   }
-  if (!html.includes('if(imageEditSession){')) html = html.replace('function save() {', "function save() { if(imageEditSession){$('undo').disabled=!history.length;$('redo').disabled=!future.length;return;}");
+  if (!html.includes('if(imageEditSession){')) html = html.replace('function save() {', "function save() { if(imageEditSession){$('undo').disabled=!undoHistory.length;$('redo').disabled=!future.length;return;}");
   if (!html.includes('renderImageEditStatus();')) html = html.replace('function renderInspector() {', 'function renderInspector() {\n  renderImageEditStatus();');
   if (!html.includes('renderImageEditAction(heading,item);')) html = html.replace("heading.append(field('Name','name',item.name,'text',true));", "heading.append(field('Name','name',item.name,'text',true));renderImageEditAction(heading,item);");
   if (!html.includes('row.dataset.id=item.id;')) html = html.replace("const row=document.createElement('div');row.className='layer'", "const row=document.createElement('div');row.dataset.id=item.id;row.className='layer'");

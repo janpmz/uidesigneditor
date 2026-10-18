@@ -392,7 +392,7 @@
       inputSchema: object({ ...target, direction: described({ enum: ['undo', 'redo'] }, 'undo restores the previous canvas state; redo reapplies the last undone step.') }, ['projectId', 'revision', 'direction']),
       async run(args) {
         await checkTarget(args);
-        if (!(args.direction === 'undo' ? history : future).length) throw new Error('There is no edit to ' + args.direction + '.');
+        if (!(args.direction === 'undo' ? undoHistory : future).length) throw new Error('There is no edit to ' + args.direction + '.');
         clearCanvasRegion(); $(args.direction).onclick();
         return snapshot();
       },

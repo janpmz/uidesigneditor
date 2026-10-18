@@ -24,7 +24,7 @@ function harness(){
     {id:'image',kind:'image',name:'Screen.png',src:'data:image/png;base64,AAAA',x:40,y:100,w:300,h:180,opacity:.6,radius:12,borderWidth:2},
   ]};
   const sandbox=vm.createContext({
-    state:structuredClone(parent),selected:new Set(['image']),editing:true,stage,history:['older'],future:['later'],fieldEdit:null,
+    state:structuredClone(parent),selected:new Set(['image']),editing:true,stage,undoHistory:['older'],future:['later'],fieldEdit:null,
     canvasView:{x:150,y:-50,width:800,height:600,page:"parent",mode:"1"},scale:1,resetCanvasView:()=>{get("zoom").value="fit";},
     pictureChoice:{open:false},pictureDropBusy:false,picturesReady:Promise.resolve(),$:get,
     document:{documentElement:{clientWidth:1200,clientHeight:800},addEventListener:(type,fn)=>on('document',type,fn),createElement:node},
@@ -37,7 +37,7 @@ function harness(){
   });
   sandbox.selectedItems=()=>sandbox.state.items.filter(entry=>sandbox.selected.has(entry.id)&&!entry.hidden);
   sandbox.render=()=>{vm.runInContext('renderImageEditStatus()',sandbox);if(!vm.runInContext('Boolean(imageEditSession)',sandbox))saved.push(JSON.stringify(sandbox.state));};
-  sandbox.remember=before=>{sandbox.history.push(before);sandbox.future=[];};
+  sandbox.remember=before=>{sandbox.undoHistory.push(before);sandbox.future=[];};
   sandbox.change=fn=>{sandbox.remember(JSON.stringify(sandbox.state));fn();sandbox.render();};
   vm.runInContext(helpers+sizes+validation+geometry+read('annotation-shapes.js')+read('pixel-tools.js')+read('fit-content.js')+controller+read('text-edit.js')+editor,sandbox);
   sandbox.selectionImage=async()=>({naturalWidth:1000,naturalHeight:600});
@@ -63,7 +63,7 @@ test('GIFs keep their animation instead of opening the still image editor',async
   await h.open();assert.equal(h.run('imageEditSession'),null);
   h.send('stage','contextmenu',h.event());assert.equal(h.get('canvas-menu-edit-image').hidden,true);
   assert.equal(h.sandbox.state.items[1].src,'data:image/gif;base64,R0lGODlh');
-  assert.deepEqual(h.sandbox.history,['older']);
+  assert.deepEqual(h.sandbox.undoHistory,['older']);
 });
 test('Edit image opens at its full size and uses picture area selection',async()=>{
   const h=harness();await h.open();
@@ -71,21 +71,21 @@ test('Edit image opens at its full size and uses picture area selection',async()
   assert.equal(h.sandbox.state.items.length,1);assert.equal(h.sandbox.state.items[0].imageBase,true);
   assert.deepEqual(h.json('imageEditSession.parent'),h.parent);
   assert.equal(h.get('image-edit-bar').hidden,false);assert.equal(h.get('image-edit-name').textContent,'Screen.png');
-  assert.deepEqual(h.json('history'),[]);assert.deepEqual(h.json('future'),[]);assert.equal(h.saved.length,0);
+  assert.deepEqual(h.json('undoHistory'),[]);assert.deepEqual(h.json('future'),[]);assert.equal(h.saved.length,0);
   h.send('stage','pointerdown',h.event());assert.equal(h.run('canvasGesture.pixels'),true);
 });
 test('Done saves one image in place, keeps the other items, and adds one page Undo step',async()=>{
   const h=harness();await h.open();
-  h.run(`state.items.push({id:'piece',kind:'image',name:'Piece',src:'data:image/png;base64,CCCC',x:90,y:30,w:120,h:60,pictureFragment:true});history.push('image change');`);
+  h.run(`state.items.push({id:'piece',kind:'image',name:'Piece',src:'data:image/png;base64,CCCC',x:90,y:30,w:120,h:60,pictureFragment:true});undoHistory.push('image change');`);
   const contents=h.json('state');await h.done();
   assert.deepEqual(h.json('state'),{...h.parent,items:[h.parent.items[0],{...h.parent.items[1],src:'data:image/png;base64,BBBB',imageContents:contents}]});
   assert.equal(h.get('image-edit-bar').hidden,true);assert.equal(h.get('zoom').value,'1');
-  assert.deepEqual(h.sandbox.history,['older',JSON.stringify(h.parent)]);assert.deepEqual(h.sandbox.future,[]);
+  assert.deepEqual(h.sandbox.undoHistory,['older',JSON.stringify(h.parent)]);assert.deepEqual(h.sandbox.future,[]);
   assert.equal(h.options.scale,1);assert.equal(h.options.backgroundColor,null);
   assert.equal(h.options.ignoreElements({classList:{contains:name=>name==='pixel-selection'}}),true);
   assert.equal(h.options.ignoreElements({classList:{contains:name=>name==='item'}}),false);
   assert.deepEqual([...h.sandbox.selected],['image']);
-  h.run('state=JSON.parse(history.pop())');assert.deepEqual(h.json('state'),h.parent);
+  h.run('state=JSON.parse(undoHistory.pop())');assert.deepEqual(h.json('state'),h.parent);
 });
 test('Done and Cancel restore the page pan and custom zoom after editing an image',async()=>{
   for(const cancel of [false,true]){
@@ -103,7 +103,7 @@ test('Cancel and Done without changes preserve the page and its Undo and Redo st
   for(const cancel of [false,true]){
     const h=harness();await h.open();if(cancel)h.sandbox.state.items[0].src='changed';
     await(cancel?h.cancel():h.done());
-    assert.deepEqual(h.json('state'),h.parent);assert.deepEqual(h.sandbox.history,['older']);assert.deepEqual(h.sandbox.future,['later']);
+    assert.deepEqual(h.json('state'),h.parent);assert.deepEqual(h.sandbox.undoHistory,['older']);assert.deepEqual(h.sandbox.future,['later']);
     assert.equal(h.get('image-edit-bar').hidden,true);
   }
 });
@@ -130,7 +130,7 @@ test('saving blocks clicks and keys, and a changed image cannot replace the page
 });
 test('a failed image or a page change while opening leaves the page alone',async()=>{
   const h=harness();h.sandbox.selectionImage=async()=>{throw new Error('Bad image');};await h.open();
-  assert.deepEqual(h.json('state'),h.parent);assert.equal(h.run('imageEditSession'),null);assert.deepEqual(h.sandbox.history,['older']);
+  assert.deepEqual(h.json('state'),h.parent);assert.equal(h.run('imageEditSession'),null);assert.deepEqual(h.sandbox.undoHistory,['older']);
   h.sandbox.selectionImage=async()=>{h.sandbox.state.items[0].text='New title';return {naturalWidth:1000,naturalHeight:600};};await h.open();
   assert.equal(h.sandbox.state.items.length,2);assert.equal(h.run('imageEditSession'),null);
 });

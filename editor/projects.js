@@ -100,7 +100,7 @@ function renderProjects(){
   $('phone').setAttribute('aria-label',project.name+' preview');
 }
 function keepProjectSession(){
-  projectSessions.set(activeProject,{state,history,future,selected:[...selected],view:{...canvasView},scale,zoom:$('zoom').value,customZoom:$('zoom-custom').value});
+  projectSessions.set(activeProject,{state,history:undoHistory,future,selected:[...selected],view:{...canvasView},scale,zoom:$('zoom').value,customZoom:$('zoom-custom').value});
 }
 function projectListData(projects=localProjects,active=activeProject,deleted=deletedProjects){
   return {version:1,active,projects:projects.map(({id,name})=>({id,name})),deleted:[...deleted]};
@@ -121,7 +121,7 @@ function renameProject(name){
 }
 function openProject(id,layout,session){
   activeProject=id;STORAGE=projectStorage(id);state=layout;
-  history=session?.history||[];future=session?.future||[];selected=new Set(session?.selected||[]);
+  undoHistory=session?.history||[];future=session?.future||[];selected=new Set(session?.selected||[]);
   editing=true;fieldEdit=null;clearCanvasRegion();closeCanvasMenu();closeItemMenu();
   if($('editor-tools').open)$('editor-tools').close();
   if(session?.view){Object.assign(canvasView,session.view);scale=session.scale;$('zoom-custom').value=session.customZoom;$('zoom').value=session.zoom;}
