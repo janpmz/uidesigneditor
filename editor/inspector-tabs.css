@@ -13,8 +13,9 @@
 .inspector-info a{color:var(--accent);text-underline-offset:3px}
 .inspector-info a:hover{color:#eeeef0}
 .inspector-info a:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:2px}
-.inspector-credit{flex:none;padding:16px 12px;color:var(--muted-foreground,#aaaab3);font-size:11px;line-height:1.5;text-align:center}
+.inspector-credit{display:flex;flex:none;align-items:center;justify-content:center;gap:8px;padding:16px 12px;color:var(--muted-foreground,#aaaab3);font-size:11px;line-height:1.5;text-align:center}
 .inspector-credit a{color:inherit;text-underline-offset:3px}
+.inspector-credit .inspector-github{display:inline-flex;flex:none;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px}
 .inspector-credit a:hover{color:var(--foreground,#eeeef0)}
 .inspector-credit a:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:2px}
 .codex-prompt{display:grid;gap:12px;margin-top:24px;padding-top:24px;border-top:1px solid var(--line)}

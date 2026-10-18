@@ -1,6 +1,14 @@
 .stage{position:relative;display:block;overflow:hidden;padding:0;background-color:#141416;background-image:radial-gradient(#38383f .8px,transparent .8px)}
 .phone-mount{position:absolute}
 .phone.editing{overflow:visible}
+.phone.free-page{border-radius:0;box-shadow:0 0 0 1px #434348,0 15px 40px #0005}
+.canvas-size-dialog{width:min(400px,calc(100vw - 24px))}
+.canvas-size-dialog p{font-size:12px;line-height:1.6;color:var(--muted-foreground,#aaaab3)}
+.canvas-size-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:20px 0}
+.canvas-size-fields label{display:flex;flex-direction:column;gap:6px}
+.canvas-size-fields input{width:100%}
+.canvas-size-scale{font-size:12px}
+.canvas-size-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:24px}
 .stage.pan-ready,.stage.pan-ready *{cursor:grab!important}
 .stage.panning,.stage.panning *{cursor:grabbing!important}
 .canvas-size-tools{display:flex;flex:none;max-width:100%}

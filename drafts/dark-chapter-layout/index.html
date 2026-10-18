@@ -20,12 +20,12 @@
 <meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1280">
 <meta property="og:image:height" content="720">
-<meta property="og:image:alt" content="Free UI mockup tool. 100% local in your browser. No accounts. Select, cut, move, resize.">
+<meta property="og:image:alt" content="Free UI design tool. Local projects or a shared Space. No signup.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Chapter layout editor | UI Design Editor">
 <meta name="twitter:description" content="Edit a chapter list with text, icons and shapes. Move and resize items and keep the draft in your browser.">
 <meta name="twitter:image" content="https://uidesigneditor.com/assets/social-card.jpg">
-<meta name="twitter:image:alt" content="Free UI mockup tool. 100% local in your browser. No accounts. Select, cut, move, resize.">
+<meta name="twitter:image:alt" content="Free UI design tool. Local projects or a shared Space. No signup.">
 
 <!-- END SITE META -->
 <style>
@@ -96,6 +96,14 @@
 .stage{position:relative;display:block;overflow:hidden;padding:0;background-color:#141416;background-image:radial-gradient(#38383f .8px,transparent .8px)}
 .phone-mount{position:absolute}
 .phone.editing{overflow:visible}
+.phone.free-page{border-radius:0;box-shadow:0 0 0 1px #434348,0 15px 40px #0005}
+.canvas-size-dialog{width:min(400px,calc(100vw - 24px))}
+.canvas-size-dialog p{font-size:12px;line-height:1.6;color:var(--muted-foreground,#aaaab3)}
+.canvas-size-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:20px 0}
+.canvas-size-fields label{display:flex;flex-direction:column;gap:6px}
+.canvas-size-fields input{width:100%}
+.canvas-size-scale{font-size:12px}
+.canvas-size-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:24px}
 .stage.pan-ready,.stage.pan-ready *{cursor:grab!important}
 .stage.panning,.stage.panning *{cursor:grabbing!important}
 .canvas-size-tools{display:flex;flex:none;max-width:100%}
@@ -136,8 +144,9 @@
 .inspector-info a{color:var(--accent);text-underline-offset:3px}
 .inspector-info a:hover{color:#eeeef0}
 .inspector-info a:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:2px}
-.inspector-credit{flex:none;padding:16px 12px;color:var(--muted-foreground,#aaaab3);font-size:11px;line-height:1.5;text-align:center}
+.inspector-credit{display:flex;flex:none;align-items:center;justify-content:center;gap:8px;padding:16px 12px;color:var(--muted-foreground,#aaaab3);font-size:11px;line-height:1.5;text-align:center}
 .inspector-credit a{color:inherit;text-underline-offset:3px}
+.inspector-credit .inspector-github{display:inline-flex;flex:none;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px}
 .inspector-credit a:hover{color:var(--foreground,#eeeef0)}
 .inspector-credit a:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:2px}
 .codex-prompt{display:grid;gap:12px;margin-top:24px;padding-top:24px;border-top:1px solid var(--line)}
@@ -327,7 +336,7 @@
 .history-actions button { border-color: transparent; color: var(--muted-foreground); box-shadow: none; }
 .top-actions { gap: 8px; flex-wrap: nowrap; }
 .export-actions { gap: 6px; }
-.canvas-size-tools select { width: 166px; }
+.canvas-size-tools select { width: 210px; }
 .canvas-view-tools { gap: 2px; }
 .canvas-view-tools select { width: 90px; min-width: 80px; }
 .canvas-view-tools button { min-width: 30px; padding: 6px; border-color: transparent; font-size: 16px; box-shadow: none; }
@@ -549,7 +558,7 @@ SOFTWARE.
   <div class="top-actions">
     <!-- BEGIN CANVAS VIEW TOOLS -->
 <div class="canvas-size-tools">
-  <select id="page-size" aria-label="Page size" title="Page size"></select>
+  <select id="page-size" aria-label="Canvas format" title="Canvas format"></select>
 </div>
 <div class="canvas-view-tools" role="group" aria-label="Canvas view">
   <button id="zoom-out" aria-label="Zoom out" title="Zoom out">−</button>
@@ -602,9 +611,10 @@ SOFTWARE.
   </div>
   <aside class="inspector" id="inspector" role="tabpanel" aria-labelledby="inspector-tab-edit" hidden></aside>
   <section class="inspector-info" id="inspector-info" role="tabpanel" aria-labelledby="inspector-tab-info">
-    <h2>100% local editor</h2>
+    <h2>Local projects or a shared Space</h2>
     <ul>
-      <li>All files stay in your browser</li>
+      <li>Local projects stay in your browser</li>
+      <li>Create a Space to share projects across browsers</li>
       <li>No signup</li>
       <li>Free to use</li>
       <li><a href="https://github.com/janpmz/uidesigneditor" target="_blank" rel="noopener noreferrer">Open source on GitHub</a></li>
@@ -615,9 +625,11 @@ SOFTWARE.
         <button type="button" id="copy-codex-prompt">Copy prompt</button>
       </div>
       <p id="codex-tools-status" role="status">Site tools need a supported Codex browser.</p>
-      <textarea id="codex-prompt" rows="8" readonly spellcheck="false" aria-labelledby="codex-prompt-title">Use https://uidesigneditor.com/ as my design canvas. Use this page's WebMCP site tools through a supported Codex browser. Keep using the same open tab and its current project.
+      <textarea id="codex-prompt" rows="8" readonly spellcheck="false" aria-labelledby="codex-prompt-title">Open https://uidesigneditor.com/ in Codex's built-in browser as my design canvas, or reuse that page if it is already open. Use this page's WebMCP site tools to make edits. Keep the tab visible and open when you finish so I can use the result.
 
-Start with read_design. For every change, use the latest projectId and revision returned by the tools. If the design changes while you work, read it again before retrying. Use the tools to make edits directly; keep my edits and the normal Undo history.
+Find the tools in this tab, then start with read_design. Create my work as a new named project unless I ask you to edit an existing project. For every change, use the latest projectId and revision returned by the tools. If the design changes while you work, read it again before retrying. Keep my edits and the normal Undo history.
+
+Local projects stay in the browser where they are saved. To share projects across browsers, create a Space and open the same Space link in each browser. Anyone with the link can edit. Keep the #space part of the URL when opening it in Codex. Space edits save to the server and other open pages fetch the changed project. If a newer saved version exists, keep my unsaved work and let me reload or save it as a copy. If I ask for a local project that is missing here, ask me for its saved HTML or screenshot.
 
 Use edit_design to add, move, resize, restyle or remove items. Use create_design for a full design in a new project. Keep text, shapes, icons and buttons as separate items I can edit. Use select_project to open a project listed by read_design.
 
@@ -629,11 +641,33 @@ Check the result with read_design and a PNG from export_design. Refresh the site
       <p id="codex-prompt-status" class="codex-prompt-status" role="status"></p>
     </div>
   </section>
-  <footer class="inspector-credit">Vibecoded with <span role="img" aria-label="love">❤️</span> by <a href="https://x.com/janxpm" target="_blank" rel="noopener noreferrer">@janxpm</a></footer>
+  <footer class="inspector-credit">
+    <span>Vibecoded with <span role="img" aria-label="love">❤️</span> by <a href="https://x.com/janxpm" target="_blank" rel="noopener noreferrer">@janxpm</a></span>
+    <a class="inspector-github" href="https://github.com/janpmz/uidesigneditor" target="_blank" rel="noopener noreferrer" aria-label="View code on GitHub" title="GitHub">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M12 .297C5.37.297 0 5.67 0 12.297c0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.043-1.61-4.043-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.083-.73.083-.73 1.205.084 1.838 1.237 1.838 1.237 1.07 1.834 2.807 1.304 3.492.997.108-.776.418-1.305.762-1.605-2.665-.304-5.467-1.334-5.467-5.93 0-1.31.47-2.38 1.236-3.22-.123-.303-.536-1.523.117-3.176 0 0 1.008-.322 3.301 1.23a11.52 11.52 0 0 1 3.004-.404c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.655 1.653.242 2.873.119 3.176.77.84 1.235 1.91 1.235 3.22 0 4.61-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222 0 1.606-.015 2.898-.015 3.293 0 .322.216.694.825.576C20.565 22.092 24 17.596 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+    </a>
+  </footer>
 </aside>
 <!-- END INSPECTOR TABS -->
 </main>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<!-- BEGIN CANVAS SIZE DIALOG -->
+<dialog id="canvas-size-dialog" class="picture-choice canvas-size-dialog" aria-labelledby="canvas-size-title" aria-describedby="canvas-size-help">
+  <form id="canvas-size-form">
+    <h2 id="canvas-size-title">Custom size</h2>
+    <p id="canvas-size-help">Set any width and height from 1 to 16,000 pixels.</p>
+    <div class="canvas-size-fields">
+      <label>Width (px)<input id="canvas-width" name="width" type="number" min="1" max="16000" step="1" required></label>
+      <label>Height (px)<input id="canvas-height" name="height" type="number" min="1" max="16000" step="1" required></label>
+    </div>
+    <label class="check-line canvas-size-scale"><input id="canvas-resize-items" type="checkbox">Resize items with canvas</label>
+    <div class="canvas-size-actions">
+      <button type="button" id="canvas-size-cancel">Cancel</button>
+      <button type="submit" class="primary">Apply size</button>
+    </div>
+  </form>
+</dialog>
+<!-- END CANVAS SIZE DIALOG -->
 <!-- BEGIN PICTURE CHOICE -->
 <dialog id="picture-drop-choice" class="picture-choice" aria-labelledby="picture-choice-title">
   <h2 id="picture-choice-title">Open file</h2>
@@ -754,7 +788,7 @@ function styleItem(el,item) {
   if(item.kind==='reading'){el.style.fontFamily="Baskerville, 'Libre Baskerville', Georgia, serif";el.style.fontWeight='400';el.style.lineHeight=item.lineHeight||1.35;}
 }
 function renderPhone() {
-  const phone=$('phone');phone.replaceChildren();phone.classList.toggle('editing',editing);phone.classList.toggle('picture-page',Boolean(state.canvas.picturePage));phone.style.background=state.canvas.background;phone.style.width=state.canvas.width+'px';phone.style.height=state.canvas.height+'px';
+  const phone=$('phone');phone.replaceChildren();phone.classList.toggle('editing',editing);phone.classList.toggle('picture-page',Boolean(state.canvas.picturePage));phone.classList.toggle('free-page',!isPhoneCanvas(state.canvas));phone.style.background=state.canvas.background;phone.style.width=state.canvas.width+'px';phone.style.height=state.canvas.height+'px';
   state.items.forEach((item,index)=>{
     if(item.hidden)return;
     const el=document.createElement('div');el.className='item kind-'+item.kind+(selected.has(item.id)?' selected':'');el.dataset.id=item.id;el.style.zIndex=index+1;el.setAttribute('aria-label',item.name);el.tabIndex=editing?0:-1;styleItem(el,item);el.classList.toggle('page-image',isPagePicture(item));
@@ -811,7 +845,7 @@ function renderInspector() {
   renderImageEditStatus();
   const pane=$('inspector');pane.replaceChildren();const item=current(),items=selectedItems();
   renderPageSizePicker($('page-size'));
-  const canvas=section(state.canvas.picturePage?'Page':'Phone');
+  const canvas=section('Canvas');
   const canvasColor=field('Background','canvasBackground',state.canvas.background,'color');canvasColor.style.marginTop='10px';canvas.append(canvasColor);pane.append(canvas);
   if(items.length>1){
     const group=section(items.length+' items selected'),bounds=boundsOf(items),fields=document.createElement('div');fields.className='fields';
@@ -847,7 +881,7 @@ function renderInspector() {
     }
     const actions=section('Arrange');const buttons=document.createElement('div');buttons.className='action-grid';renderOrderActions(buttons);[['Duplicate',duplicate],[item.hidden?'Restore':'Delete',()=>change(()=>{item.hidden=!item.hidden;})]].forEach(([title,fn])=>{const button=document.createElement('button');button.textContent=title;button.onclick=fn;if(title==='Delete')button.className='danger';buttons.append(button);});actions.append(buttons);pane.append(actions);
   }
-  const help=section('Your draft');const note=document.createElement('p');note.className='note';note.textContent=imageEditSession?'Choose Done to save the image and return to the page. Cancel discards these edits.':'Changes save in this browser. Copy HTML copies the whole editor with your draft. Copy layout gives you the exact positions and styles.';help.append(note);const keys=document.createElement('p');keys.className='note';keys.style.marginTop='10px';keys.textContent='Drag: draw a box. Drag inside: move. Shift-click: add or remove. ⌘A: select all. Arrow keys: 1 px. Shift + arrow: 10 px. Delete: remove. ⌘Z: undo.';help.append(keys);pane.append(help);
+  const help=section('Your draft');const note=document.createElement('p');note.className='note';note.textContent=imageEditSession?'Choose Done to save the image and return to the page. Cancel discards these edits.':typeof onlineSpaceId!=='undefined'&&onlineSpaceId?'Changes save to this Space. Open its link in another browser to share work.':'Changes save in this browser. Copy HTML copies the whole editor with your draft. Copy layout gives you the exact positions and styles.';help.append(note);const keys=document.createElement('p');keys.className='note';keys.style.marginTop='10px';keys.textContent='Drag: draw a box. Drag inside: move. Shift-click: add or remove. ⌘A: select all. Arrow keys: 1 px. Shift + arrow: 10 px. Delete: remove. ⌘Z: undo.';help.append(keys);pane.append(help);
 }
 function render(){selected=new Set([...selected].filter(id=>state.items.some(item=>item.id===id)));document.body.classList.toggle('preview',!editing);$('preview').classList.toggle('active',!editing);$('preview').textContent=editing?'Preview':'Back to editing';$('canvas-help').textContent=editing?'Drag to select · Space + drag to pan · ⌘/Ctrl + scroll to zoom':'Preview · Back to editing to make changes';renderPhone();renderLayers();renderInspector();save();}
 function duplicate(){
@@ -1012,22 +1046,30 @@ function pageSizeChoices(layout){
     {value:'393,852',text:'iPhone 16 · 393 × 852'},
     {value:'402,874',text:'iPhone 17 Pro · 402 × 874'},
     {value:'440,956',text:'Large phone · 440 × 956'},
+    {value:'768,1024',text:'Tablet · 768 × 1024'},
+    {value:'1440,900',text:'Website · 1440 × 900'},
+    {value:'1920,1080',text:'Presentation · 1920 × 1080'},
+    {value:'1080,1080',text:'Square · 1080 × 1080'},
+    {value:'794,1123',text:'A4 page · 794 × 1123'},
   ];
   if(page)options.unshift({value:'page',text:'Page · '+page.width+' × '+page.height});
   const value=layout.canvas.picturePage?'page':layout.canvas.width+','+layout.canvas.height;
   if(!options.some(option=>option.value===value))options.push({value,text:layout.canvas.width+' × '+layout.canvas.height});
+  options.push({value:'custom',text:'Custom size…'});
   return {page,options,value};
 }
-function setPageSize(layout,value){
+function isPhoneCanvas(canvas){return !canvas.picturePage&&['393,852','402,874','440,956'].includes(canvas.width+','+canvas.height);}
+function setPageSize(layout,value,resizeItems=true){
   const page=picturePageSizeFor(layout),size=value==='page'?page:(()=>{const [width,height]=value.split(',').map(Number);return {width,height};})();
   if(!size||!['width','height'].every(key=>Number.isInteger(size[key])&&size[key]>0&&size[key]<=16000))return;
   if(page)layout.canvas.picturePageSize=page;
   const sx=size.width/layout.canvas.width,sy=size.height/layout.canvas.height;
-  layout.items.forEach(entry=>{entry.x=round(entry.x*sx);entry.y=round(entry.y*sy);entry.w=round(entry.w*sx);entry.h=round(entry.h*sy);});
+  if(resizeItems)layout.items.forEach(entry=>{entry.x=round(entry.x*sx);entry.y=round(entry.y*sy);entry.w=Math.max(.1,round(entry.w*sx));entry.h=Math.max(.1,round(entry.h*sy));});
   layout.canvas.width=size.width;layout.canvas.height=size.height;
   if(value==='page')layout.canvas.picturePage=true;else delete layout.canvas.picturePage;
 }
 // END PAGE SIZE HELPERS
+// BEGIN PAGE SIZE PICKER
 function renderPageSizePicker(preset){
   const choices=pageSizeChoices(state);
   if(choices.page)state.canvas.picturePageSize=choices.page;
@@ -1036,8 +1078,39 @@ function renderPageSizePicker(preset){
     for(const choice of choices.options){const option=document.createElement('option');option.value=choice.value;option.textContent=choice.text;preset.append(option);}
   }
   preset.value=choices.value;
-  preset.onchange=()=>change(()=>{if(typeof clearCanvasRegion==='function')clearCanvasRegion();setPageSize(state,preset.value);});
+  preset.onchange=()=>{
+    if(preset.value==='custom'){preset.value=choices.value;openCustomPageSize(preset);return;}
+    change(()=>{if(typeof clearCanvasRegion==='function')clearCanvasRegion();setPageSize(state,preset.value);});
+  };
 }
+const canvasSizeDialog=$('canvas-size-dialog');
+let canvasSizeState=null,canvasSizeTrigger=null;
+function openCustomPageSize(preset){
+  if(canvasSizeDialog.open||canvasViewBusy()||canvasPan||canvasPinch||drag||pictureChoice.open)return;
+  canvasSizeState=state;canvasSizeTrigger=preset;
+  $('canvas-width').value=state.canvas.width;$('canvas-height').value=state.canvas.height;
+  $('canvas-resize-items').checked=false;
+  canvasSizeDialog.showModal();$('canvas-width').focus();$('canvas-width').select();
+}
+$('canvas-size-form').onsubmit=event=>{
+  event.preventDefault();
+  if(!$('canvas-size-form').reportValidity())return;
+  if(state!==canvasSizeState){canvasSizeDialog.close();return;}
+  const width=Number($('canvas-width').value),height=Number($('canvas-height').value);
+  if(![width,height].every(value=>Number.isInteger(value)&&value>0&&value<=16000))return;
+  const resizeItems=$('canvas-resize-items').checked;
+  if(width!==state.canvas.width||height!==state.canvas.height)change(()=>{
+    if(typeof clearCanvasRegion==='function')clearCanvasRegion();
+    setPageSize(state,width+','+height,resizeItems);
+  });
+  canvasSizeDialog.close();
+};
+$('canvas-size-cancel').onclick=()=>canvasSizeDialog.close();
+canvasSizeDialog.addEventListener('close',()=>{canvasSizeState=null;canvasSizeTrigger?.focus({preventScroll:true});canvasSizeTrigger=null;});
+for(const type of ['keydown','drop','paste','copy','cut'])document.addEventListener(type,event=>{
+  if(canvasSizeDialog.open){if(type==='drop')event.preventDefault();event.stopImmediatePropagation();}
+},true);
+// END PAGE SIZE PICKER
 
 const pictureChoice=$('picture-drop-choice');
 function choosePictureDrop(){
@@ -2041,9 +2114,14 @@ for(const button of inspectorTabButtons){
 document.addEventListener('pointerdown',event=>{
   if(event.button===0&&stage.contains(event.target)&&event.target.closest('.item,.selection-overlay,.group-grip,.resize-handle'))showInspectorTab('edit');
 },true);
+const codexPrompt=$('codex-prompt');
+function codexCanvasUrl(){return location.origin+location.pathname+(/^#space=[a-f0-9]{64}$/.test(location.hash||'')?location.hash:'');}
+function updateCodexPromptUrl(){if(['http:','https:'].includes(location.protocol))codexPrompt.value=codexPrompt.value.replace(/Open https?:\/\/\S+ in Codex/,'Open '+codexCanvasUrl()+' in Codex');}
+updateCodexPromptUrl();
 $('copy-codex-prompt').onclick=async()=>{
   const prompt=$('codex-prompt'),status=$('codex-prompt-status');
   try{
+    updateCodexPromptUrl();
     await navigator.clipboard.writeText(prompt.value);
     status.textContent='Prompt copied. Paste it into Codex with your request.';
   }catch{
@@ -2145,7 +2223,7 @@ render();
   function idle() {
     if (!editing || drag || fieldEdit || canvasGesture || canvasEditBusy || canvasPan || canvasPinch || canvasViewBusy()
       || pictureDropBusy || imageEditSession || (typeof projectSwitchBusy !== 'undefined' && projectSwitchBusy)
-      || ['picture-drop-choice', 'icon-picker', 'project-delete-dialog'].some(id => $(id)?.open)) {
+      || ['picture-drop-choice', 'icon-picker', 'project-delete-dialog', 'canvas-size-dialog'].some(id => $(id)?.open)) {
       throw new Error('Finish the current edit or close the open choice, then try again.');
     }
   }
@@ -2181,6 +2259,7 @@ render();
   async function ready() {
     await picturesReady;
     if (typeof projectsReady !== 'undefined') await projectsReady;
+    if (typeof spaceClient !== 'undefined') await spaceClient?.ready;
     idle();
   }
 
@@ -2359,7 +2438,12 @@ render();
           execute: async (args = {}) => {
             if (busy) return { ok: false, error: 'Another site tool is still running. Try again when it finishes.' };
             busy = true;
-            try { validate(args, definition.inputSchema); await ready(); return { ok: true, ...await definition.run(args) }; }
+            try {
+              validate(args, definition.inputSchema); await ready();
+              const result = await definition.run(args);
+              if (!definition.readOnly && typeof spaceClient !== 'undefined') await spaceClient?.saved();
+              return { ok: true, ...result };
+            }
             catch (error) { return { ok: false, error: error.message || 'The edit could not finish.' }; }
             finally { busy = false; }
           },

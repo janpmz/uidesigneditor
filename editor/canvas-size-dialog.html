@@ -1,0 +1,15 @@
+<dialog id="canvas-size-dialog" class="picture-choice canvas-size-dialog" aria-labelledby="canvas-size-title" aria-describedby="canvas-size-help">
+  <form id="canvas-size-form">
+    <h2 id="canvas-size-title">Custom size</h2>
+    <p id="canvas-size-help">Set any width and height from 1 to 16,000 pixels.</p>
+    <div class="canvas-size-fields">
+      <label>Width (px)<input id="canvas-width" name="width" type="number" min="1" max="16000" step="1" required></label>
+      <label>Height (px)<input id="canvas-height" name="height" type="number" min="1" max="16000" step="1" required></label>
+    </div>
+    <label class="check-line canvas-size-scale"><input id="canvas-resize-items" type="checkbox">Resize items with canvas</label>
+    <div class="canvas-size-actions">
+      <button type="button" id="canvas-size-cancel">Cancel</button>
+      <button type="submit" class="primary">Apply size</button>
+    </div>
+  </form>
+</dialog>

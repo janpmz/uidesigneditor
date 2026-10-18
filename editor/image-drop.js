@@ -54,22 +54,30 @@ function pageSizeChoices(layout){
     {value:'393,852',text:'iPhone 16 · 393 × 852'},
     {value:'402,874',text:'iPhone 17 Pro · 402 × 874'},
     {value:'440,956',text:'Large phone · 440 × 956'},
+    {value:'768,1024',text:'Tablet · 768 × 1024'},
+    {value:'1440,900',text:'Website · 1440 × 900'},
+    {value:'1920,1080',text:'Presentation · 1920 × 1080'},
+    {value:'1080,1080',text:'Square · 1080 × 1080'},
+    {value:'794,1123',text:'A4 page · 794 × 1123'},
   ];
   if(page)options.unshift({value:'page',text:'Page · '+page.width+' × '+page.height});
   const value=layout.canvas.picturePage?'page':layout.canvas.width+','+layout.canvas.height;
   if(!options.some(option=>option.value===value))options.push({value,text:layout.canvas.width+' × '+layout.canvas.height});
+  options.push({value:'custom',text:'Custom size…'});
   return {page,options,value};
 }
-function setPageSize(layout,value){
+function isPhoneCanvas(canvas){return !canvas.picturePage&&['393,852','402,874','440,956'].includes(canvas.width+','+canvas.height);}
+function setPageSize(layout,value,resizeItems=true){
   const page=picturePageSizeFor(layout),size=value==='page'?page:(()=>{const [width,height]=value.split(',').map(Number);return {width,height};})();
   if(!size||!['width','height'].every(key=>Number.isInteger(size[key])&&size[key]>0&&size[key]<=16000))return;
   if(page)layout.canvas.picturePageSize=page;
   const sx=size.width/layout.canvas.width,sy=size.height/layout.canvas.height;
-  layout.items.forEach(entry=>{entry.x=round(entry.x*sx);entry.y=round(entry.y*sy);entry.w=round(entry.w*sx);entry.h=round(entry.h*sy);});
+  if(resizeItems)layout.items.forEach(entry=>{entry.x=round(entry.x*sx);entry.y=round(entry.y*sy);entry.w=Math.max(.1,round(entry.w*sx));entry.h=Math.max(.1,round(entry.h*sy));});
   layout.canvas.width=size.width;layout.canvas.height=size.height;
   if(value==='page')layout.canvas.picturePage=true;else delete layout.canvas.picturePage;
 }
 // END PAGE SIZE HELPERS
+// BEGIN PAGE SIZE PICKER
 function renderPageSizePicker(preset){
   const choices=pageSizeChoices(state);
   if(choices.page)state.canvas.picturePageSize=choices.page;
@@ -78,8 +86,39 @@ function renderPageSizePicker(preset){
     for(const choice of choices.options){const option=document.createElement('option');option.value=choice.value;option.textContent=choice.text;preset.append(option);}
   }
   preset.value=choices.value;
-  preset.onchange=()=>change(()=>{if(typeof clearCanvasRegion==='function')clearCanvasRegion();setPageSize(state,preset.value);});
+  preset.onchange=()=>{
+    if(preset.value==='custom'){preset.value=choices.value;openCustomPageSize(preset);return;}
+    change(()=>{if(typeof clearCanvasRegion==='function')clearCanvasRegion();setPageSize(state,preset.value);});
+  };
 }
+const canvasSizeDialog=$('canvas-size-dialog');
+let canvasSizeState=null,canvasSizeTrigger=null;
+function openCustomPageSize(preset){
+  if(canvasSizeDialog.open||canvasViewBusy()||canvasPan||canvasPinch||drag||pictureChoice.open)return;
+  canvasSizeState=state;canvasSizeTrigger=preset;
+  $('canvas-width').value=state.canvas.width;$('canvas-height').value=state.canvas.height;
+  $('canvas-resize-items').checked=false;
+  canvasSizeDialog.showModal();$('canvas-width').focus();$('canvas-width').select();
+}
+$('canvas-size-form').onsubmit=event=>{
+  event.preventDefault();
+  if(!$('canvas-size-form').reportValidity())return;
+  if(state!==canvasSizeState){canvasSizeDialog.close();return;}
+  const width=Number($('canvas-width').value),height=Number($('canvas-height').value);
+  if(![width,height].every(value=>Number.isInteger(value)&&value>0&&value<=16000))return;
+  const resizeItems=$('canvas-resize-items').checked;
+  if(width!==state.canvas.width||height!==state.canvas.height)change(()=>{
+    if(typeof clearCanvasRegion==='function')clearCanvasRegion();
+    setPageSize(state,width+','+height,resizeItems);
+  });
+  canvasSizeDialog.close();
+};
+$('canvas-size-cancel').onclick=()=>canvasSizeDialog.close();
+canvasSizeDialog.addEventListener('close',()=>{canvasSizeState=null;canvasSizeTrigger?.focus({preventScroll:true});canvasSizeTrigger=null;});
+for(const type of ['keydown','drop','paste','copy','cut'])document.addEventListener(type,event=>{
+  if(canvasSizeDialog.open){if(type==='drop')event.preventDefault();event.stopImmediatePropagation();}
+},true);
+// END PAGE SIZE PICKER
 
 const pictureChoice=$('picture-drop-choice');
 function choosePictureDrop(){

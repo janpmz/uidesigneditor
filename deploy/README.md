@@ -1,8 +1,28 @@
 # Publish with Caddy
 
 The existing VPS setup can serve this site through Cloudflare Tunnel and Caddy.
-It needs no Python or Node server, extra app port, database, or project upload path.
-Node is used only to prepare the files and run checks.
+Static pages use Caddy. Space saves need Node.js 24 or later, the `ws` package,
+and one SQLite file. The save service listens only on `127.0.0.1:3000`.
+Caddy sends `/api/*` and `/ws` to it, including WebSocket connections.
+
+## Start the save service
+
+Keep the checkout in `/opt/uidesigneditor`, or change both paths in
+`uidesigneditor.service` to match its location. Use a folder outside `/home`
+that the service can read. Check the Node path in `ExecStart` too.
+
+Run `npm ci` in the checkout, then install the service:
+
+```sh
+sudo install -m 644 deploy/uidesigneditor.service /etc/systemd/system/uidesigneditor.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now uidesigneditor
+```
+
+The service creates `/var/lib/uidesigneditor/spaces.sqlite`. Keep that folder
+across releases. Back up this database along with its SQLite write-ahead log,
+or stop the service before copying the database file. Never put it in `dist/`
+or `/srv/uidesigneditor/`.
 
 ## Prepare the files
 
@@ -12,9 +32,10 @@ Run on the VPS from this project folder:
 ./redeploy.sh
 ```
 
-The script pulls the latest code, builds the public files, runs the checks, then
+The script pulls the latest code, installs packages, builds the public files, runs the checks, then
 copies `dist/` to `/srv/uidesigneditor/`. It stops if the pull fails or needs a
 merge. It replaces files there to match the build. Caddy serves that folder.
+It restarts the save service when that service is running.
 
 ## Add the site to Caddy
 
@@ -23,7 +44,8 @@ repo. Keep its existing global block, local bind address and DNS settings.
 
 The blocks serve `uidesigneditor.com` and redirect `www` to it. They turn on
 compression, let browsers check for new files, and return a real 404 status for
-a missing page. They do not add directory listings or a project save service.
+a missing page. They send Space requests to the save service and keep its
+database outside the public site.
 
 Use the VPS repo's existing commands to check, install and reload that Caddyfile:
 
@@ -77,10 +99,18 @@ projects. It helps tools read the site; it does not guarantee search rank.
 
 ## User work
 
-Drafts and pictures stay in each user's browser. Publishing these files neither
-uploads those drafts nor moves them between addresses. A draft at localhost
-will not appear at `https://uidesigneditor.com`; use Copy HTML and open that file
-at the new address to move it.
+Local drafts and pictures stay in each browser. Creating a Space copies those
+projects to the save service. Open the same secret Space link in each browser
+to share work. Anyone with that link can read and edit every project in it.
+Keep these links out of public logs and shared screenshots.
+
+A Space on localhost and one on the public site use different databases.
+Use Copy HTML and import the file at the other site to move work between them.
+Publishing the site files alone does not move local drafts or Space data.
+
+Check two browsers with the same Space link: create a project, edit it, and
+check that the other page updates. Disconnect one page, edit in the other,
+then reconnect. A page with unsaved work must offer reload or save as a copy.
 
 Keep one public address. Redirect `www` to the main domain before people start
 saving work, since each address has its own browser store. Keep regular copies

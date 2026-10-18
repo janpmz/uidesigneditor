@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <!-- BEGIN SITE META -->
-<title>UI Design Editor | Free local screen editor</title>
-<meta name="description" content="A simple and free ui design tool. Select, cut, move and resize. Add buttons and rectangles. 100% local, all files stay in your browser. No signup.">
+<title>UI Design Editor | Free screen editor</title>
+<meta name="description" content="A free UI design tool. Move and resize text, shapes and pictures. Keep projects in your browser or share them through a Space. No signup.">
 <meta name="robots" content="index,follow,max-image-preview:large">
 <link rel="canonical" href="https://uidesigneditor.com/">
 <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
@@ -13,19 +13,19 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="UI Design Editor">
 <meta property="og:locale" content="en_US">
-<meta property="og:title" content="UI Design Editor | Free local screen editor">
-<meta property="og:description" content="A simple and free ui design tool. Select, cut, move and resize. Add buttons and rectangles. 100% local, all files stay in your browser. No signup.">
+<meta property="og:title" content="UI Design Editor | Free screen editor">
+<meta property="og:description" content="A free UI design tool. Move and resize text, shapes and pictures. Keep projects in your browser or share them through a Space. No signup.">
 <meta property="og:url" content="https://uidesigneditor.com/">
 <meta property="og:image" content="https://uidesigneditor.com/assets/social-card.jpg">
 <meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1280">
 <meta property="og:image:height" content="720">
-<meta property="og:image:alt" content="Free UI mockup tool. 100% local in your browser. No accounts. Select, cut, move, resize.">
+<meta property="og:image:alt" content="Free UI design tool. Local projects or a shared Space. No signup.">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="UI Design Editor | Free local screen editor">
-<meta name="twitter:description" content="A simple and free ui design tool. Select, cut, move and resize. Add buttons and rectangles. 100% local, all files stay in your browser. No signup.">
+<meta name="twitter:title" content="UI Design Editor | Free screen editor">
+<meta name="twitter:description" content="A free UI design tool. Move and resize text, shapes and pictures. Keep projects in your browser or share them through a Space. No signup.">
 <meta name="twitter:image" content="https://uidesigneditor.com/assets/social-card.jpg">
-<meta name="twitter:image:alt" content="Free UI mockup tool. 100% local in your browser. No accounts. Select, cut, move, resize.">
+<meta name="twitter:image:alt" content="Free UI design tool. Local projects or a shared Space. No signup.">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -43,7 +43,7 @@
       "@id": "https://uidesigneditor.com/#app",
       "name": "UI Design Editor",
       "url": "https://uidesigneditor.com/",
-      "description": "A simple and free ui design tool. Select, cut, move and resize. Add buttons and rectangles. 100% local, all files stay in your browser. No signup.",
+      "description": "A free UI design tool. Move and resize text, shapes and pictures. Keep projects in your browser or share them through a Space. No signup.",
       "applicationCategory": "DesignApplication",
       "operatingSystem": "Any",
       "browserRequirements": "Requires JavaScript and browser storage.",
@@ -61,8 +61,8 @@
       "@type": "WebPage",
       "@id": "https://uidesigneditor.com/#page",
       "url": "https://uidesigneditor.com/",
-      "name": "UI Design Editor | Free local screen editor",
-      "description": "A simple and free ui design tool. Select, cut, move and resize. Add buttons and rectangles. 100% local, all files stay in your browser. No signup.",
+      "name": "UI Design Editor | Free screen editor",
+      "description": "A free UI design tool. Move and resize text, shapes and pictures. Keep projects in your browser or share them through a Space. No signup.",
       "inLanguage": "en",
       "isPartOf": {
         "@id": "https://uidesigneditor.com/#website"
@@ -196,6 +196,14 @@ OTHER DEALINGS IN THE SOFTWARE.
 .stage{position:relative;display:block;overflow:hidden;padding:0;background-color:#141416;background-image:radial-gradient(#38383f .8px,transparent .8px)}
 .phone-mount{position:absolute}
 .phone.editing{overflow:visible}
+.phone.free-page{border-radius:0;box-shadow:0 0 0 1px #434348,0 15px 40px #0005}
+.canvas-size-dialog{width:min(400px,calc(100vw - 24px))}
+.canvas-size-dialog p{font-size:12px;line-height:1.6;color:var(--muted-foreground,#aaaab3)}
+.canvas-size-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:20px 0}
+.canvas-size-fields label{display:flex;flex-direction:column;gap:6px}
+.canvas-size-fields input{width:100%}
+.canvas-size-scale{font-size:12px}
+.canvas-size-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:24px}
 .stage.pan-ready,.stage.pan-ready *{cursor:grab!important}
 .stage.panning,.stage.panning *{cursor:grabbing!important}
 .canvas-size-tools{display:flex;flex:none;max-width:100%}
@@ -236,8 +244,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 .inspector-info a{color:var(--accent);text-underline-offset:3px}
 .inspector-info a:hover{color:#eeeef0}
 .inspector-info a:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:2px}
-.inspector-credit{flex:none;padding:16px 12px;color:var(--muted-foreground,#aaaab3);font-size:11px;line-height:1.5;text-align:center}
+.inspector-credit{display:flex;flex:none;align-items:center;justify-content:center;gap:8px;padding:16px 12px;color:var(--muted-foreground,#aaaab3);font-size:11px;line-height:1.5;text-align:center}
 .inspector-credit a{color:inherit;text-underline-offset:3px}
+.inspector-credit .inspector-github{display:inline-flex;flex:none;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px}
 .inspector-credit a:hover{color:var(--foreground,#eeeef0)}
 .inspector-credit a:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:2px}
 .codex-prompt{display:grid;gap:12px;margin-top:24px;padding-top:24px;border-top:1px solid var(--line)}
@@ -270,6 +279,15 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 </style>
 <style data-projects>
+.project-new{width:100%;margin-bottom:6px}
+.space-controls{flex:none;padding:0 0 14px;margin-bottom:14px;border-bottom:1px solid #39353e}
+.space-controls p{font-size:11px;line-height:1.5;color:#aaa3b3;margin:0 0 8px}
+.space-controls #space-status{color:#e5e1eb;font-weight:600}
+.space-controls button{width:100%;margin-bottom:6px;text-align:center}
+.space-controls #space-help{margin-top:5px}
+#space-conflict{padding:10px 8px;margin-top:8px;border:1px solid #875f36;border-radius:7px}
+#space-conflict-message{color:#f0c68c}
+.project-new:disabled{opacity:.4}
 .project-page-row{display:flex;align-items:center;gap:4px;flex:none;min-width:0}
 .project-page-row .project-page{flex:1;min-width:0}
 .project-delete{display:grid;place-items:center;width:30px;min-height:34px;flex:none;padding:6px;border:1px solid transparent;border-radius:6px;background:transparent;color:#aaa3b3}
@@ -444,7 +462,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 .history-actions button { border-color: transparent; color: var(--muted-foreground); box-shadow: none; }
 .top-actions { gap: 8px; flex-wrap: nowrap; }
 .export-actions { gap: 6px; }
-.canvas-size-tools select { width: 166px; }
+.canvas-size-tools select { width: 210px; }
 .canvas-view-tools { gap: 2px; }
 .canvas-view-tools select { width: 90px; min-width: 80px; }
 .canvas-view-tools button { min-width: 30px; padding: 6px; border-color: transparent; font-size: 16px; box-shadow: none; }
@@ -667,7 +685,7 @@ SOFTWARE.
   <div class="top-actions">
     <!-- BEGIN CANVAS VIEW TOOLS -->
 <div class="canvas-size-tools">
-  <select id="page-size" aria-label="Page size" title="Page size"></select>
+  <select id="page-size" aria-label="Canvas format" title="Canvas format"></select>
 </div>
 <div class="canvas-view-tools" role="group" aria-label="Canvas view">
   <button id="zoom-out" aria-label="Zoom out" title="Zoom out">−</button>
@@ -716,7 +734,20 @@ SOFTWARE.
     </div>
     <template id="home-pages"></template>
     <nav class="project-pages" id="editor-pages" aria-labelledby="project-pages-title">
+      <section class="space-controls" aria-label="Space">
+  <p id="space-status" role="status">Local projects</p>
+  <button type="button" id="space-create">Create Space</button>
+  <button type="button" id="space-share" hidden>Copy Space link</button>
+  <button type="button" id="space-retry" hidden>Retry</button>
+  <p id="space-help">A Space shares these projects across browsers. Anyone with its link can edit.</p>
+  <div id="space-conflict" hidden>
+    <p id="space-conflict-message"></p>
+    <button type="button" id="space-reload">Reload saved project</button>
+    <button type="button" id="space-copy">Save as a copy</button>
+  </div>
+</section>
       <h2 id="project-pages-title">Projects</h2>
+      <button type="button" class="project-page project-new" id="project-new"><svg viewBox="0 0 16 18" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M8 3v12M2 9h12"/></svg><span>New Project</span></button>
       <div class="project-page-list">
         <div class="project-page-row" data-project-row="player"><button type="button" class="project-page" data-project="player" aria-current="page"><svg viewBox="0 0 16 18" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><path d="M9.5 1.5H3a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V6L9.5 1.5Z"/><path d="M9 1.5V6h5M5 10h6M5 13h4"/></svg><span>Player</span></button><button type="button" class="project-delete" data-delete-project="player" aria-label="Delete Player" title="Delete Player"><svg viewBox="0 0 16 18" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><path d="M2 4.5h12M6 4.5v-2h4v2M3.5 4.5l.7 11h7.6l.7-11M6.5 7v6M9.5 7v6"/></svg></button></div>
         <div class="project-page-row" data-project-row="library"><button type="button" class="project-page" data-project="library"><svg viewBox="0 0 16 18" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><path d="M9.5 1.5H3a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V6L9.5 1.5Z"/><path d="M9 1.5V6h5M5 10h6M5 13h4"/></svg><span>Library</span></button><button type="button" class="project-delete" data-delete-project="library" aria-label="Delete Library" title="Delete Library"><svg viewBox="0 0 16 18" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><path d="M2 4.5h12M6 4.5v-2h4v2M3.5 4.5l.7 11h7.6l.7-11M6.5 7v6M9.5 7v6"/></svg></button></div>
@@ -743,9 +774,10 @@ SOFTWARE.
   </div>
   <aside class="inspector" id="inspector" role="tabpanel" aria-labelledby="inspector-tab-edit" hidden></aside>
   <section class="inspector-info" id="inspector-info" role="tabpanel" aria-labelledby="inspector-tab-info">
-    <h2>100% local editor</h2>
+    <h2>Local projects or a shared Space</h2>
     <ul>
-      <li>All files stay in your browser</li>
+      <li>Local projects stay in your browser</li>
+      <li>Create a Space to share projects across browsers</li>
       <li>No signup</li>
       <li>Free to use</li>
       <li><a href="https://github.com/janpmz/uidesigneditor" target="_blank" rel="noopener noreferrer">Open source on GitHub</a></li>
@@ -756,9 +788,11 @@ SOFTWARE.
         <button type="button" id="copy-codex-prompt">Copy prompt</button>
       </div>
       <p id="codex-tools-status" role="status">Site tools need a supported Codex browser.</p>
-      <textarea id="codex-prompt" rows="8" readonly spellcheck="false" aria-labelledby="codex-prompt-title">Use https://uidesigneditor.com/ as my design canvas. Use this page's WebMCP site tools through a supported Codex browser. Keep using the same open tab and its current project.
+      <textarea id="codex-prompt" rows="8" readonly spellcheck="false" aria-labelledby="codex-prompt-title">Open https://uidesigneditor.com/ in Codex's built-in browser as my design canvas, or reuse that page if it is already open. Use this page's WebMCP site tools to make edits. Keep the tab visible and open when you finish so I can use the result.
 
-Start with read_design. For every change, use the latest projectId and revision returned by the tools. If the design changes while you work, read it again before retrying. Use the tools to make edits directly; keep my edits and the normal Undo history.
+Find the tools in this tab, then start with read_design. Create my work as a new named project unless I ask you to edit an existing project. For every change, use the latest projectId and revision returned by the tools. If the design changes while you work, read it again before retrying. Keep my edits and the normal Undo history.
+
+Local projects stay in the browser where they are saved. To share projects across browsers, create a Space and open the same Space link in each browser. Anyone with the link can edit. Keep the #space part of the URL when opening it in Codex. Space edits save to the server and other open pages fetch the changed project. If a newer saved version exists, keep my unsaved work and let me reload or save it as a copy. If I ask for a local project that is missing here, ask me for its saved HTML or screenshot.
 
 Use edit_design to add, move, resize, restyle or remove items. Use create_design for a full design in a new project. Keep text, shapes, icons and buttons as separate items I can edit. Use select_project to open a project listed by read_design.
 
@@ -770,7 +804,12 @@ Check the result with read_design and a PNG from export_design. Refresh the site
       <p id="codex-prompt-status" class="codex-prompt-status" role="status"></p>
     </div>
   </section>
-  <footer class="inspector-credit">Vibecoded with <span role="img" aria-label="love">❤️</span> by <a href="https://x.com/janxpm" target="_blank" rel="noopener noreferrer">@janxpm</a></footer>
+  <footer class="inspector-credit">
+    <span>Vibecoded with <span role="img" aria-label="love">❤️</span> by <a href="https://x.com/janxpm" target="_blank" rel="noopener noreferrer">@janxpm</a></span>
+    <a class="inspector-github" href="https://github.com/janpmz/uidesigneditor" target="_blank" rel="noopener noreferrer" aria-label="View code on GitHub" title="GitHub">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M12 .297C5.37.297 0 5.67 0 12.297c0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.043-1.61-4.043-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.083-.73.083-.73 1.205.084 1.838 1.237 1.838 1.237 1.07 1.834 2.807 1.304 3.492.997.108-.776.418-1.305.762-1.605-2.665-.304-5.467-1.334-5.467-5.93 0-1.31.47-2.38 1.236-3.22-.123-.303-.536-1.523.117-3.176 0 0 1.008-.322 3.301 1.23a11.52 11.52 0 0 1 3.004-.404c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.655 1.653.242 2.873.119 3.176.77.84 1.235 1.91 1.235 3.22 0 4.61-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222 0 1.606-.015 2.898-.015 3.293 0 .322.216.694.825.576C20.565 22.092 24 17.596 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+    </a>
+  </footer>
 </aside>
 <!-- END INSPECTOR TABS -->
 </main>
@@ -801,6 +840,23 @@ Check the result with read_design and a PNG from export_design. Refresh the site
   <p class="icon-picker-count muted small" id="icon-picker-count" role="status" aria-live="polite"></p>
   <div class="icon-picker-results" id="icon-picker-results"><div class="icon-grid" id="icon-grid"></div><button class="icon-picker-more" id="icon-picker-more">Show more icons</button></div>
 </dialog>
+<!-- BEGIN CANVAS SIZE DIALOG -->
+<dialog id="canvas-size-dialog" class="picture-choice canvas-size-dialog" aria-labelledby="canvas-size-title" aria-describedby="canvas-size-help">
+  <form id="canvas-size-form">
+    <h2 id="canvas-size-title">Custom size</h2>
+    <p id="canvas-size-help">Set any width and height from 1 to 16,000 pixels.</p>
+    <div class="canvas-size-fields">
+      <label>Width (px)<input id="canvas-width" name="width" type="number" min="1" max="16000" step="1" required></label>
+      <label>Height (px)<input id="canvas-height" name="height" type="number" min="1" max="16000" step="1" required></label>
+    </div>
+    <label class="check-line canvas-size-scale"><input id="canvas-resize-items" type="checkbox">Resize items with canvas</label>
+    <div class="canvas-size-actions">
+      <button type="button" id="canvas-size-cancel">Cancel</button>
+      <button type="submit" class="primary">Apply size</button>
+    </div>
+  </form>
+</dialog>
+<!-- END CANVAS SIZE DIALOG -->
 <!-- BEGIN PICTURE CHOICE -->
 <dialog id="picture-drop-choice" class="picture-choice" aria-labelledby="picture-choice-title">
   <h2 id="picture-choice-title">Open file</h2>
@@ -899,8 +955,11 @@ function original() {
 const projectData=JSON.parse($('initial-projects').textContent);
 const localProjects=projectData.projects;
 const projectHome=['/','/index.html','/drafts/dark-player-layout/','/drafts/dark-player-layout/index.html'].includes(location.pathname);
-const activeProjectKey='ui-design-editor-active-project-v1:'+(projectHome?'/':location.pathname);
-const projectListKey='ui-design-editor-projects-v1:'+(projectHome?'/':location.pathname);
+let spaceClient=null;
+let onlineSpaceId=location.protocol==='file:'?null:(location.hash||'').match(/^#space=([a-f0-9]{64})$/)?.[1]||null;
+function projectScope(){return onlineSpaceId?'space:'+onlineSpaceId:(projectHome?'/':location.pathname);}
+let activeProjectKey='ui-design-editor-active-project-v1:'+projectScope();
+let projectListKey='ui-design-editor-projects-v1:'+projectScope();
 const deletedProjects=new Set();
 function restoreProjectList(saved){
   if(saved?.version!==1||!Array.isArray(saved.projects))return;
@@ -911,20 +970,21 @@ function restoreProjectList(saved){
     localProjects.push({id:project.id,name:project.name,layout:null});
   }
 }
-function blankProject(){return {id:'project-'+crypto.randomUUID(),name:'New project',layout:{version:1,canvas:{width:393,height:852,background:'#000000'},items:[]}};}
+function blankProjectLayout(){return {version:1,canvas:{width:393,height:852,background:'#000000'},items:[]};}
+function blankProject(){return {id:'project-'+crypto.randomUUID(),name:'New project',layout:blankProjectLayout()};}
 let savedProjectList,savedActiveProject;
 try{savedProjectList=JSON.parse(localStorage.getItem(projectListKey)||'null');restoreProjectList(savedProjectList);}catch{}
 if(!localProjects.length)localProjects.push(blankProject());
 let activeProject=projectData.active||'player';
 try{savedActiveProject=localStorage.getItem(activeProjectKey)||savedProjectList?.active;if(localProjects.some(project=>project.id===savedActiveProject))activeProject=savedActiveProject;}catch{}
 if(!localProjects.some(project=>project.id===activeProject))activeProject=localProjects[0].id;
-function projectStorage(id){return 'dark-'+id+'-layout-v2:'+(projectHome?'/drafts/dark-'+id+'-layout/':location.pathname);}
+function projectStorage(id){return 'dark-'+id+'-layout-v2:'+(onlineSpaceId?'space:'+onlineSpaceId:(projectHome?'/drafts/dark-'+id+'-layout/':location.pathname));}
 let STORAGE=projectStorage(activeProject);
 const projectSessions=new Map();
 let projectSwitchBusy=false;
 function localProjectLayout(id){
   const project=localProjects.find(project=>project.id===id);
-  let layout=project.layout||(id==='player'?original():{version:1,canvas:{width:393,height:852,background:'#000000'},items:[]});
+  let layout=project.layout||(id==='player'?original():blankProjectLayout());
   try{const embedded=JSON.parse($('initial-layout').textContent);if(id===projectData.active&&validEditorPage(embedded))layout=embedded;}catch{}
   try{const saved=JSON.parse(localStorage.getItem(projectStorage(id))||'null');if(validEditorPage(saved))layout=saved;}catch{}
   return copy(layout);
@@ -942,6 +1002,7 @@ async function readProjectLayout(id){
 }
 function renderProjects(){
   const list=document.querySelector('#editor-pages .project-page-list');
+  $('project-new').disabled=projectSwitchBusy||Boolean(imageEditSession);
   for(const row of list.querySelectorAll('[data-project-row]'))if(!localProjects.some(project=>project.id===row.dataset.projectRow))row.remove();
   for(const project of localProjects){
     let button=[...list.querySelectorAll('[data-project]')].find(button=>button.dataset.project===project.id);
@@ -976,6 +1037,7 @@ function saveProjectList(){
   const saved=projectListData();
   try{localStorage.setItem(projectListKey,JSON.stringify(saved));localStorage.setItem(activeProjectKey,activeProject);}catch{}
   if(pictureDB)try{pictureDB.transaction('drafts','readwrite').objectStore('drafts').put(saved,projectListKey);}catch{}
+  spaceClient?.changed();
 }
 function openProject(id,layout,session){
   activeProject=id;STORAGE=projectStorage(id);state=layout;
@@ -994,6 +1056,19 @@ function createProject(layout,fileName){
   localProjects.push({id,name,layout:copy(layout)});
   openProject(id,copy(layout));
 }
+async function createBlankProject(){
+  if(projectSwitchBusy)return;
+  if(imageEditSession){notify('Choose Done or Cancel before creating a project.');return;}
+  if(canvasViewBusy()||canvasPan||canvasPinch||drag||pictureChoice.open)return;
+  projectSwitchBusy=true;renderProjects();
+  try{
+    await projectsReady;
+    await spaceClient?.ready;
+    if(imageEditSession||canvasViewBusy()||canvasPan||canvasPinch||drag||pictureChoice.open)return;
+    createProject(blankProjectLayout(),'New Project');
+  }finally{projectSwitchBusy=false;renderProjects();}
+}
+$('project-new').onclick=createBlankProject;
 async function switchProject(id){
   if(id===activeProject||!localProjects.some(project=>project.id===id)||projectSwitchBusy)return;
   if(imageEditSession){notify('Choose Done or Cancel before switching projects.');return;}
@@ -1001,6 +1076,7 @@ async function switchProject(id){
   projectSwitchBusy=true;renderProjects();
   try{
     await projectsReady;
+    await spaceClient?.ready;
     if(imageEditSession||canvasViewBusy()||canvasPan||canvasPinch||drag||pictureChoice.open)return;
     save();keepProjectSession();
     const session=projectSessions.get(id),layout=session?.state||await readProjectLayout(id);
@@ -1014,7 +1090,7 @@ function confirmProjectDeletion(project){
   const cancel=$('project-delete-cancel'),confirm=$('project-delete-confirm');
   let finalStep=false,committing=false;
   $('project-delete-title').textContent='Delete “'+project.name+'”?';
-  $('project-delete-help').textContent='This will delete the project and its saved work from this browser. You can’t undo this.';
+  $('project-delete-help').textContent=onlineSpaceId?'This will delete the project from this Space for everyone with its link. You can’t undo this.':'This will delete the project and its saved work from this browser. You can’t undo this.';
   confirm.textContent='Continue';confirm.classList.remove('danger');cancel.disabled=confirm.disabled=false;
   return new Promise(resolve=>{
     projectDeleteDialog.addEventListener('close',()=>resolve(false),{once:true});
@@ -1054,9 +1130,11 @@ async function deleteProject(id){
   projectSwitchBusy=true;renderProjects();
   try{
     await projectsReady;
+    await spaceClient?.ready;
     const project=localProjects.find(project=>project.id===id);
     if(!project||imageEditSession||canvasViewBusy()||canvasPan||canvasPinch||drag||pictureChoice.open||pictureDropBusy)return;
     dialogShown=true;if(!await confirmProjectDeletion(project))return;
+    if(spaceClient)await spaceClient.remove(id);
     const remaining=localProjects.filter(project=>project.id!==id),index=localProjects.indexOf(project);
     if(!remaining.length)remaining.push(blankProject());
     const nextId=id===activeProject?remaining[Math.min(index,remaining.length-1)].id:activeProject;
@@ -1121,7 +1199,7 @@ function updateVoiceActionColors(){
 }
 updateVoiceActionColors();
 function remember(before=JSON.stringify(state)) { history.push(before); if(history.length>80)history.shift(); future=[]; }
-function save() { if(imageEditSession){$('undo').disabled=!history.length;$('redo').disabled=!future.length;return;} let stored=true;try{localStorage.setItem(STORAGE,JSON.stringify(state));}catch{stored=false;}savePictureDraft(stored); $('undo').disabled=!history.length; $('redo').disabled=!future.length; }
+function save() { if(imageEditSession){$('undo').disabled=!history.length;$('redo').disabled=!future.length;return;} let stored=true;try{localStorage.setItem(STORAGE,JSON.stringify(state));}catch{stored=false;}spaceClient?.changed();savePictureDraft(stored); $('undo').disabled=!history.length; $('redo').disabled=!future.length; }
 function notify(text) { $('toast').textContent=text;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),2100); }
 function change(fn,full=true) { remember();fn();save();if(full)render();else{renderPhone();renderLayers();} }
 // Selection geometry is kept apart from pointer events so each drag uses the same rules.
@@ -1174,7 +1252,7 @@ function styleItem(el,item) {
   if(item.kind==='reading'){el.style.fontFamily="Baskerville, 'Libre Baskerville', Georgia, serif";el.style.fontWeight='400';el.style.lineHeight=item.lineHeight||1.35;}
 }
 function renderPhone() {
-  const phone=$('phone');phone.replaceChildren();phone.classList.toggle('editing',editing);phone.classList.toggle('picture-page',Boolean(state.canvas.picturePage));phone.style.background=state.canvas.background;phone.style.width=state.canvas.width+'px';phone.style.height=state.canvas.height+'px';
+  const phone=$('phone');phone.replaceChildren();phone.classList.toggle('editing',editing);phone.classList.toggle('picture-page',Boolean(state.canvas.picturePage));phone.classList.toggle('free-page',!isPhoneCanvas(state.canvas));phone.style.background=state.canvas.background;phone.style.width=state.canvas.width+'px';phone.style.height=state.canvas.height+'px';
   state.items.forEach((item,index)=>{
     if(item.hidden)return;
     const el=document.createElement('div');el.className='item kind-'+item.kind+(selected.has(item.id)?' selected':'');el.dataset.id=item.id;el.style.zIndex=index+1;el.setAttribute('aria-label',item.name);el.tabIndex=editing?0:-1;styleItem(el,item);el.classList.toggle('page-image',isPagePicture(item));
@@ -1233,7 +1311,7 @@ function renderInspector() {
   renderImageEditStatus();
   const pane=$('inspector');pane.replaceChildren();const item=current(),items=selectedItems();
   renderPageSizePicker($('page-size'));
-  const canvas=section(state.canvas.picturePage?'Page':'Phone');
+  const canvas=section('Canvas');
   const canvasColor=field('Background','canvasBackground',state.canvas.background,'color');canvasColor.style.marginTop='10px';canvas.append(canvasColor);pane.append(canvas);
   if(items.length>1){
     const group=section(items.length+' items selected'),bounds=boundsOf(items),fields=document.createElement('div');fields.className='fields';
@@ -1276,7 +1354,7 @@ function renderInspector() {
     }
     const actions=section('Arrange');const buttons=document.createElement('div');buttons.className='action-grid';renderOrderActions(buttons);[['Duplicate',duplicate],[item.hidden?'Restore':'Delete',()=>change(()=>{item.hidden=!item.hidden;})]].forEach(([title,fn])=>{const button=document.createElement('button');button.textContent=title;button.onclick=fn;if(title==='Delete')button.className='danger';buttons.append(button);});actions.append(buttons);pane.append(actions);
   }
-  const help=section('Your draft');const note=document.createElement('p');note.className='note';note.textContent=imageEditSession?'Choose Done to save the image and return to the page. Cancel discards these edits.':'Changes save in this browser. Copy HTML copies the whole editor with your draft. Copy layout gives you the exact positions and styles.';help.append(note);const keys=document.createElement('p');keys.className='note';keys.style.marginTop='10px';keys.textContent='Drag: draw a box. Drag inside: move. Shift-click: add or remove. ⌘X / ⌘C / ⌘V: cut, copy and paste. ⌘A: select all. Arrow keys: 1 px. Shift + arrow: 10 px. Delete: remove. ⌘Z: undo. Ctrl works too.';help.append(keys);pane.append(help);
+  const help=section('Your draft');const note=document.createElement('p');note.className='note';note.textContent=imageEditSession?'Choose Done to save the image and return to the page. Cancel discards these edits.':typeof onlineSpaceId!=='undefined'&&onlineSpaceId?'Changes save to this Space. Open its link in another browser to share work.':'Changes save in this browser. Copy HTML copies the whole editor with your draft. Copy layout gives you the exact positions and styles.';help.append(note);const keys=document.createElement('p');keys.className='note';keys.style.marginTop='10px';keys.textContent='Drag: draw a box. Drag inside: move. Shift-click: add or remove. ⌘X / ⌘C / ⌘V: cut, copy and paste. ⌘A: select all. Arrow keys: 1 px. Shift + arrow: 10 px. Delete: remove. ⌘Z: undo. Ctrl works too.';help.append(keys);pane.append(help);
 }
 function render(){updateVoiceActionColors();selected=new Set([...selected].filter(id=>state.items.some(item=>item.id===id)));document.body.classList.remove('preview');renderPhone();renderLayers();renderInspector();save();renderProjects();}
 function duplicate(){
@@ -1679,22 +1757,30 @@ function pageSizeChoices(layout){
     {value:'393,852',text:'iPhone 16 · 393 × 852'},
     {value:'402,874',text:'iPhone 17 Pro · 402 × 874'},
     {value:'440,956',text:'Large phone · 440 × 956'},
+    {value:'768,1024',text:'Tablet · 768 × 1024'},
+    {value:'1440,900',text:'Website · 1440 × 900'},
+    {value:'1920,1080',text:'Presentation · 1920 × 1080'},
+    {value:'1080,1080',text:'Square · 1080 × 1080'},
+    {value:'794,1123',text:'A4 page · 794 × 1123'},
   ];
   if(page)options.unshift({value:'page',text:'Page · '+page.width+' × '+page.height});
   const value=layout.canvas.picturePage?'page':layout.canvas.width+','+layout.canvas.height;
   if(!options.some(option=>option.value===value))options.push({value,text:layout.canvas.width+' × '+layout.canvas.height});
+  options.push({value:'custom',text:'Custom size…'});
   return {page,options,value};
 }
-function setPageSize(layout,value){
+function isPhoneCanvas(canvas){return !canvas.picturePage&&['393,852','402,874','440,956'].includes(canvas.width+','+canvas.height);}
+function setPageSize(layout,value,resizeItems=true){
   const page=picturePageSizeFor(layout),size=value==='page'?page:(()=>{const [width,height]=value.split(',').map(Number);return {width,height};})();
   if(!size||!['width','height'].every(key=>Number.isInteger(size[key])&&size[key]>0&&size[key]<=16000))return;
   if(page)layout.canvas.picturePageSize=page;
   const sx=size.width/layout.canvas.width,sy=size.height/layout.canvas.height;
-  layout.items.forEach(entry=>{entry.x=round(entry.x*sx);entry.y=round(entry.y*sy);entry.w=round(entry.w*sx);entry.h=round(entry.h*sy);});
+  if(resizeItems)layout.items.forEach(entry=>{entry.x=round(entry.x*sx);entry.y=round(entry.y*sy);entry.w=Math.max(.1,round(entry.w*sx));entry.h=Math.max(.1,round(entry.h*sy));});
   layout.canvas.width=size.width;layout.canvas.height=size.height;
   if(value==='page')layout.canvas.picturePage=true;else delete layout.canvas.picturePage;
 }
 // END PAGE SIZE HELPERS
+// BEGIN PAGE SIZE PICKER
 function renderPageSizePicker(preset){
   const choices=pageSizeChoices(state);
   if(choices.page)state.canvas.picturePageSize=choices.page;
@@ -1703,8 +1789,39 @@ function renderPageSizePicker(preset){
     for(const choice of choices.options){const option=document.createElement('option');option.value=choice.value;option.textContent=choice.text;preset.append(option);}
   }
   preset.value=choices.value;
-  preset.onchange=()=>change(()=>{if(typeof clearCanvasRegion==='function')clearCanvasRegion();setPageSize(state,preset.value);});
+  preset.onchange=()=>{
+    if(preset.value==='custom'){preset.value=choices.value;openCustomPageSize(preset);return;}
+    change(()=>{if(typeof clearCanvasRegion==='function')clearCanvasRegion();setPageSize(state,preset.value);});
+  };
 }
+const canvasSizeDialog=$('canvas-size-dialog');
+let canvasSizeState=null,canvasSizeTrigger=null;
+function openCustomPageSize(preset){
+  if(canvasSizeDialog.open||canvasViewBusy()||canvasPan||canvasPinch||drag||pictureChoice.open)return;
+  canvasSizeState=state;canvasSizeTrigger=preset;
+  $('canvas-width').value=state.canvas.width;$('canvas-height').value=state.canvas.height;
+  $('canvas-resize-items').checked=false;
+  canvasSizeDialog.showModal();$('canvas-width').focus();$('canvas-width').select();
+}
+$('canvas-size-form').onsubmit=event=>{
+  event.preventDefault();
+  if(!$('canvas-size-form').reportValidity())return;
+  if(state!==canvasSizeState){canvasSizeDialog.close();return;}
+  const width=Number($('canvas-width').value),height=Number($('canvas-height').value);
+  if(![width,height].every(value=>Number.isInteger(value)&&value>0&&value<=16000))return;
+  const resizeItems=$('canvas-resize-items').checked;
+  if(width!==state.canvas.width||height!==state.canvas.height)change(()=>{
+    if(typeof clearCanvasRegion==='function')clearCanvasRegion();
+    setPageSize(state,width+','+height,resizeItems);
+  });
+  canvasSizeDialog.close();
+};
+$('canvas-size-cancel').onclick=()=>canvasSizeDialog.close();
+canvasSizeDialog.addEventListener('close',()=>{canvasSizeState=null;canvasSizeTrigger?.focus({preventScroll:true});canvasSizeTrigger=null;});
+for(const type of ['keydown','drop','paste','copy','cut'])document.addEventListener(type,event=>{
+  if(canvasSizeDialog.open){if(type==='drop')event.preventDefault();event.stopImmediatePropagation();}
+},true);
+// END PAGE SIZE PICKER
 
 const pictureChoice=$('picture-drop-choice');
 function choosePictureDrop(){
@@ -2708,9 +2825,14 @@ for(const button of inspectorTabButtons){
 document.addEventListener('pointerdown',event=>{
   if(event.button===0&&stage.contains(event.target)&&event.target.closest('.item,.selection-overlay,.group-grip,.resize-handle'))showInspectorTab('edit');
 },true);
+const codexPrompt=$('codex-prompt');
+function codexCanvasUrl(){return location.origin+location.pathname+(/^#space=[a-f0-9]{64}$/.test(location.hash||'')?location.hash:'');}
+function updateCodexPromptUrl(){if(['http:','https:'].includes(location.protocol))codexPrompt.value=codexPrompt.value.replace(/Open https?:\/\/\S+ in Codex/,'Open '+codexCanvasUrl()+' in Codex');}
+updateCodexPromptUrl();
 $('copy-codex-prompt').onclick=async()=>{
   const prompt=$('codex-prompt'),status=$('codex-prompt-status');
   try{
+    updateCodexPromptUrl();
     await navigator.clipboard.writeText(prompt.value);
     status.textContent='Prompt copied. Paste it into Codex with your request.';
   }catch{
@@ -2723,6 +2845,287 @@ syncInspectorTabs();
 syncToolLayout();render();
 const projectsReady=initializeProjects();
 </script>
+<!-- BEGIN SPACE -->
+<script data-editor-space>
+// Space saves use HTTP. WebSockets only announce that a saved project changed.
+(() => {
+  const records=new Map(),pictures=new Map(),pictureIds=new Map();
+  let applying=false,enabled=false,ws=null,reconnectTimer=null,saveTimer=null,saving=null,refreshing=null;
+  let stopped=false,problem='',conflictId=null,starting=false,refreshAgain=false;
+  const metadataKey=()=> 'ui-design-editor-space-versions-v1:'+onlineSpaceId;
+  const snapshot=id=>JSON.stringify({name:localProjects.find(project=>project.id===id).name,layout:copy(id===activeProject?state:projectSessions.get(id)?.state||localProjectLayout(id))});
+  const dirty=record=>record.local!==record.saved;
+  const busy=()=>Boolean(drag||fieldEdit||imageEditSession||canvasViewBusy()||canvasPan||canvasPinch||projectSwitchBusy||pictureDropBusy||pictureChoice.open);
+
+  spaceClient={changed,remove,ready:Promise.resolve(),flush,async saved(){
+    if(!onlineSpaceId)return;
+    if(!enabled)throw new Error('The Space is not open. Retry before saving.');
+    await flush();
+    if(records.get(activeProject)?.conflict)throw new Error('A newer version exists. Reload or save as a copy. Your edit stays in this browser.');
+  },close(){stopped=true;clearTimeout(saveTimer);clearTimeout(reconnectTimer);ws?.close();}};
+  $('space-create').onclick=()=>spaceClient.ready=run(createSpace);
+  $('space-share').onclick=()=>run(async()=>{await navigator.clipboard.writeText(location.href);notify('Space link copied. Anyone with this link can edit.');});
+  $('space-retry').onclick=()=>spaceClient.ready=run(async()=>{problem='';if(!onlineSpaceId)await createSpace();else if(!enabled)await start();else{await refresh();await flush();}if(!ws||ws.readyState===WebSocket.CLOSED)connect();});
+  $('space-reload').onclick=()=>run(async()=>{
+    if(busy())throw new Error('Finish the current edit first.');
+    const id=conflictId,record=records.get(id);
+    if(!record)return;
+    // Reload is explicit; keep the current page in Undo when it still exists.
+    await refreshProject(id,true);await refresh();showStatus();
+  });
+  $('space-copy').onclick=()=>run(async()=>{
+    if(busy())throw new Error('Finish the current edit first.');
+    const record=records.get(conflictId);
+    const local=JSON.parse(record.local);
+    createProject(local.layout,local.name+' (copy)');
+    await refreshProject(conflictId,true);await flush();showStatus();
+  });
+  window.addEventListener('hashchange',()=>{if((location.hash||'')!==(onlineSpaceId?'#space='+onlineSpaceId:''))location.reload();});
+  window.addEventListener('beforeunload',event=>{
+    if(enabled&&[...records.values()].some(dirty)){event.preventDefault();event.returnValue='';}
+  });
+  if(location.protocol==='file:'){showStatus();$('space-create').hidden=true;$('space-help').textContent='This HTML file keeps its own projects. Open the site to create a Space.';return;}
+  if(onlineSpaceId)spaceClient.ready=run(start);
+
+  async function start(){
+    await projectsReady;
+    setLoading(true);
+    try{
+      let metadata={};
+      try{metadata=JSON.parse(localStorage.getItem(metadataKey())||'{}');}catch{}
+      for(const project of localProjects){
+        const saved=metadata[project.id];
+        if(!saved)continue;
+        const local=snapshot(project.id);
+        records.set(project.id,{version:saved.version,local,saved:saved.dirty?null:local,conflict:false});
+      }
+      await refresh();enabled=true;problem='';
+      changed();connect();
+    }finally{setLoading(false);}
+  }
+
+  async function createSpace(){
+    await projectsReady;
+    if(busy())throw new Error('Finish the current edit first.');
+    const seeds=localProjects.map(project=>({id:project.id,...JSON.parse(snapshot(project.id))}));
+    setLoading(true);
+    try{
+      const {spaceId}=await request('/api/spaces',{method:'POST'},null);
+      const created=[];
+      for(const project of seeds){
+        const layout=await encodePictures(project.layout,spaceId);
+        const result=await request('/api/projects/'+project.id,{method:'PUT',body:{name:project.name,layout,version:0}},spaceId);
+        created.push({id:project.id,version:result.version});
+      }
+      onlineSpaceId=spaceId;
+      activeProjectKey='ui-design-editor-active-project-v1:'+projectScope();
+      projectListKey='ui-design-editor-projects-v1:'+projectScope();STORAGE=projectStorage(activeProject);
+      window.history.replaceState(null,'','#space='+spaceId);
+      if(typeof updateCodexPromptUrl==='function')updateCodexPromptUrl();
+      for(const project of created){const local=snapshot(project.id),seed=seeds.find(seed=>seed.id===project.id);records.set(project.id,{version:project.version,local,saved:JSON.stringify({name:seed.name,layout:seed.layout}),conflict:false});cacheProject(project.id,JSON.parse(local).layout);}
+      enabled=true;saveMetadata();saveProjectList();problem='';connect();
+      notify('Space created. Copy its link to open it in another browser.');
+    }finally{setLoading(false);}
+  }
+
+  function changed(){
+    if(!enabled||applying||!onlineSpaceId||imageEditSession)return;
+    const local=snapshot(activeProject);
+    let record=records.get(activeProject);
+    if(record?.local===local)return;
+    if(!record){record={version:0,saved:null,local,conflict:false};records.set(activeProject,record);}
+    record.local=local;saveMetadata();
+    clearTimeout(saveTimer);saveTimer=setTimeout(()=>run(async()=>{await refresh();await flush();}),160);
+    showStatus();
+  }
+
+  async function flush(force=false){
+    if(saving)return saving;
+    if(!enabled||!onlineSpaceId)return;
+    if(busy()&&!force){clearTimeout(saveTimer);saveTimer=setTimeout(()=>run(flush),160);return;}
+    saving=(async()=>{
+      for(const [id,record] of records){
+        while(dirty(record)&&!record.conflict&&!record.deleting){
+          const sent=record.local,project=JSON.parse(sent);
+          record.saving=true;
+          try{
+            const layout=await encodePictures(project.layout,onlineSpaceId);
+            const result=await request('/api/projects/'+id,{method:'PUT',body:{version:record.version,name:project.name,layout}});
+            record.version=result.version;record.saved=sent;problem='';saveMetadata();
+          }catch(error){if(error.status===409){record.conflict=true;saveMetadata();break;}throw error;}
+          finally{record.saving=false;}
+        }
+      }
+    })();
+    try{await saving;}finally{saving=null;showStatus();}
+    await refresh();
+  }
+
+  async function refresh(){
+    if(refreshing){refreshAgain=true;return refreshing;}
+    refreshing=(async()=>{
+      do{
+      refreshAgain=false;
+      const {projects}=await request('/api/projects');
+      // Freshly opened links start with the saved Space, not the sample pages.
+      if(!enabled&&!records.size){applying=true;localProjects.splice(0);projectSessions.clear();applying=false;}
+      for(const project of projects){
+        const record=records.get(project.id);
+        if(record?.saving||record?.deleting)continue;
+        if(!record||project.version>record.version)await refreshProject(project.id,false,project);
+      }
+      if(!localProjects.length){
+        applying=true;
+        const blank=blankProject();localProjects.push(blank);openProject(blank.id,blank.layout);
+        applying=false;
+      }
+      saveProjectList();renderProjects();
+      }while(refreshAgain);
+    })();
+    try{await refreshing;}finally{refreshing=null;}
+  }
+
+  async function refreshProject(id,force=false,metadata=null){
+    let record=records.get(id);
+    const before=record?.local;
+    if(record?.conflict&&!force)return;
+    if(record&&dirty(record)&&!force){record.conflict=true;saveMetadata();showStatus();return;}
+    if(busy()&&!starting){clearTimeout(saveTimer);saveTimer=setTimeout(()=>run(async()=>{await refresh();await flush();}),160);return;}
+    if(metadata?.deleted){applyDeletion(id);return;}
+    let remote;
+    try{remote=await request('/api/projects/'+id);}
+    catch(error){if(error.status===404){applyDeletion(id);return;}throw error;}
+    const layout=await decodePictures(remote.layout);
+    // An edit may have started while the page or pictures were loading.
+    record=records.get(id);
+    if(record&&record.local!==before){record.conflict=true;saveMetadata();showStatus();return;}
+    if(record&&dirty(record)&&!force){record.conflict=true;saveMetadata();showStatus();return;}
+    if(busy()&&!starting){clearTimeout(saveTimer);saveTimer=setTimeout(()=>run(refresh),160);return;}
+    applying=true;
+    try{
+      let project=localProjects.find(project=>project.id===id);
+      if(!project){project={id,name:remote.name,layout};localProjects.push(project);}
+      project.name=remote.name;project.layout=copy(layout);deletedProjects.delete(id);
+      const previous=projectSessions.get(id);
+      if(id===activeProject){
+        if(JSON.stringify(state)!==JSON.stringify(layout))remember();
+        state=copy(layout);selected=new Set([...selected].filter(id=>layout.items.some(item=>item.id===id)));render();keepProjectSession();
+      }else{
+        if(previous&&JSON.stringify(previous.state)!==JSON.stringify(layout)){
+          previous.history.push(JSON.stringify(previous.state));if(previous.history.length>80)previous.history.shift();previous.future=[];
+        }
+        projectSessions.set(id,{...(previous||{history:[],future:[],selected:[],view:null}),state:copy(layout)});
+      }
+      const local=JSON.stringify({name:remote.name,layout});
+      records.set(id,{version:remote.version,saved:local,local,conflict:false});
+      cacheProject(id,layout);saveMetadata();
+      if(!localProjects.some(project=>project.id===activeProject))openProject(id,copy(layout),projectSessions.get(id));
+    }finally{applying=false;}
+    showStatus();
+  }
+
+  function applyDeletion(id){
+    applying=true;
+    try{
+      const index=localProjects.findIndex(project=>project.id===id);
+      if(index>=0)localProjects.splice(index,1);
+      projectSessions.delete(id);records.delete(id);deletedProjects.add(id);
+      if(id===activeProject&&localProjects.length){const next=localProjects[0];openProject(next.id,copy(next.layout||projectSessions.get(next.id).state),projectSessions.get(next.id));}
+      saveMetadata();
+    }finally{applying=false;}
+  }
+
+  async function remove(id){
+    if(!enabled)return;
+    await flush(true);
+    const record=records.get(id);
+    if(!record||record.conflict||dirty(record))throw new Error('A newer version exists. Reload before deleting.');
+    record.deleting=true;
+    try{
+      await request('/api/projects/'+id,{method:'DELETE',body:{version:record.version}});
+      records.delete(id);saveMetadata();
+    }catch(error){record.deleting=false;if(error.status===409)record.conflict=true;throw error;}
+  }
+
+  function connect(){
+    if(stopped||!onlineSpaceId||ws&&[WebSocket.OPEN,WebSocket.CONNECTING].includes(ws.readyState))return;
+    clearTimeout(reconnectTimer);
+    ws=new WebSocket((location.protocol==='https:'?'wss:':'ws:')+'//'+location.host+'/ws');
+    ws.onopen=()=>ws.send(JSON.stringify({type:'join_space',payload:{spaceId:onlineSpaceId}}));
+    ws.onmessage=event=>run(async()=>{
+      const {type,payload}=JSON.parse(event.data);
+      if(type==='connected'){spaceClient.clientId=payload.clientId;problem='';await refresh();await flush();}
+      else if(type==='project_changed'){await refresh();}
+      showStatus();
+    });
+    ws.onclose=event=>{
+      if(event.code===1008){problem='Space not found. Check the link.';stopped=true;}
+      else if(!stopped)reconnectTimer=setTimeout(connect,3000);
+      showStatus();
+    };
+    ws.onerror=()=>{problem='Connection lost. Your unsaved work stays here.';showStatus();};
+  }
+
+  async function request(path,{method='GET',body}={},spaceId=onlineSpaceId){
+    const response=await fetch(path,{method,headers:{...(spaceId?{Authorization:'Bearer '+spaceId}:{}),...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{}),cache:'no-store'});
+    const data=await response.json();
+    if(!response.ok)throw Object.assign(new Error(data.error||'Could not save.'),{status:response.status});
+    return data;
+  }
+
+  async function encodePictures(source,spaceId){
+    const layout=copy(source);
+    for(const item of layout.items){
+      if(item.kind==='image'){
+        const key=spaceId+':'+item.src;
+        let id=pictureIds.get(key);
+        if(!id){({id}=await request('/api/pictures',{method:'POST',body:{src:item.src}},spaceId));pictureIds.set(key,id);pictures.set(spaceId+':'+id,item.src);}
+        item.src='picture:'+id;
+      }
+      if(item.imageContents)item.imageContents=await encodePictures(item.imageContents,spaceId);
+    }
+    return layout;
+  }
+  async function decodePictures(source){
+    const layout=copy(source);
+    for(const item of layout.items){
+      if(item.kind==='image'){
+        const id=item.src.slice(8),key=onlineSpaceId+':'+id;
+        if(!pictures.has(key)){const {src}=await request('/api/pictures/'+id);pictures.set(key,src);pictureIds.set(onlineSpaceId+':'+src,id);}
+        item.src=pictures.get(key);
+      }
+      if(item.imageContents)item.imageContents=await decodePictures(item.imageContents);
+    }
+    return layout;
+  }
+
+  function cacheProject(id,layout){
+    try{localStorage.setItem(projectStorage(id),JSON.stringify(layout));}catch{}
+    if(pictureDB)pictureDB.transaction('drafts','readwrite').objectStore('drafts').put(copy(layout),projectStorage(id));
+  }
+  function saveMetadata(){
+    try{localStorage.setItem(metadataKey(),JSON.stringify(Object.fromEntries([...records].map(([id,record])=>[id,{version:record.version,dirty:dirty(record)}]))));}catch{}
+  }
+  function showStatus(){
+    conflictId=[...records].find(([,record])=>record.conflict)?.[0]||null;
+    $('space-create').hidden=Boolean(onlineSpaceId);$('space-create').disabled=starting;
+    $('space-share').hidden=!enabled;$('space-retry').hidden=!problem;
+    $('space-help').hidden=Boolean(onlineSpaceId);
+    $('space-conflict').hidden=!conflictId;
+    if(conflictId)$('space-conflict-message').textContent='“'+(localProjects.find(p=>p.id===conflictId)?.name||'Project')+'”: A newer version exists. Reload or save as a copy.';
+    $('space-status').textContent=problem||(starting?'Opening Space…':!onlineSpaceId?'Local projects':!enabled?'Could not open Space.':conflictId?'Space · Can’t save':saving||[...records.values()].some(dirty)?'Space · Saving…':ws?.readyState===WebSocket.OPEN?'Space · Saved':'Space · Reconnecting…');
+  }
+  function setLoading(value){
+    starting=value;stage.inert=value;
+    for(const id of ['editor-topbar','editor-layers','editor-inspector'])if($(id))$(id).inert=value;
+    showStatus();
+  }
+  async function run(fn){
+    try{await fn();}catch(error){problem=error.message;showStatus();notify(error.message);}
+  }
+})();
+</script>
+<!-- END SPACE -->
 <!-- BEGIN WEBMCP -->
 <script data-editor-webmcp>
 // Page tools use the same design data, save code and Undo steps as the editor.
@@ -2813,7 +3216,7 @@ const projectsReady=initializeProjects();
   function idle() {
     if (!editing || drag || fieldEdit || canvasGesture || canvasEditBusy || canvasPan || canvasPinch || canvasViewBusy()
       || pictureDropBusy || imageEditSession || (typeof projectSwitchBusy !== 'undefined' && projectSwitchBusy)
-      || ['picture-drop-choice', 'icon-picker', 'project-delete-dialog'].some(id => $(id)?.open)) {
+      || ['picture-drop-choice', 'icon-picker', 'project-delete-dialog', 'canvas-size-dialog'].some(id => $(id)?.open)) {
       throw new Error('Finish the current edit or close the open choice, then try again.');
     }
   }
@@ -2849,6 +3252,7 @@ const projectsReady=initializeProjects();
   async function ready() {
     await picturesReady;
     if (typeof projectsReady !== 'undefined') await projectsReady;
+    if (typeof spaceClient !== 'undefined') await spaceClient?.ready;
     idle();
   }
 
@@ -3027,7 +3431,12 @@ const projectsReady=initializeProjects();
           execute: async (args = {}) => {
             if (busy) return { ok: false, error: 'Another site tool is still running. Try again when it finishes.' };
             busy = true;
-            try { validate(args, definition.inputSchema); await ready(); return { ok: true, ...await definition.run(args) }; }
+            try {
+              validate(args, definition.inputSchema); await ready();
+              const result = await definition.run(args);
+              if (!definition.readOnly && typeof spaceClient !== 'undefined') await spaceClient?.saved();
+              return { ok: true, ...result };
+            }
             catch (error) { return { ok: false, error: error.message || 'The edit could not finish.' }; }
             finally { busy = false; }
           },

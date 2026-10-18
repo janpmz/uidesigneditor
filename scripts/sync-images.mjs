@@ -14,6 +14,7 @@ const webmcp = '<!-- BEGIN WEBMCP -->\n<script data-editor-webmcp>\n' + webmcpCo
 const styles = (await Promise.all(['image-drop.css', 'canvas-view.css', 'sidebar-tabs.css', 'inspector-tabs.css', 'annotation-shapes.css'].map(name => readFile(new URL(`editor/${name}`, root), 'utf8')))).join('\n');
 const view = await readFile(new URL('editor/canvas-view.js', root), 'utf8');
 const viewTools = (await readFile(new URL('editor/canvas-view-tools.html', root), 'utf8')).trimEnd();
+const sizeDialog = (await readFile(new URL('editor/canvas-size-dialog.html', root), 'utf8')).trimEnd();
 const reader = await readFile(new URL('editor/vendor/heic-to-1.6.6.js', root), 'utf8');
 const license = await readFile(new URL('editor/vendor/heic-to.LICENSE.txt', root), 'utf8');
 const pictureStyles = '<style data-picture-drop>\n' + styles + '\n</style>\n';
@@ -73,6 +74,9 @@ for (const entry of await readdir(new URL('drafts/', root), { withFileTypes: tru
     if (toolsEnd < 0) throw new Error('Missing canvas view tools end mark.');
     html = html.slice(0, toolsStart) + toolsBlock + html.slice(toolsEnd + '<!-- END CANVAS VIEW TOOLS -->'.length);
   }
+  const sizeDialogBlock = '<!-- BEGIN CANVAS SIZE DIALOG -->\n' + sizeDialog + '\n<!-- END CANVAS SIZE DIALOG -->';
+  if (html.includes('<!-- BEGIN CANVAS SIZE DIALOG -->')) html = html.replace(/<!-- BEGIN CANVAS SIZE DIALOG -->[\s\S]*?<!-- END CANVAS SIZE DIALOG -->/, () => sizeDialogBlock);
+  else html = html.replace('<!-- BEGIN PICTURE CHOICE -->', () => sizeDialogBlock + '\n<!-- BEGIN PICTURE CHOICE -->');
   const imageEditStart = html.indexOf('<!-- BEGIN IMAGE EDIT BAR -->');
   const imageEditBlock = '<!-- BEGIN IMAGE EDIT BAR -->\n' + imageEditBar.trimEnd() + '\n<!-- END IMAGE EDIT BAR -->';
   if (imageEditStart < 0) {
@@ -92,6 +96,7 @@ for (const entry of await readdir(new URL('drafts/', root), { withFileTypes: tru
   html = html.replace(/^function reorder\(direction\)\{[^\n]*\}\n/m, '');
   if (!html.includes('renderOrderActions(actions);')) html = html.replace("actions.className='action-grid';actions.style.marginTop='12px';", "actions.className='action-grid';actions.style.marginTop='12px';renderOrderActions(actions);");
   html = html.replace("note.textContent='Changes save in this browser.", "note.textContent=imageEditSession?'Choose Done to save the image and return to the page. Cancel discards these edits.':'Changes save in this browser.");
+  if (!html.includes('Changes save to this Space.')) html = html.replace("':'Changes save in this browser.", "':typeof onlineSpaceId!=='undefined'&&onlineSpaceId?'Changes save to this Space. Open its link in another browser to share work.':'Changes save in this browser.");
   html = html.replace(/<!-- BEGIN HEIC READER -->[\s\S]*?<!-- END HEIC READER -->\n?/, '');
   html = html.replace(/<!-- BEGIN WEBMCP -->[\s\S]*?<!-- END WEBMCP -->\n?/g, '');
   if (html.includes('<style data-picture-drop>')) html = html.replace(/<style data-picture-drop>[\s\S]*?<\/style>\n?/, pictureStyles);
@@ -122,8 +127,9 @@ for (const entry of await readdir(new URL('drafts/', root), { withFileTypes: tru
     html = html.slice(0, choiceStart) + choice + html.slice(choiceEnd + '<!-- END PICTURE CHOICE -->'.length);
   }
   if (!html.includes("phone.classList.toggle('picture-page'")) html = html.replace("phone.classList.toggle('editing',editing);", "phone.classList.toggle('editing',editing);phone.classList.toggle('picture-page',Boolean(state.canvas.picturePage));");
+  if (!html.includes("phone.classList.toggle('free-page'")) html = html.replace("phone.classList.toggle('picture-page',Boolean(state.canvas.picturePage));", "phone.classList.toggle('picture-page',Boolean(state.canvas.picturePage));phone.classList.toggle('free-page',!isPhoneCanvas(state.canvas));");
   html = html.replace('Math.max(.2,Math.min(1,', 'Math.max(state.canvas.picturePage ? .01 : .2,Math.min(1,');
-  html = html.replace("const canvas=section('Phone');", "const canvas=section(state.canvas.picturePage?'Page':'Phone');");
+  html = html.replace(/const canvas=section\((?:'Phone'|state\.canvas\.picturePage\?'Page':'Phone')\);/, "const canvas=section('Canvas');");
   html = html.replace("preset.setAttribute('aria-label','Phone size');", "preset.setAttribute('aria-label',state.canvas.picturePage?'Page size':'Phone size');");
   html = html.replace(/\[\['393,852','iPhone 16[^\n]*\n\s*preset\.onchange=[^\n]*canvas\.append\(preset\);/, 'renderPageSizePicker(preset);canvas.append(preset);');
   if (!html.includes('cleanPictureExport(doc);')) html = html.replace('const doc=document.documentElement.cloneNode(true);', 'const doc=document.documentElement.cloneNode(true);cleanPictureExport(doc);');

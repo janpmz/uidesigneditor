@@ -1,10 +1,16 @@
 # uidesigneditor.com
 
-Free UI mockup tool. Work stays in your browser. Use **Copy HTML** to keep a file.
+Free UI design tool. Keep projects in your browser or share them through a Space. Use **Copy HTML** to keep a file.
 
-Needs Node.js and Python 3.
+Needs Node.js 24 or later. Run `npm ci` once.
 
 Run `npm start`, then open [localhost:3000](http://localhost:3000/).
+
+Choose **Create Space** to copy your local projects to the server. Use **Copy Space link** and open that link in each browser, including Codex. Anyone with the link can read and edit its projects. Local projects stay separate. Opening the plain site address keeps local mode.
+
+Space saves live in `data/spaces.sqlite`, outside the public files. `DATA_DIR`, `PUBLIC_DIR` and `PORT` set the data folder, site folder and port. Keep the data folder across builds and server restarts.
+
+The server keeps `spaceId → clientId → connection` in memory. Each connection gets a new ID. JSON messages use `{ type, payload }`: clients send `join_space`, the server replies `connected`, then sends `project_changed` after each saved change. Pages fetch the changed project over HTTP. Pictures stay separate and each page keeps loaded pictures for later edits. A version check rejects old saves; the page offers reload or save as a copy. Reconnects check the saved project list again. Each page keeps its Undo steps.
 
 - Check: `npm test`
 - Build: `npm run build`
@@ -15,6 +21,6 @@ The editor uses [shadcn/ui](https://ui.shadcn.com/)'s dark styles, fitted to its
 
 The editor offers [WebMCP site tools](https://learn.chatgpt.com/docs/webmcp) in a supported Codex browser. Open **Info**, copy the prompt, and add your design request in Codex. The page must stay open. Users need no local helper or Node.js install.
 
-The tools read and edit designs, create and switch projects, import pictures and saved HTML, move parts of a picture, undo edits, and export JSON, HTML or PNG. Each edit uses the project id and revision from the last tool result, so it stops if the user changes the design first. Edits use the normal save and Undo code. For saved HTML imports, send a small HTML document with just its `initial-layout` JSON script. The site sends no project data to its server; tools return the data the user asks Codex to read.
+The tools read and edit designs, create and switch projects, import pictures and saved HTML, move parts of a picture, undo edits, and export JSON, HTML or PNG. Each edit uses the project id and revision from the last tool result, so it stops if the user changes the design first. Edits use the normal save and Undo code. For saved HTML imports, send a small HTML document with just its `initial-layout` JSON script. Local projects stay in the browser. Space projects save to the server; site tools wait for the save before reporting success.
 
 Edit `editor/webmcp.js`, then run `npm run build`. The build puts the tools in every editor page and HTML export. Browsers without site tools keep the normal editor.

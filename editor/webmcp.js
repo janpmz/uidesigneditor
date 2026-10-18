@@ -86,7 +86,7 @@
   function idle() {
     if (!editing || drag || fieldEdit || canvasGesture || canvasEditBusy || canvasPan || canvasPinch || canvasViewBusy()
       || pictureDropBusy || imageEditSession || (typeof projectSwitchBusy !== 'undefined' && projectSwitchBusy)
-      || ['picture-drop-choice', 'icon-picker', 'project-delete-dialog'].some(id => $(id)?.open)) {
+      || ['picture-drop-choice', 'icon-picker', 'project-delete-dialog', 'canvas-size-dialog'].some(id => $(id)?.open)) {
       throw new Error('Finish the current edit or close the open choice, then try again.');
     }
   }
@@ -122,6 +122,7 @@
   async function ready() {
     await picturesReady;
     if (typeof projectsReady !== 'undefined') await projectsReady;
+    if (typeof spaceClient !== 'undefined') await spaceClient?.ready;
     idle();
   }
 
@@ -300,7 +301,12 @@
           execute: async (args = {}) => {
             if (busy) return { ok: false, error: 'Another site tool is still running. Try again when it finishes.' };
             busy = true;
-            try { validate(args, definition.inputSchema); await ready(); return { ok: true, ...await definition.run(args) }; }
+            try {
+              validate(args, definition.inputSchema); await ready();
+              const result = await definition.run(args);
+              if (!definition.readOnly && typeof spaceClient !== 'undefined') await spaceClient?.saved();
+              return { ok: true, ...result };
+            }
             catch (error) { return { ok: false, error: error.message || 'The edit could not finish.' }; }
             finally { busy = false; }
           },

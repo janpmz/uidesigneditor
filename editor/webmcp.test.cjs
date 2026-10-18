@@ -189,8 +189,11 @@ test('tools wait for saved data and do not edit during a drag, text edit or open
     assert.equal((await h.call('read_design')).ok, false);
     h.sandbox[flag] = null;
   }
-  h.get('project-delete-dialog').open = true;
-  assert.equal((await h.call('read_design')).ok, false);
+  for (const id of ['project-delete-dialog', 'canvas-size-dialog']) {
+    h.get(id).open = true;
+    assert.equal((await h.call('read_design')).ok, false);
+    h.get(id).open = false;
+  }
 });
 
 test('exports return editable data or download a file without changing the design', async () => {

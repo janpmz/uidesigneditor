@@ -2,9 +2,11 @@
 
 Source: https://uidesigneditor.com/
 
-## 100% local editor
+## Local projects or a shared Space
 
-- All files stay in your browser
+- Local projects stay in your browser
+
+- Create a Space to share projects across browsers
 
 - No signup
 
@@ -18,9 +20,11 @@ Copy prompt
 
 Site tools need a supported Codex browser.
 
-Use https://uidesigneditor.com/ as my design canvas. Use this page's WebMCP site tools through a supported Codex browser. Keep using the same open tab and its current project.
+Open https://uidesigneditor.com/ in Codex's built-in browser as my design canvas, or reuse that page if it is already open. Use this page's WebMCP site tools to make edits. Keep the tab visible and open when you finish so I can use the result.
 
-Start with read_design. For every change, use the latest projectId and revision returned by the tools. If the design changes while you work, read it again before retrying. Use the tools to make edits directly; keep my edits and the normal Undo history.
+Find the tools in this tab, then start with read_design. Create my work as a new named project unless I ask you to edit an existing project. For every change, use the latest projectId and revision returned by the tools. If the design changes while you work, read it again before retrying. Keep my edits and the normal Undo history.
+
+Local projects stay in the browser where they are saved. To share projects across browsers, create a Space and open the same Space link in each browser. Anyone with the link can edit. Keep the #space part of the URL when opening it in Codex. Space edits save to the server and other open pages fetch the changed project. If a newer saved version exists, keep my unsaved work and let me reload or save it as a copy. If I ask for a local project that is missing here, ask me for its saved HTML or screenshot.
 
 Use edit_design to add, move, resize, restyle or remove items. Use create_design for a full design in a new project. Keep text, shapes, icons and buttons as separate items I can edit. Use select_project to open a project listed by read_design.
 
@@ -36,11 +40,15 @@ Check the result with read_design and a PNG from export_design. Refresh the site
 
 Move and resize text, shapes, icons and pictures in your browser.
 
-Your work stays in this browser. The editor sends no project data to a server.
+Local projects stay in this browser. Create a Space to save projects and pictures on the server and share them across browsers.
+
+Use **Copy Space link** and open the same link in each browser. Anyone with that link can read and edit every project in the Space. Keep the link private.
+
+Space changes appear in other open pages. If another page saved a newer version, reload the saved project or save your work as a copy.
 
 Player and Library start as local projects. Use **Projects** to switch between them. Each keeps its own edits.
 
-Use **Copy HTML** to keep a file. Clearing browser data removes saved drafts.
+Use **Copy HTML** to keep a file. Clearing browser data removes saved drafts from this browser. Saved Space projects stay on the server; keep the Space link to open them again.
 
 Free to use. [View the code on GitHub](https://github.com/janpmz/uidesigneditor).
 

@@ -5,10 +5,15 @@ cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
 
 git pull --ff-only
 
+npm ci
 npm run build
 npm test
 
-sudo install -d -m 755 /srv/uidesigneditor
-sudo rsync -a --delete --chmod=D755,F644 -- dist/ /srv/uidesigneditor/
+mkdir -p /srv/uidesigneditor
+rsync -a --delete --chmod=D755,F644 -- dist/ /srv/uidesigneditor/
+
+if systemctl is-active --quiet uidesigneditor; then
+  sudo systemctl restart uidesigneditor
+fi
 
 printf 'Published to /srv/uidesigneditor\n'

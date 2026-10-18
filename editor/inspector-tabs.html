@@ -5,9 +5,10 @@
   </div>
   <aside class="inspector" id="inspector" role="tabpanel" aria-labelledby="inspector-tab-edit" hidden></aside>
   <section class="inspector-info" id="inspector-info" role="tabpanel" aria-labelledby="inspector-tab-info">
-    <h2>100% local editor</h2>
+    <h2>Local projects or a shared Space</h2>
     <ul>
-      <li>All files stay in your browser</li>
+      <li>Local projects stay in your browser</li>
+      <li>Create a Space to share projects across browsers</li>
       <li>No signup</li>
       <li>Free to use</li>
       <li><a href="https://github.com/janpmz/uidesigneditor" target="_blank" rel="noopener noreferrer">Open source on GitHub</a></li>
@@ -18,9 +19,11 @@
         <button type="button" id="copy-codex-prompt">Copy prompt</button>
       </div>
       <p id="codex-tools-status" role="status">Site tools need a supported Codex browser.</p>
-      <textarea id="codex-prompt" rows="8" readonly spellcheck="false" aria-labelledby="codex-prompt-title">Use https://uidesigneditor.com/ as my design canvas. Use this page's WebMCP site tools through a supported Codex browser. Keep using the same open tab and its current project.
+      <textarea id="codex-prompt" rows="8" readonly spellcheck="false" aria-labelledby="codex-prompt-title">Open https://uidesigneditor.com/ in Codex's built-in browser as my design canvas, or reuse that page if it is already open. Use this page's WebMCP site tools to make edits. Keep the tab visible and open when you finish so I can use the result.
 
-Start with read_design. For every change, use the latest projectId and revision returned by the tools. If the design changes while you work, read it again before retrying. Use the tools to make edits directly; keep my edits and the normal Undo history.
+Find the tools in this tab, then start with read_design. Create my work as a new named project unless I ask you to edit an existing project. For every change, use the latest projectId and revision returned by the tools. If the design changes while you work, read it again before retrying. Keep my edits and the normal Undo history.
+
+Local projects stay in the browser where they are saved. To share projects across browsers, create a Space and open the same Space link in each browser. Anyone with the link can edit. Keep the #space part of the URL when opening it in Codex. Space edits save to the server and other open pages fetch the changed project. If a newer saved version exists, keep my unsaved work and let me reload or save it as a copy. If I ask for a local project that is missing here, ask me for its saved HTML or screenshot.
 
 Use edit_design to add, move, resize, restyle or remove items. Use create_design for a full design in a new project. Keep text, shapes, icons and buttons as separate items I can edit. Use select_project to open a project listed by read_design.
 
@@ -32,5 +35,10 @@ Check the result with read_design and a PNG from export_design. Refresh the site
       <p id="codex-prompt-status" class="codex-prompt-status" role="status"></p>
     </div>
   </section>
-  <footer class="inspector-credit">Vibecoded with <span role="img" aria-label="love">❤️</span> by <a href="https://x.com/janxpm" target="_blank" rel="noopener noreferrer">@janxpm</a></footer>
+  <footer class="inspector-credit">
+    <span>Vibecoded with <span role="img" aria-label="love">❤️</span> by <a href="https://x.com/janxpm" target="_blank" rel="noopener noreferrer">@janxpm</a></span>
+    <a class="inspector-github" href="https://github.com/janpmz/uidesigneditor" target="_blank" rel="noopener noreferrer" aria-label="View code on GitHub" title="GitHub">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M12 .297C5.37.297 0 5.67 0 12.297c0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.043-1.61-4.043-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.083-.73.083-.73 1.205.084 1.838 1.237 1.838 1.237 1.07 1.834 2.807 1.304 3.492.997.108-.776.418-1.305.762-1.605-2.665-.304-5.467-1.334-5.467-5.93 0-1.31.47-2.38 1.236-3.22-.123-.303-.536-1.523.117-3.176 0 0 1.008-.322 3.301 1.23a11.52 11.52 0 0 1 3.004-.404c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.655 1.653.242 2.873.119 3.176.77.84 1.235 1.91 1.235 3.22 0 4.61-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222 0 1.606-.015 2.898-.015 3.293 0 .322.216.694.825.576C20.565 22.092 24 17.596 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+    </a>
+  </footer>
 </aside>

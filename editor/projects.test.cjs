@@ -15,9 +15,10 @@ const layout = text => ({ version: 1, canvas: { width: 393, height: 852 }, items
 const playerKey = 'dark-player-layout-v2:/drafts/dark-player-layout/';
 const libraryKey = 'dark-library-layout-v2:/drafts/dark-library-layout/';
 const listKey = 'ui-design-editor-projects-v1:/';
+const spaceCode = readFileSync(join(__dirname,'space.js'),'utf8');
 let nextId = 0;
 
-function harness({ stored = new Map(), database = new Map(), pathname = '/', data, embedded = null, blocked = false, full = false, noDatabase = false } = {}) {
+function harness({ stored = new Map(), database = new Map(), pathname = '/', data, embedded = null, blocked = false, full = false, noDatabase = false, spaceUrl } = {}) {
   let focused;
   const listeners = new Map();
   function node(tag = 'div') {
@@ -78,7 +79,7 @@ function harness({ stored = new Map(), database = new Map(), pathname = '/', dat
     querySelector: selector => selector === '#editor-pages .project-page-list' ? list : selector.startsWith('[data-') ? list.querySelector(selector) : get('canvas'),
     createElement: node, addEventListener(type, fn) { listeners.set(type, fn); },
   },
-    location: { pathname }, original: () => layout('Player'), validEditorPage: value => value?.version === 1 && value.canvas && Array.isArray(value.items),
+    location: spaceUrl?new URL(spaceUrl):{ pathname }, original: () => layout('Player'), validEditorPage: value => value?.version === 1 && value.canvas && Array.isArray(value.items),
     localStorage: { getItem(key) { if (blocked) throw Error('Blocked');return stored.get(key) || null; }, setItem(key, value) { if (blocked || full) throw Error('Full');stored.set(key, value); }, removeItem(key) { if (blocked) throw Error('Blocked');stored.delete(key); } },
     indexedDB: { open() { const request = {};queueMicrotask(() => { if (noDatabase) { request.onerror();return; }request.result = db;request.onsuccess(); });return request; } },
     crypto: { randomUUID: () => String(++nextId) }, round: value => Math.round(value * 10) / 10,
@@ -90,6 +91,8 @@ function harness({ stored = new Map(), database = new Map(), pathname = '/', dat
     notify: message => { sandbox.message = message; },
     stage: { focus() {} }, canvasView: { x: 0, y: 0 }, canvasViewBusy: () => false,
     clearCanvasRegion() {}, closeCanvasMenu() {}, closeItemMenu() {}, resetCanvasView: () => { get('zoom').value = 'fit'; },
+    ...(spaceUrl?{WebSocket,fetch:(path,options)=>fetch(new URL(path,spaceUrl),options),setTimeout,clearTimeout,
+      window:{addEventListener(){},history:{replaceState(_state,_title,hash){sandbox.location.hash=hash;}}}}:{}),
   });
   function $(id) { return get(id); }
   vm.runInContext(`
@@ -99,6 +102,7 @@ function harness({ stored = new Map(), database = new Map(), pathname = '/', dat
     let imageEditSession=null,canvasPan=null,canvasPinch=null,drag=null,pictureChoice={open:false};
     ${saveCode}
     function change(fn){history.push(JSON.stringify(state));fn();render();}
+    function remember(){history.push(JSON.stringify(state));future=[];}
     function render(){save();renderProjects();}
     ${pictureHelpers}
     ${dropCode}
@@ -202,6 +206,64 @@ test('projects still switch when the browser’s small text store is full', asyn
   h.run('state.items[0].text="My player";');await h.run('switchProject("library")');await h.run('switchProject("player")');
   assert.equal(h.run('state.items[0].text'), 'My player');
   assert.equal(h.database.get(playerKey).items[0].text, 'My player');
+});
+
+test('New Project opens a blank canvas and keeps the current project’s work and undo steps', async () => {
+  const h = harness();await h.ready;
+  h.run('state.items[0].text="My player";history.push("player undo");future.push("player redo");selected.add("text");canvasView.x=123;');
+  await h.get('project-new').onclick();
+  const id = h.run('activeProject');
+  assert.notEqual(id, 'player');
+  assert.equal(h.buttons[2].querySelector('span').textContent, 'New Project');
+  assert.equal(h.buttons[2].attributes['aria-current'], 'page');
+  assert.deepEqual(h.json('state'), { version: 1, canvas: { width: 393, height: 852, background: '#000000' }, items: [] });
+  assert.deepEqual(h.json('history'), []);
+  assert.deepEqual(h.json('future'), []);
+  assert.deepEqual(h.json('[...selected]'), []);
+  assert.equal(h.get('zoom').value, 'fit');
+  assert.equal(h.database.get(playerKey).items[0].text, 'My player');
+  await h.get('project-player').onclick();
+  assert.equal(h.run('state.items[0].text'), 'My player');
+  assert.deepEqual(h.json('history'), ['player undo']);
+  assert.deepEqual(h.json('future'), ['player redo']);
+  assert.deepEqual(h.json('[...selected]'), ['text']);
+  assert.equal(h.run('canvasView.x'), 123);
+  await h.get('project-new').onclick();
+  assert.notEqual(h.run('activeProject'), id);
+  assert.equal(h.buttons[3].querySelector('span').textContent, 'New Project (2)');
+});
+
+test('blank projects survive reloads and Copy HTML with either browser store', async () => {
+  for (const options of [{}, { blocked: true }, { noDatabase: true }]) {
+    const h = harness(options);await h.ready;await h.get('project-new').onclick();
+    const id = h.run('activeProject');
+    const next = harness({ ...options, stored: h.stored, database: h.database });await next.ready;
+    assert.equal(next.run('activeProject'), id);
+    assert.deepEqual(next.json('state.items'), []);
+    assert.equal(next.buttons[2].querySelector('span').textContent, 'New Project');
+    const output = { textContent: '' };next.sandbox.exportDoc = { querySelector: () => output };next.run('exportProjects(exportDoc)');
+    const saved = harness({ pathname: '/saved.html', data: JSON.parse(output.textContent), embedded: next.json('state') });await saved.ready;
+    assert.equal(saved.run('activeProject'), id);
+    assert.deepEqual(saved.json('state.items'), []);
+    await saved.get('project-new').onclick();
+    assert.equal(saved.buttons[3].querySelector('span').textContent, 'New Project (2)');
+  }
+});
+
+test('New Project waits for saved work, ignores repeated clicks and stops during other edits', async () => {
+  const h = harness();
+  const creating = h.get('project-new').onclick();
+  assert.equal(h.get('project-new').disabled, true);
+  assert.equal(h.run('localProjects.length'), 2);
+  await h.get('project-new').onclick();await creating;
+  assert.equal(h.run('localProjects.length'), 3);
+  assert.equal(h.get('project-new').disabled, false);
+  h.sandbox.canvasViewBusy = () => h.run('pictureDropBusy');
+  for (const busy of ['imageEditSession={}', 'drag={}', 'canvasPan={}', 'canvasPinch={}', 'pictureDropBusy=true', 'pictureChoice.open=true', 'projectSwitchBusy=true']) {
+    h.run('imageEditSession=drag=canvasPan=canvasPinch=null;pictureDropBusy=pictureChoice.open=projectSwitchBusy=false;');
+    h.run(busy);await h.get('project-new').onclick();
+    assert.equal(h.run('localProjects.length'), 3);
+  }
 });
 
 test('a screenshot opened as a new page adds and selects a project, keeping Player’s work', async () => {
@@ -538,7 +600,66 @@ test('keys, file drops and pasted pictures cannot change the page while a delete
 
 test('the home page contains both projects and the same project code', () => {
   assert.equal(page.split('// BEGIN LOCAL PROJECTS\n')[1].split('// END LOCAL PROJECTS')[0].trim(), code.trim());
+  assert.match(page, /<button type="button" class="project-page project-new" id="project-new"><svg[^>]*aria-hidden="true"[\s\S]*?<\/svg><span>New Project<\/span><\/button>/);
   const data = JSON.parse(page.match(/id="initial-projects">([\s\S]*?)<\/script>/)[1]);
   assert.deepEqual(data.projects.map(project => project.name), ['Player', 'Library']);
   assert.ok(data.projects[1].layout.items.some(item => item.id === 'page-title' && item.text === 'Library'));
+});
+
+test('separate browser stores share a Space, keep Undo, preserve conflicts, and save copies', async t => {
+  const {createSpaceServer}=await import('../server/index.mjs');
+  const {once}=require('node:events');
+  const app=await createSpaceServer();app.server.listen(0,'127.0.0.1');await once(app.server,'listening');
+  const base='http://127.0.0.1:'+app.server.address().port;
+  const browsers=[];
+  t.after(async()=>{for(const h of browsers)h.run('spaceClient.close()');await app.close();});
+  const design={version:1,canvas:{width:400,height:300,background:'#fff'},items:[{id:'hello',kind:'label',x:10,y:10,w:200,h:30,text:'Local work'}]};
+  const data={version:1,active:'demo',projects:[{id:'demo',name:'Demo',layout:design}]};
+  const open=async(url,stored=new Map(),database=new Map())=>{
+    const h=harness({spaceUrl:url,data:structuredClone(data),stored,database});browsers.push(h);await h.ready;
+    h.run(spaceCode);await h.run('spaceClient.ready');return h;
+  };
+  const waitFor=async(fn)=>{
+    const deadline=Date.now()+3000;
+    while(!fn()){if(Date.now()>deadline)assert.fail('Space did not update');await new Promise(resolve=>setTimeout(resolve,10));}
+  };
+  const first=await open(base+'/');
+  await first.get('space-create').onclick();const spaceId=first.run('onlineSpaceId');assert.match(spaceId,/^[a-f0-9]{64}$/);
+  const second=await open(base+'/#space='+spaceId);
+  assert.notEqual(first.stored,second.stored);
+  await waitFor(()=>app.clients.get(spaceId)?.size===2);
+  first.run("change(()=>state.items[0].text='Shared edit')");await first.run('spaceClient.saved()');
+  await waitFor(()=>second.run('state.items[0].text')==='Shared edit');
+  assert.ok(second.run('history.length')>0);
+  assert.equal(first.run('history.length'),1);
+  assert.equal(JSON.parse(first.stored.get('dark-demo-layout-v2:/drafts/dark-demo-layout/')).items[0].text,'Local work');
+
+  // Hold the second page in an edit so a remote notice cannot replace its work.
+  second.run("fieldEdit={};change(()=>state.items[0].text='Unsaved work')");
+  first.run("change(()=>state.items[0].text='Newer saved work')");await first.run('spaceClient.saved()');
+  await waitFor(()=>second.get('space-conflict').hidden===false);
+  assert.equal(second.run('state.items[0].text'),'Unsaved work');
+  second.run('fieldEdit=null');
+  await assert.rejects(second.run('spaceClient.saved()'),/newer version/);
+  await second.get('space-copy').onclick();
+  assert.equal(second.run('state.items[0].text'),'Unsaved work');
+  const copiedId=second.run('activeProject');assert.notEqual(copiedId,'demo');
+  assert.equal(app.store.get(spaceId,'demo').layout.items[0].text,'Newer saved work');
+  assert.equal(app.store.get(spaceId,copiedId).layout.items[0].text,'Unsaved work');
+  await waitFor(()=>first.run('localProjects.length')===2);
+
+  // A dirty local page survives reopening with a newer server copy.
+  second.run("fieldEdit={};change(()=>state.items[0].text='Kept through reload');spaceClient.close()");
+  const newer=app.store.get(spaceId,copiedId);
+  app.store.save(spaceId,copiedId,{...newer,layout:{...newer.layout,items:[{...newer.layout.items[0],text:'Changed while away'}]}});
+  const reopening=await open(base+'/#space='+spaceId,second.stored,second.database);
+  assert.equal(reopening.run('state.items[0].text'),'Kept through reload');
+  assert.equal(reopening.get('space-conflict').hidden,false);
+  assert.equal(app.store.get(spaceId,copiedId).layout.items[0].text,'Changed while away');
+  await reopening.get('space-reload').onclick();
+  assert.equal(reopening.run('state.items[0].text'),'Changed while away');
+  await reopening.remove(copiedId);
+  await waitFor(()=>first.run('localProjects.length')===1);
+  assert.equal(reopening.run('activeProject'),'demo');
+  assert.throws(()=>app.store.get(spaceId,copiedId),/not found/);
 });

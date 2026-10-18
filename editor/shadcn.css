@@ -155,7 +155,7 @@
 .history-actions button { border-color: transparent; color: var(--muted-foreground); box-shadow: none; }
 .top-actions { gap: 8px; flex-wrap: nowrap; }
 .export-actions { gap: 6px; }
-.canvas-size-tools select { width: 166px; }
+.canvas-size-tools select { width: 210px; }
 .canvas-view-tools { gap: 2px; }
 .canvas-view-tools select { width: 90px; min-width: 80px; }
 .canvas-view-tools button { min-width: 30px; padding: 6px; border-color: transparent; font-size: 16px; box-shadow: none; }

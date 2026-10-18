@@ -8,6 +8,8 @@ www.uidesigneditor.com {
 uidesigneditor.com {
 	root * /srv/uidesigneditor
 	encode zstd gzip
+	@spaces path /api/* /ws
+	reverse_proxy @spaces 127.0.0.1:3000
 
 	header {
 		X-Content-Type-Options nosniff
