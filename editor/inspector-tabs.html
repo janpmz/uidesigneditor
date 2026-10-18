@@ -12,5 +12,24 @@
       <li>Free to use</li>
       <li><a href="https://github.com/janpmz/uidesigneditor" target="_blank" rel="noopener noreferrer">Open source on GitHub</a></li>
     </ul>
+    <div class="codex-prompt">
+      <div class="codex-prompt-heading">
+        <h3 id="codex-prompt-title">Use with Codex</h3>
+        <button type="button" id="copy-codex-prompt">Copy prompt</button>
+      </div>
+      <textarea id="codex-prompt" rows="8" readonly spellcheck="false" aria-labelledby="codex-prompt-title">Open https://uidesigneditor.com/ in your browser and use the editor to carry out my design request. Use any files I attach.
+
+Screenshot: Drop the picture onto the editor and choose "Open as new page?" to edit it at its own size, or "Add to page?" to place it in the current design. Edit parts of the picture or add text, shapes, buttons and icons as I ask.
+
+New items or a full design: Make separate items I can move, resize and edit. Add items to the current page; open a full design as a new page.
+
+HTML: Drop HTML saved with this editor's "Copy HTML" straight into the editor. For other HTML, rebuild its visible design as editor items first. The editor reads an application/json script with id="initial-layout" from the dropped HTML file. Its JSON must have version: 1, canvas: {width, height, background}, and items: [...]. Each item needs a unique id, name, kind, x, y, w and h. Use positive sizes in pixels. Item kinds are label, icon, shape, reading, tab, button, textbox and image. Set text, fontSize, color, background, borderColor, borderWidth, radius, align and opacity as needed. Images need a src with an embedded PNG data URL. Inspect the editor's page source for examples and defaults.
+
+Use your browser's file drop tools to upload. If your tools allow page scripts, put the File in a DataTransfer and send a bubbling drop event to #stage. Then choose "Add to page?" for new items or "Open as new page?" for a full design.
+
+Check the result in the editor, then use "Copy HTML" to keep an editable copy. Give me the saved HTML file and a brief note on what changed.</textarea>
+      <p id="codex-prompt-status" class="codex-prompt-status" role="status"></p>
+    </div>
   </section>
+  <footer class="inspector-credit">Vibecoded with <span role="img" aria-label="love">❤️</span> by <a href="https://x.com/janxpm" target="_blank" rel="noopener noreferrer">@janxpm</a></footer>
 </aside>

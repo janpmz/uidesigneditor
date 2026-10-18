@@ -57,13 +57,14 @@ test('clicking a selected canvas item opens Edit, and tab keys update focus and 
   assert.equal(h.get('inspector-tab-edit').tabIndex, -1);
 });
 
-test('the root is the working editor and each sidebar contains only the requested Info text', () => {
+test('the root is the working editor and each sidebar keeps the Info text', () => {
   const info = ['100% local editor', 'All files stay in your browser', 'No signup', 'Free to use', 'Open source on GitHub'];
   for (const file of ['index.html', ...['dark-player-layout', 'dark-library-layout', 'dark-chapter-layout', 'dark-add-layout'].map(name => `drafts/${name}/index.html`)]) {
     const html = readFileSync(join(root, file), 'utf8');
     new vm.Script(html.match(/<script>\s*([\s\S]*?)<\/script>/)[1]);
     const content = html.match(/<section class="inspector-info"[^>]*>([\s\S]*?)<\/section>/)[1];
-    assert.deepEqual(content.replace(/<[^>]+>/g, ' ').trim().split(/\s{2,}/).map(text => text.trim()), info);
+    const facts = content.slice(0, content.indexOf('<div class="codex-prompt">'));
+    assert.deepEqual(facts.replace(/<[^>]+>/g, ' ').trim().split(/\s{2,}/).map(text => text.trim()), info);
     assert.equal(html.split('id="editor-inspector"').length - 1, 1);
     assert.equal(html.split('// BEGIN INSPECTOR TABS\n').length - 1, 1);
     if (html.includes('const toolLocations=')) assert.match(html, /\['editor-inspector','home-inspector','tools-edit'\]/);

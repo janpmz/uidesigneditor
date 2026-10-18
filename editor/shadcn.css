@@ -258,9 +258,7 @@
 .empty-state { padding: 24px 16px; }
 .inspector-info { padding: 12px 16px 24px; }
 .inspector-info h2 { margin-bottom: 18px; font-size: 17px; letter-spacing: -.4px; }
-.inspector-info ul { gap: 0; padding: 0 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); color: var(--muted-foreground); font-size: 12px; }
-.inspector-info li { padding: 14px 0; border-bottom: 1px solid var(--border); }
-.inspector-info li:last-child { border: 0; }
+.inspector-info ul { color: var(--muted-foreground); font-size: 12px; }
 .inspector-info a { color: var(--foreground); text-decoration-color: var(--input); text-underline-offset: 4px; }
 .inspector-info a:hover { text-decoration-color: var(--foreground); }
 

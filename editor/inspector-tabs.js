@@ -31,4 +31,14 @@ for(const button of inspectorTabButtons){
 document.addEventListener('pointerdown',event=>{
   if(event.button===0&&stage.contains(event.target)&&event.target.closest('.item,.selection-overlay,.group-grip,.resize-handle'))showInspectorTab('edit');
 },true);
+$('copy-codex-prompt').onclick=async()=>{
+  const prompt=$('codex-prompt'),status=$('codex-prompt-status');
+  try{
+    await navigator.clipboard.writeText(prompt.value);
+    status.textContent='Prompt copied. Paste it into Codex with your request.';
+  }catch{
+    prompt.focus();prompt.select();
+    status.textContent='Press Ctrl+C or ⌘C to copy the selected prompt.';
+  }
+};
 syncInspectorTabs();

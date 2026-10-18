@@ -13,3 +13,4 @@
 .handle-nw,.handle-w,.handle-sw{left:0}.handle-ne,.handle-e,.handle-se{left:100%}
 .handle-n,.handle-s{left:50%;cursor:ns-resize}.handle-e,.handle-w{top:50%;cursor:ew-resize}
 .handle-nw,.handle-se{cursor:nwse-resize}.handle-ne,.handle-sw{cursor:nesw-resize}
+.rectangle-selection .resize-handle{width:var(--rectangle-grip);height:var(--rectangle-grip);left:100%;top:100%;right:auto;bottom:auto;background:#3b82f6;transform:translate(-50%,-50%)}

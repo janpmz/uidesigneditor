@@ -161,8 +161,10 @@ stage.addEventListener('pointerdown',event=>{
   const entry=state.items.find(item=>item.id===id),items=selectedItems().filter(item=>!isPagePicture(item));
   const common={pointer:event.pointerId,start:point,latest:point,selectionBefore:[...selected],regionBefore:regionSelection,before:JSON.stringify(state),changed:false,moved:false};
   const rectangleHandle=event.target.closest('[data-rectangle-resize]');
-  if(items.length===1&&isRectangleShape(items[0])&&rectangleHandle){
+  if(items.length===1&&hasSideResizeHandles(items[0])&&rectangleHandle){
     regionSelection=null;canvasGesture={...common,type:'rectangle-resize',side:rectangleHandle.dataset.rectangleResize,items,starts:items.map(copy)};
+  }else if(!event.shiftKey&&items.length===1&&event.target.closest('.resize-handle')){
+    regionSelection=null;canvasGesture={...common,type:'resize',items,starts:items.map(copy)};
   }else if(!event.shiftKey&&isRectangleShape(entry)){
     regionSelection=null;const moving=selected.has(entry.id)?items:[entry];
     selected=new Set(moving.map(item=>item.id));refreshSelection();

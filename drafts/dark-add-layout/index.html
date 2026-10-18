@@ -183,12 +183,24 @@ OTHER DEALINGS IN THE SOFTWARE.
 .inspector-tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-4px}
 .inspector-pane>.inspector{flex:1;min-height:0;overflow:auto;border-left:0}
 .inspector-pane>[hidden]{display:none!important}
-.inspector-info{padding:28px 18px;overflow:auto}
+.inspector-info{flex:1;min-height:0;padding:28px 18px;overflow:auto}
 .inspector-info h2{font-size:19px;font-weight:600;letter-spacing:-.4px;margin-bottom:24px}
 .inspector-info ul{list-style:none;margin:0;padding:0;display:grid;gap:18px;color:#aaaab3;font-size:13px;line-height:1.5}
 .inspector-info a{color:var(--accent);text-underline-offset:3px}
 .inspector-info a:hover{color:#eeeef0}
 .inspector-info a:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:2px}
+.inspector-credit{flex:none;padding:16px 12px;color:var(--muted-foreground,#aaaab3);font-size:11px;line-height:1.5;text-align:center}
+.inspector-credit a{color:inherit;text-underline-offset:3px}
+.inspector-credit a:hover{color:var(--foreground,#eeeef0)}
+.inspector-credit a:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:2px}
+.codex-prompt{display:grid;gap:12px;margin-top:24px;padding-top:24px;border-top:1px solid var(--line)}
+.codex-prompt-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.codex-prompt h3{margin:0;font-size:14px;font-weight:600;letter-spacing:-.2px}
+.codex-prompt p{margin:0;color:var(--muted-foreground,#aaaab3);font-size:12px;line-height:1.6}
+.codex-prompt textarea{box-sizing:border-box;width:100%;min-width:0;padding:10px;border:1px solid var(--input,#45404d);border-radius:6px;background:var(--panel);color:inherit;font-family:inherit;font-size:12px;line-height:1.6;resize:vertical}
+.codex-prompt textarea:focus-visible,.codex-prompt button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.codex-prompt button{flex:none;min-height:34px}
+.codex-prompt .codex-prompt-status:empty{display:none}
 .compact-tools .inspector-pane{height:100%;border:0}
 .compact-tools .inspector-pane>.inspector{overflow:auto}
 
@@ -207,6 +219,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 .handle-nw,.handle-w,.handle-sw{left:0}.handle-ne,.handle-e,.handle-se{left:100%}
 .handle-n,.handle-s{left:50%;cursor:ns-resize}.handle-e,.handle-w{top:50%;cursor:ew-resize}
 .handle-nw,.handle-se{cursor:nwse-resize}.handle-ne,.handle-sw{cursor:nesw-resize}
+.rectangle-selection .resize-handle{width:var(--rectangle-grip);height:var(--rectangle-grip);left:100%;top:100%;right:auto;bottom:auto;background:#3b82f6;transform:translate(-50%,-50%)}
 
 </style>
 <style data-shadcn-ui>
@@ -470,9 +483,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 .empty-state { padding: 24px 16px; }
 .inspector-info { padding: 12px 16px 24px; }
 .inspector-info h2 { margin-bottom: 18px; font-size: 17px; letter-spacing: -.4px; }
-.inspector-info ul { gap: 0; padding: 0 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); color: var(--muted-foreground); font-size: 12px; }
-.inspector-info li { padding: 14px 0; border-bottom: 1px solid var(--border); }
-.inspector-info li:last-child { border: 0; }
+.inspector-info ul { color: var(--muted-foreground); font-size: 12px; }
 .inspector-info a { color: var(--foreground); text-decoration-color: var(--input); text-underline-offset: 4px; }
 .inspector-info a:hover { text-decoration-color: var(--foreground); }
 
@@ -660,7 +671,26 @@ SOFTWARE.
       <li>Free to use</li>
       <li><a href="https://github.com/janpmz/uidesigneditor" target="_blank" rel="noopener noreferrer">Open source on GitHub</a></li>
     </ul>
+    <div class="codex-prompt">
+      <div class="codex-prompt-heading">
+        <h3 id="codex-prompt-title">Use with Codex</h3>
+        <button type="button" id="copy-codex-prompt">Copy prompt</button>
+      </div>
+      <textarea id="codex-prompt" rows="8" readonly spellcheck="false" aria-labelledby="codex-prompt-title">Open https://uidesigneditor.com/ in your browser and use the editor to carry out my design request. Use any files I attach.
+
+Screenshot: Drop the picture onto the editor and choose "Open as new page?" to edit it at its own size, or "Add to page?" to place it in the current design. Edit parts of the picture or add text, shapes, buttons and icons as I ask.
+
+New items or a full design: Make separate items I can move, resize and edit. Add items to the current page; open a full design as a new page.
+
+HTML: Drop HTML saved with this editor's "Copy HTML" straight into the editor. For other HTML, rebuild its visible design as editor items first. The editor reads an application/json script with id="initial-layout" from the dropped HTML file. Its JSON must have version: 1, canvas: {width, height, background}, and items: [...]. Each item needs a unique id, name, kind, x, y, w and h. Use positive sizes in pixels. Item kinds are label, icon, shape, reading, tab, button, textbox and image. Set text, fontSize, color, background, borderColor, borderWidth, radius, align and opacity as needed. Images need a src with an embedded PNG data URL. Inspect the editor's page source for examples and defaults.
+
+Use your browser's file drop tools to upload. If your tools allow page scripts, put the File in a DataTransfer and send a bubbling drop event to #stage. Then choose "Add to page?" for new items or "Open as new page?" for a full design.
+
+Check the result in the editor, then use "Copy HTML" to keep an editable copy. Give me the saved HTML file and a brief note on what changed.</textarea>
+      <p id="codex-prompt-status" class="codex-prompt-status" role="status"></p>
+    </div>
   </section>
+  <footer class="inspector-credit">Vibecoded with <span role="img" aria-label="love">❤️</span> by <a href="https://x.com/janxpm" target="_blank" rel="noopener noreferrer">@janxpm</a></footer>
 </aside>
 <!-- END INSPECTOR TABS -->
 </main>
@@ -1320,7 +1350,7 @@ function renderNativeSelection() {
   if(items.length===1){
     overlay.dataset.id=items[0].id;
     if(isArrowShape(items[0]))renderArrowHandles(overlay,items[0]);
-    else if(isRectangleShape(items[0]))renderRectangleHandles(overlay,items[0]);
+    else if(hasSideResizeHandles(items[0]))renderRectangleHandles(overlay,items[0]);
     else {
     const handle=document.createElement('span');handle.className='resize-handle';handle.dataset.resize='true';handle.setAttribute('aria-label','Resize '+items[0].name);handle.title='Scale item and contents';overlay.append(handle);
     }
@@ -2135,18 +2165,22 @@ function isArrowShape(entry){return entry?.kind==='shape'&&entry.shape==='arrow'
 function isRectangleShape(entry){
   return ['shape','button','textbox'].includes(entry?.kind)&&!isArrowShape(entry);
 }
+function isTextBox(entry){return ['label','reading'].includes(entry?.kind);}
+function hasSideResizeHandles(entry){return isRectangleShape(entry)||isTextBox(entry)||entry?.kind==='icon';}
 function renderRectangleHandles(overlay,entry){
   overlay.classList.add('rectangle-selection');
   sizeRectangleHandles(overlay);
-  const names={n:'top',ne:'top right',e:'right',se:'bottom right',s:'bottom',sw:'bottom left',w:'left',nw:'top left'};
+  const names={n:'top',e:'right',s:'bottom',w:'left'};
   for(const side of ['n','e','s','w']){
     const edge=document.createElement('span');edge.className='rectangle-edge edge-'+side;edge.dataset.rectangleResize=side;
     edge.setAttribute('aria-hidden','true');overlay.append(edge);
   }
-  for(const side of ['nw','n','ne','e','se','s','sw','w']){
+  for(const side of ['n','e','s','w']){
     const handle=document.createElement('span');handle.className='rectangle-handle handle-'+side;handle.dataset.rectangleResize=side;
     handle.setAttribute('aria-label','Resize '+(entry?.name||'item')+' '+names[side]);handle.title='Drag to resize '+names[side];overlay.append(handle);
   }
+  const handle=document.createElement('span');handle.className='resize-handle';handle.dataset.resize='true';
+  handle.setAttribute('aria-label','Scale '+(entry?.name||'item'));handle.title='Scale item and contents';overlay.append(handle);
 }
 function sizeRectangleHandles(overlay=$('phone').querySelector('.rectangle-selection')){
   if(!overlay)return;
@@ -2508,8 +2542,10 @@ stage.addEventListener('pointerdown',event=>{
   const entry=state.items.find(item=>item.id===id),items=selectedItems().filter(item=>!isPagePicture(item));
   const common={pointer:event.pointerId,start:point,latest:point,selectionBefore:[...selected],regionBefore:regionSelection,before:JSON.stringify(state),changed:false,moved:false};
   const rectangleHandle=event.target.closest('[data-rectangle-resize]');
-  if(items.length===1&&isRectangleShape(items[0])&&rectangleHandle){
+  if(items.length===1&&hasSideResizeHandles(items[0])&&rectangleHandle){
     regionSelection=null;canvasGesture={...common,type:'rectangle-resize',side:rectangleHandle.dataset.rectangleResize,items,starts:items.map(copy)};
+  }else if(!event.shiftKey&&items.length===1&&event.target.closest('.resize-handle')){
+    regionSelection=null;canvasGesture={...common,type:'resize',items,starts:items.map(copy)};
   }else if(!event.shiftKey&&isRectangleShape(entry)){
     regionSelection=null;const moving=selected.has(entry.id)?items:[entry];
     selected=new Set(moving.map(item=>item.id));refreshSelection();
@@ -2788,6 +2824,16 @@ for(const button of inspectorTabButtons){
 document.addEventListener('pointerdown',event=>{
   if(event.button===0&&stage.contains(event.target)&&event.target.closest('.item,.selection-overlay,.group-grip,.resize-handle'))showInspectorTab('edit');
 },true);
+$('copy-codex-prompt').onclick=async()=>{
+  const prompt=$('codex-prompt'),status=$('codex-prompt-status');
+  try{
+    await navigator.clipboard.writeText(prompt.value);
+    status.textContent='Prompt copied. Paste it into Codex with your request.';
+  }catch{
+    prompt.focus();prompt.select();
+    status.textContent='Press Ctrl+C or ⌘C to copy the selected prompt.';
+  }
+};
 syncInspectorTabs();
 // END INSPECTOR TABS
 syncToolLayout();render();

@@ -183,12 +183,24 @@ OTHER DEALINGS IN THE SOFTWARE.
 .inspector-tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-4px}
 .inspector-pane>.inspector{flex:1;min-height:0;overflow:auto;border-left:0}
 .inspector-pane>[hidden]{display:none!important}
-.inspector-info{padding:28px 18px;overflow:auto}
+.inspector-info{flex:1;min-height:0;padding:28px 18px;overflow:auto}
 .inspector-info h2{font-size:19px;font-weight:600;letter-spacing:-.4px;margin-bottom:24px}
 .inspector-info ul{list-style:none;margin:0;padding:0;display:grid;gap:18px;color:#aaaab3;font-size:13px;line-height:1.5}
 .inspector-info a{color:var(--accent);text-underline-offset:3px}
 .inspector-info a:hover{color:#eeeef0}
 .inspector-info a:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:2px}
+.inspector-credit{flex:none;padding:16px 12px;color:var(--muted-foreground,#aaaab3);font-size:11px;line-height:1.5;text-align:center}
+.inspector-credit a{color:inherit;text-underline-offset:3px}
+.inspector-credit a:hover{color:var(--foreground,#eeeef0)}
+.inspector-credit a:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:2px}
+.codex-prompt{display:grid;gap:12px;margin-top:24px;padding-top:24px;border-top:1px solid var(--line)}
+.codex-prompt-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.codex-prompt h3{margin:0;font-size:14px;font-weight:600;letter-spacing:-.2px}
+.codex-prompt p{margin:0;color:var(--muted-foreground,#aaaab3);font-size:12px;line-height:1.6}
+.codex-prompt textarea{box-sizing:border-box;width:100%;min-width:0;padding:10px;border:1px solid var(--input,#45404d);border-radius:6px;background:var(--panel);color:inherit;font-family:inherit;font-size:12px;line-height:1.6;resize:vertical}
+.codex-prompt textarea:focus-visible,.codex-prompt button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.codex-prompt button{flex:none;min-height:34px}
+.codex-prompt .codex-prompt-status:empty{display:none}
 .compact-tools .inspector-pane{height:100%;border:0}
 .compact-tools .inspector-pane>.inspector{overflow:auto}
 
@@ -207,7 +219,25 @@ OTHER DEALINGS IN THE SOFTWARE.
 .handle-nw,.handle-w,.handle-sw{left:0}.handle-ne,.handle-e,.handle-se{left:100%}
 .handle-n,.handle-s{left:50%;cursor:ns-resize}.handle-e,.handle-w{top:50%;cursor:ew-resize}
 .handle-nw,.handle-se{cursor:nwse-resize}.handle-ne,.handle-sw{cursor:nesw-resize}
+.rectangle-selection .resize-handle{width:var(--rectangle-grip);height:var(--rectangle-grip);left:100%;top:100%;right:auto;bottom:auto;background:#3b82f6;transform:translate(-50%,-50%)}
 
+</style>
+<style data-projects>
+.project-page-row{display:flex;align-items:center;gap:4px;flex:none;min-width:0}
+.project-page-row .project-page{flex:1;min-width:0}
+.project-delete{display:grid;place-items:center;width:30px;min-height:34px;flex:none;padding:6px;border:1px solid transparent;border-radius:6px;background:transparent;color:#aaa3b3}
+.project-delete svg{width:14px;height:16px}
+.project-delete:hover{border-color:#75404a;background:#41272d;color:#ffafb8}
+.project-delete:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.project-delete:disabled{opacity:.4}
+.project-delete-dialog{width:min(420px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow:auto;padding:22px;border:1px solid #46414e;border-radius:14px;background:#1c1c1f;color:#eeeef0;box-shadow:0 20px 80px #0008}
+.project-delete-dialog::backdrop{background:#0009}
+.project-delete-dialog h2{margin:0 0 10px;font-size:18px;overflow-wrap:anywhere}
+.project-delete-dialog p{margin:0;font-size:13px;line-height:1.6;color:#c2bec9}
+.project-delete-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin-top:22px}
+.project-delete-actions .danger{border-color:#b34453;background:#a92f41;color:#fff}
+.project-delete-actions .danger:hover{background:#c43b4f}
+.project-delete-actions button:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 </style>
 <style data-shadcn-ui>
 /*
@@ -470,9 +500,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 .empty-state { padding: 24px 16px; }
 .inspector-info { padding: 12px 16px 24px; }
 .inspector-info h2 { margin-bottom: 18px; font-size: 17px; letter-spacing: -.4px; }
-.inspector-info ul { gap: 0; padding: 0 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); color: var(--muted-foreground); font-size: 12px; }
-.inspector-info li { padding: 14px 0; border-bottom: 1px solid var(--border); }
-.inspector-info li:last-child { border: 0; }
+.inspector-info ul { color: var(--muted-foreground); font-size: 12px; }
 .inspector-info a { color: var(--foreground); text-decoration-color: var(--input); text-underline-offset: 4px; }
 .inspector-info a:hover { text-decoration-color: var(--foreground); }
 
@@ -629,8 +657,8 @@ SOFTWARE.
     <nav class="project-pages" id="editor-pages" aria-labelledby="project-pages-title">
       <h2 id="project-pages-title">Projects</h2>
       <div class="project-page-list">
-        <button type="button" class="project-page" data-project="player" aria-current="page"><svg viewBox="0 0 16 18" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><path d="M9.5 1.5H3a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V6L9.5 1.5Z"/><path d="M9 1.5V6h5M5 10h6M5 13h4"/></svg><span>Player</span></button>
-        <button type="button" class="project-page" data-project="library"><svg viewBox="0 0 16 18" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><path d="M9.5 1.5H3a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V6L9.5 1.5Z"/><path d="M9 1.5V6h5M5 10h6M5 13h4"/></svg><span>Library</span></button>
+        <div class="project-page-row" data-project-row="player"><button type="button" class="project-page" data-project="player" aria-current="page"><svg viewBox="0 0 16 18" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><path d="M9.5 1.5H3a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V6L9.5 1.5Z"/><path d="M9 1.5V6h5M5 10h6M5 13h4"/></svg><span>Player</span></button><button type="button" class="project-delete" data-delete-project="player" aria-label="Delete Player" title="Delete Player"><svg viewBox="0 0 16 18" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><path d="M2 4.5h12M6 4.5v-2h4v2M3.5 4.5l.7 11h7.6l.7-11M6.5 7v6M9.5 7v6"/></svg></button></div>
+        <div class="project-page-row" data-project-row="library"><button type="button" class="project-page" data-project="library"><svg viewBox="0 0 16 18" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><path d="M9.5 1.5H3a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V6L9.5 1.5Z"/><path d="M9 1.5V6h5M5 10h6M5 13h4"/></svg><span>Library</span></button><button type="button" class="project-delete" data-delete-project="library" aria-label="Delete Library" title="Delete Library"><svg viewBox="0 0 16 18" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><path d="M2 4.5h12M6 4.5v-2h4v2M3.5 4.5l.7 11h7.6l.7-11M6.5 7v6M9.5 7v6"/></svg></button></div>
       </div>
     </nav>
   </aside>
@@ -661,7 +689,26 @@ SOFTWARE.
       <li>Free to use</li>
       <li><a href="https://github.com/janpmz/uidesigneditor" target="_blank" rel="noopener noreferrer">Open source on GitHub</a></li>
     </ul>
+    <div class="codex-prompt">
+      <div class="codex-prompt-heading">
+        <h3 id="codex-prompt-title">Use with Codex</h3>
+        <button type="button" id="copy-codex-prompt">Copy prompt</button>
+      </div>
+      <textarea id="codex-prompt" rows="8" readonly spellcheck="false" aria-labelledby="codex-prompt-title">Open https://uidesigneditor.com/ in your browser and use the editor to carry out my design request. Use any files I attach.
+
+Screenshot: Drop the picture onto the editor and choose "Open as new page?" to edit it at its own size, or "Add to page?" to place it in the current design. Edit parts of the picture or add text, shapes, buttons and icons as I ask.
+
+New items or a full design: Make separate items I can move, resize and edit. Add items to the current page; open a full design as a new page.
+
+HTML: Drop HTML saved with this editor's "Copy HTML" straight into the editor. For other HTML, rebuild its visible design as editor items first. The editor reads an application/json script with id="initial-layout" from the dropped HTML file. Its JSON must have version: 1, canvas: {width, height, background}, and items: [...]. Each item needs a unique id, name, kind, x, y, w and h. Use positive sizes in pixels. Item kinds are label, icon, shape, reading, tab, button, textbox and image. Set text, fontSize, color, background, borderColor, borderWidth, radius, align and opacity as needed. Images need a src with an embedded PNG data URL. Inspect the editor's page source for examples and defaults.
+
+Use your browser's file drop tools to upload. If your tools allow page scripts, put the File in a DataTransfer and send a bubbling drop event to #stage. Then choose "Add to page?" for new items or "Open as new page?" for a full design.
+
+Check the result in the editor, then use "Copy HTML" to keep an editable copy. Give me the saved HTML file and a brief note on what changed.</textarea>
+      <p id="codex-prompt-status" class="codex-prompt-status" role="status"></p>
+    </div>
   </section>
+  <footer class="inspector-credit">Vibecoded with <span role="img" aria-label="love">❤️</span> by <a href="https://x.com/janxpm" target="_blank" rel="noopener noreferrer">@janxpm</a></footer>
 </aside>
 <!-- END INSPECTOR TABS -->
 </main>
@@ -717,6 +764,16 @@ SOFTWARE.
   <button id="canvas-menu-no-item" role="menuitem" hidden>No item</button>
 </div>
 <!-- END PICTURE CHOICE -->
+<!-- BEGIN PROJECT DELETE -->
+<dialog id="project-delete-dialog" class="project-delete-dialog" aria-labelledby="project-delete-title" aria-describedby="project-delete-help">
+  <h2 id="project-delete-title">Delete project?</h2>
+  <p id="project-delete-help">You can’t undo this.</p>
+  <div class="project-delete-actions">
+    <button type="button" id="project-delete-cancel" autofocus>Cancel</button>
+    <button type="button" id="project-delete-confirm">Continue</button>
+  </div>
+</dialog>
+<!-- END PROJECT DELETE -->
 <script type="application/json" id="initial-projects">{"version":1,"active":"player","projects":[{"id":"player","name":"Player","layout":null},{"id":"library","name":"Library","layout":{"version":1,"canvas":{"width":393,"height":852,"background":"#000000"},"items":[{"id":"island","name":"Dynamic Island","kind":"shape","x":134,"y":11,"w":125,"h":37,"fontSize":11,"iconSize":18,"color":"#999999","background":"#050505","borderColor":"#666666","borderWidth":0,"radius":24,"align":"center","opacity":1,"text":"","icon":"","hidden":false},{"id":"time","name":"Time","kind":"label","x":39,"y":21,"w":55,"h":25,"fontSize":17,"iconSize":18,"color":"#f5f5f5","background":"transparent","borderColor":"#666666","borderWidth":0,"radius":0,"align":"center","opacity":1,"text":"9:41","icon":"","hidden":false,"fontWeight":600},{"id":"signal","name":"Phone signal","kind":"icon","x":288,"y":25,"w":15,"h":14,"fontSize":11,"iconSize":13,"color":"#c6c6c6","background":"transparent","borderColor":"#666666","borderWidth":0,"radius":0,"align":"center","opacity":1,"text":"","icon":"cellular","hidden":false},{"id":"wifi","name":"Wi-Fi","kind":"icon","x":309,"y":23,"w":20,"h":18,"fontSize":11,"iconSize":18,"color":"#f5f5f5","background":"transparent","borderColor":"#666666","borderWidth":0,"radius":0,"align":"center","opacity":1,"text":"","icon":"wifi","hidden":false},{"id":"battery","name":"Battery","kind":"icon","x":335,"y":23,"w":25,"h":18,"fontSize":11,"iconSize":25,"color":"#f5f5f5","background":"transparent","borderColor":"#666666","borderWidth":0,"radius":0,"align":"center","opacity":1,"text":"","icon":"battery-full","hidden":false},{"id":"page-title","name":"Library heading","kind":"label","x":16,"y":78,"w":269,"h":45,"fontSize":32,"iconSize":18,"color":"#f5f5f5","background":"transparent","borderColor":"#666666","borderWidth":0,"radius":0,"align":"left","opacity":1,"text":"Library","icon":"","hidden":false,"fontFamily":"serif","lineHeight":1.2},{"id":"theme","name":"Light mode","kind":"icon","x":295,"y":66,"w":44,"h":44,"fontSize":11,"iconSize":18,"color":"#999999","background":"transparent","borderColor":"#666666","borderWidth":0,"radius":0,"align":"center","opacity":1,"text":"","icon":"sunny-outline","hidden":false},{"id":"more","name":"Library options","kind":"icon","x":345,"y":66,"w":44,"h":44,"fontSize":11,"iconSize":20,"color":"#999999","background":"transparent","borderColor":"#666666","borderWidth":0,"radius":0,"align":"center","opacity":1,"text":"","icon":"ellipsis-horizontal","hidden":false},{"id":"library-count","name":"Document count","kind":"label","x":16,"y":132,"w":309,"h":20,"fontSize":12,"iconSize":18,"color":"#888888","background":"transparent","borderColor":"#666666","borderWidth":0,"radius":0,"align":"left","opacity":1,"text":"4 documents","icon":"","hidden":false},{"id":"list-divider","name":"List divider","kind":"shape","x":16,"y":166,"w":361,"h":1,"fontSize":11,"iconSize":18,"color":"#999999","background":"#242424","borderColor":"#666666","borderWidth":0,"radius":0,"align":"center","opacity":1,"text":"","icon":"","hidden":true},{"id":"document-1-title","name":"Document 1 title","kind":"label","x":16,"y":168.5,"w":321,"h":65,"fontSize":25,"iconSize":18,"color":"#f5f5f5","background":"transparent","borderColor":"#666666","borderWidth":0,"radius":0,"align":"left","opacity":1,"text":"Neural networks\nare already clean","icon":"","hidden":false,"fontFamily":"serif","lineHeight":1.2,"wrap":true},{"id":"document-1-meta","name":"Document 1 details","kind":"label","x":16,"y":237.5,"w":321,"h":18,"fontSize":11,"iconSize":18,"color":"#888888","background":"transparent","borderColor":"#666666","borderWidth":0,"radius":0,"align":"left","opacity":1,"text":"Today · 34 min","icon":"","hidden":false},{"id":"document-1-more","name":"Document 1 options","kind":"icon","x":336,"y":207.4,"w":38,"h":36,"fontSize":11,"iconSize":18,"color":"#777777","background":"transparent","borderColor":"#666666","borderWidth":0,"radius":0,"align":"center","opacity":1,"text":"","icon":"ellipsis-horizontal","hidden":true},{"id":"current-position","name":"Current listening position","kind":"label","x":16,"y":282,"w":309,"h":18,"fontSize":11,"iconSize":18,"color":"#a78bfa","background":"transparent","borderColor":"#666666","borderWidth":0,"radius":0,"align":"left","opacity":1,"text":"Chapter 3, Page 2","icon":"","hidden":true},{"id":"current-play","name":"Current document play icon","kind":"icon","x":345,"y":161.5,"w":44,"h":44,"fontSize":11,"iconSize":19,"color":"#a78bfa","background":"transparent","borderColor":"#666666","borderWidth":0,"radius":0,"align":"center","opacity":1,"text":"","icon":"play-outline","hidden":false},{"id":"document-1-divider","name":"Divider after document 1","kind":"shape","x":16,"y":308,"w":361,"h":1,"fontSize":11,"iconSize":18,"color":"#999999","background":"#1c1c1c","borderColor":"#666666","borderWidth":0,"radius":0,"align":"center","opacity":1,"text":"","icon":"","hidden":true},{"id":"document-2-title","name":"Document 2 title","kind":"label","x":16,"y":275,"w":321,"h":65,"fontSize":25,"iconSize":18,"color":"#d4d4d4","background":"transparent","borderColor":"#666666","borderWidth":0,"radius":0,"align":"left","opacity":1,"text":"The beginning\nof infinity","icon":"","hidden":false,"fontFamily":"serif","lineHeight":1.2,"wrap":true},{"id":"document-2-meta","name":"Document 2 details","kind":"label","x":16,"y":344,"w":321,"h":18,"fontSize":11,"iconSize":18,"color":"#888888","background":"transparent","borderColor":"#666666","borderWidth":0,"radius":0,"align":"left","opacity":1,"text":"Yesterday · 3 hr 24 min","icon":"","hidden":false},{"id":"document-2-more","name":"Document 2 options","kind":"icon","x":336,"y":313.9,"w":38,"h":36,"fontSize":11,"iconSize":18,"color":"#777777","background":"transparent","borderColor":"#666666","borderWidth":0,"radius":0,"align":"center","opacity":1,"text":"","icon":"ellipsis-horizontal","hidden":true},{"id":"document-2-divider","name":"Divider after document 2","kind":"shape","x":16,"y":421,"w":361,"h":1,"fontSize":11,"iconSize":18,"color":"#999999","background":"#1c1c1c","borderColor":"#666666","borderWidth":0,"radius":0,"align":"center","opacity":1,"text":"","icon":"","hidden":true},{"id":"document-3-title","name":"Document 3 title","kind":"label","x":16,"y":388,"w":321,"h":65,"fontSize":25,"iconSize":18,"color":"#d4d4d4","background":"transparent","borderColor":"#666666","borderWidth":0,"radius":0,"align":"left","opacity":1,"text":"On the nature\nof attention","icon":"","hidden":false,"fontFamily":"serif","lineHeight":1.2,"wrap":true},{"id":"document-3-meta","name":"Document 3 details","kind":"label","x":16,"y":457,"w":321,"h":18,"fontSize":11,"iconSize":18,"color":"#888888","background":"transparent","borderColor":"#666666","borderWidth":0,"radius":0,"align":"left","opacity":1,"text":"3 days ago · 38 min","icon":"","hidden":false},{"id":"document-3-more","name":"Document 3 options","kind":"icon","x":336,"y":426.9,"w":38,"h":36,"fontSize":11,"iconSize":18,"color":"#777777","background":"transparent","borderColor":"#666666","borderWidth":0,"radius":0,"align":"center","opacity":1,"text":"","icon":"ellipsis-horizontal","hidden":true},{"id":"document-3-divider","name":"Divider after document 3","kind":"shape","x":16,"y":534,"w":361,"h":1,"fontSize":11,"iconSize":18,"color":"#999999","background":"#1c1c1c","borderColor":"#666666","borderWidth":0,"radius":0,"align":"center","opacity":1,"text":"","icon":"","hidden":true},{"id":"document-4-title","name":"Document 4 title","kind":"label","x":16,"y":501,"w":361,"h":65,"fontSize":25,"iconSize":18,"color":"#d4d4d4","background":"transparent","borderColor":"#666666","borderWidth":0,"radius":0,"align":"left","opacity":1,"text":"A short guide\nto clear thinking","icon":"","hidden":false,"fontFamily":"serif","lineHeight":1.2,"wrap":true},{"id":"document-4-meta","name":"Document 4 date","kind":"label","x":16,"y":570,"w":59,"h":18,"fontSize":11,"iconSize":18,"color":"#888888","background":"transparent","borderColor":"#666666","borderWidth":0,"radius":0,"align":"left","opacity":1,"text":"Just now ·","icon":"","hidden":false},{"id":"document-4-more","name":"Document 4 options","kind":"icon","x":336,"y":502,"w":38,"h":36,"fontSize":11,"iconSize":18,"color":"#777777","background":"transparent","borderColor":"#666666","borderWidth":0,"radius":0,"align":"center","opacity":1,"text":"","icon":"ellipsis-horizontal","hidden":true},{"id":"nav-bg","name":"Tab bar background","kind":"shape","x":21,"y":770,"w":351,"h":60,"fontSize":11,"iconSize":18,"color":"#999999","background":"#161616","borderColor":"#2a2a2a","borderWidth":1,"radius":31,"align":"center","opacity":1,"text":"","icon":"","hidden":false},{"id":"nav-active","name":"Selected Library background","kind":"shape","x":25,"y":773,"w":88,"h":54,"fontSize":11,"iconSize":18,"color":"#999999","background":"#333333","borderColor":"#666666","borderWidth":0,"radius":29,"align":"center","opacity":1,"text":"","icon":"","hidden":false},{"id":"library","name":"Library tab","kind":"tab","x":39,"y":779,"w":65,"h":48,"fontSize":10,"iconSize":25,"color":"#a78bfa","background":"transparent","borderColor":"#666666","borderWidth":0,"radius":0,"align":"center","opacity":1,"text":"Library","icon":"library-outline","hidden":false},{"id":"player","name":"Player tab","kind":"tab","x":123,"y":779,"w":65,"h":48,"fontSize":10,"iconSize":25,"color":"#999999","background":"transparent","borderColor":"#666666","borderWidth":0,"radius":0,"align":"center","opacity":1,"text":"Player","icon":"play","hidden":false},{"id":"add","name":"Add tab","kind":"tab","x":208,"y":779,"w":65,"h":48,"fontSize":10,"iconSize":25,"color":"#999999","background":"transparent","borderColor":"#666666","borderWidth":0,"radius":0,"align":"center","opacity":1,"text":"Add","icon":"add-circle-outline","hidden":false},{"id":"examples","name":"Examples tab","kind":"tab","x":292,"y":779,"w":65,"h":48,"fontSize":10,"iconSize":25,"color":"#999999","background":"transparent","borderColor":"#666666","borderWidth":0,"radius":0,"align":"center","opacity":1,"text":"Examples","icon":"headset-outline","hidden":false},{"id":"document-2-play","name":"Document 2 play icon","kind":"icon","x":345,"y":268,"w":44,"h":44,"fontSize":11,"iconSize":19,"color":"#a78bfa","background":"transparent","borderColor":"#666666","borderWidth":0,"radius":0,"align":"center","opacity":1,"text":"","icon":"play-outline","hidden":false},{"id":"document-3-play","name":"Document 3 play icon","kind":"icon","x":345,"y":381,"w":44,"h":44,"fontSize":11,"iconSize":19,"color":"#a78bfa","background":"transparent","borderColor":"#666666","borderWidth":0,"radius":0,"align":"center","opacity":1,"text":"","icon":"play-outline","hidden":false},{"id":"document-4-status","name":"Document 4 status","kind":"label","x":77,"y":570,"w":150,"h":18,"fontSize":11,"iconSize":18,"color":"#86e499","background":"transparent","borderColor":"#666666","borderWidth":0,"radius":0,"align":"left","opacity":1,"text":"Making audio","icon":"","hidden":false}],"libraryTitlesAligned":true,"libraryPlayAligned":true,"libraryPagePadding":16,"libraryEdgeButtonMargin":-12}}]}</script>
 <script type="application/json" id="initial-layout">null</script>
 <script>
@@ -788,17 +845,23 @@ const localProjects=projectData.projects;
 const projectHome=['/','/index.html','/drafts/dark-player-layout/','/drafts/dark-player-layout/index.html'].includes(location.pathname);
 const activeProjectKey='ui-design-editor-active-project-v1:'+(projectHome?'/':location.pathname);
 const projectListKey='ui-design-editor-projects-v1:'+(projectHome?'/':location.pathname);
+const deletedProjects=new Set();
 function restoreProjectList(saved){
   if(saved?.version!==1||!Array.isArray(saved.projects))return;
+  for(const id of Array.isArray(saved.deleted)?saved.deleted:[])if(typeof id==='string'&&/^[-a-z0-9]+$/.test(id))deletedProjects.add(id);
+  for(let index=localProjects.length-1;index>=0;index--)if(deletedProjects.has(localProjects[index].id))localProjects.splice(index,1);
   for(const project of saved.projects){
-    if(!project||typeof project.id!=='string'||!/^[-a-z0-9]+$/.test(project.id)||typeof project.name!=='string'||!project.name.trim()||localProjects.some(entry=>entry.id===project.id))continue;
+    if(!project||typeof project.id!=='string'||!/^[-a-z0-9]+$/.test(project.id)||typeof project.name!=='string'||!project.name.trim()||deletedProjects.has(project.id)||localProjects.some(entry=>entry.id===project.id))continue;
     localProjects.push({id:project.id,name:project.name,layout:null});
   }
 }
+function blankProject(){return {id:'project-'+crypto.randomUUID(),name:'New project',layout:{version:1,canvas:{width:393,height:852,background:'#000000'},items:[]}};}
 let savedProjectList,savedActiveProject;
 try{savedProjectList=JSON.parse(localStorage.getItem(projectListKey)||'null');restoreProjectList(savedProjectList);}catch{}
+if(!localProjects.length)localProjects.push(blankProject());
 let activeProject=projectData.active||'player';
 try{savedActiveProject=localStorage.getItem(activeProjectKey)||savedProjectList?.active;if(localProjects.some(project=>project.id===savedActiveProject))activeProject=savedActiveProject;}catch{}
+if(!localProjects.some(project=>project.id===activeProject))activeProject=localProjects[0].id;
 function projectStorage(id){return 'dark-'+id+'-layout-v2:'+(projectHome?'/drafts/dark-'+id+'-layout/':location.pathname);}
 let STORAGE=projectStorage(activeProject);
 const projectSessions=new Map();
@@ -823,14 +886,21 @@ async function readProjectLayout(id){
 }
 function renderProjects(){
   const list=document.querySelector('#editor-pages .project-page-list');
+  for(const row of list.querySelectorAll('[data-project-row]'))if(!localProjects.some(project=>project.id===row.dataset.projectRow))row.remove();
   for(const project of localProjects){
     let button=[...list.querySelectorAll('[data-project]')].find(button=>button.dataset.project===project.id);
     if(!button){
+      const row=document.createElement('div');row.className='project-page-row';row.dataset.projectRow=project.id;
       button=document.createElement('button');button.type='button';button.className='project-page';button.dataset.project=project.id;
-      const icon=list.querySelector('svg')?.cloneNode(true);if(icon)button.append(icon);
-      button.append(document.createElement('span'));list.append(button);
+      button.innerHTML=projectPageIcon;
+      button.append(document.createElement('span'));row.append(button);
+      const remove=document.createElement('button');remove.type='button';remove.className='project-delete';remove.dataset.deleteProject=project.id;remove.innerHTML=projectDeleteIcon;
+      row.append(remove);list.append(row);
     }
     button.querySelector('span').textContent=project.name;button.onclick=()=>switchProject(project.id);
+    const remove=[...list.querySelectorAll('[data-delete-project]')].find(button=>button.dataset.deleteProject===project.id);
+    remove.setAttribute('aria-label','Delete '+project.name);remove.title='Delete '+project.name;
+    remove.disabled=projectSwitchBusy||Boolean(imageEditSession);remove.onclick=()=>deleteProject(project.id);
   }
   for(const button of document.querySelectorAll('[data-project]')){
     if(button.dataset.project===activeProject)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
@@ -843,8 +913,11 @@ function renderProjects(){
 function keepProjectSession(){
   projectSessions.set(activeProject,{state,history,future,selected:[...selected],view:{...canvasView},scale,zoom:$('zoom').value,customZoom:$('zoom-custom').value});
 }
+function projectListData(projects=localProjects,active=activeProject,deleted=deletedProjects){
+  return {version:1,active,projects:projects.map(({id,name})=>({id,name})),deleted:[...deleted]};
+}
 function saveProjectList(){
-  const saved={version:1,active:activeProject,projects:localProjects.map(({id,name})=>({id,name}))};
+  const saved=projectListData();
   try{localStorage.setItem(projectListKey,JSON.stringify(saved));localStorage.setItem(activeProjectKey,activeProject);}catch{}
   if(pictureDB)try{pictureDB.transaction('drafts','readwrite').objectStore('drafts').put(saved,projectListKey);}catch{}
 }
@@ -878,6 +951,73 @@ async function switchProject(id){
     openProject(id,layout,session);
   }finally{projectSwitchBusy=false;renderProjects();}
 }
+const projectPageIcon='<svg viewBox="0 0 16 18" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><path d="M9.5 1.5H3a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V6L9.5 1.5Z"/><path d="M9 1.5V6h5M5 10h6M5 13h4"/></svg>';
+const projectDeleteIcon='<svg viewBox="0 0 16 18" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><path d="M2 4.5h12M6 4.5v-2h4v2M3.5 4.5l.7 11h7.6l.7-11M6.5 7v6M9.5 7v6"/></svg>';
+const projectDeleteDialog=$('project-delete-dialog');
+function confirmProjectDeletion(project){
+  const cancel=$('project-delete-cancel'),confirm=$('project-delete-confirm');
+  let finalStep=false,committing=false;
+  $('project-delete-title').textContent='Delete “'+project.name+'”?';
+  $('project-delete-help').textContent='This will delete the project and its saved work from this browser. You can’t undo this.';
+  confirm.textContent='Continue';confirm.classList.remove('danger');cancel.disabled=confirm.disabled=false;
+  return new Promise(resolve=>{
+    projectDeleteDialog.addEventListener('close',()=>resolve(false),{once:true});
+    projectDeleteDialog.oncancel=event=>{if(committing)event.preventDefault();};
+    cancel.onclick=()=>projectDeleteDialog.close();
+    confirm.onclick=event=>{
+      if(committing||event?.detail>1)return;
+      if(finalStep){committing=true;cancel.disabled=confirm.disabled=true;resolve(true);return;}
+      finalStep=true;
+      $('project-delete-title').textContent='Delete “'+project.name+'” for good?';
+      $('project-delete-help').textContent='The project, its pictures and all undo steps will be lost. It won’t come back when you reload.';
+      confirm.textContent='Delete for good';confirm.classList.add('danger');cancel.focus();
+    };
+    projectDeleteDialog.showModal();cancel.focus();
+  });
+}
+document.addEventListener('keydown',event=>{if(projectDeleteDialog.open)event.stopImmediatePropagation();},true);
+for(const type of ['drop','paste'])document.addEventListener(type,event=>{if(projectDeleteDialog.open){event.preventDefault();event.stopImmediatePropagation();}},true);
+async function removeProjectData(id,saved){
+  if(pictureDB)await new Promise((resolve,reject)=>{
+    const transaction=pictureDB.transaction('drafts','readwrite');
+    transaction.oncomplete=resolve;transaction.onabort=transaction.onerror=()=>reject(transaction.error||new Error('Could not delete project.'));
+    try{
+      const store=transaction.objectStore('drafts');
+      store.delete(projectStorage(id));store.put(saved,projectListKey);
+    }catch(error){transaction.abort();reject(error);}
+  });
+  try{
+    localStorage.setItem(projectListKey,JSON.stringify(saved));localStorage.removeItem(projectStorage(id));localStorage.setItem(activeProjectKey,saved.active);
+  }catch(error){if(!pictureDB)throw error;}
+}
+async function deleteProject(id){
+  if(projectSwitchBusy||!localProjects.some(project=>project.id===id))return;
+  if(imageEditSession){notify('Choose Done or Cancel before deleting a project.');return;}
+  if(canvasViewBusy()||canvasPan||canvasPinch||drag||pictureChoice.open||pictureDropBusy)return;
+  let deleted=false,dialogShown=false;
+  projectSwitchBusy=true;renderProjects();
+  try{
+    await projectsReady;
+    const project=localProjects.find(project=>project.id===id);
+    if(!project||imageEditSession||canvasViewBusy()||canvasPan||canvasPinch||drag||pictureChoice.open||pictureDropBusy)return;
+    dialogShown=true;if(!await confirmProjectDeletion(project))return;
+    const remaining=localProjects.filter(project=>project.id!==id),index=localProjects.indexOf(project);
+    if(!remaining.length)remaining.push(blankProject());
+    const nextId=id===activeProject?remaining[Math.min(index,remaining.length-1)].id:activeProject;
+    const session=projectSessions.get(nextId),nextLayout=id===activeProject?(session?.state||remaining.find(project=>project.id===nextId).layout||await readProjectLayout(nextId)):null;
+    await removeProjectData(id,projectListData(remaining,nextId,new Set([...deletedProjects,id])));
+    deletedProjects.add(id);localProjects.splice(0,localProjects.length,...remaining);projectSessions.delete(id);
+    if(id===activeProject)openProject(nextId,nextLayout,session);
+    else saveProjectList();
+    deleted=true;notify('Deleted “'+project.name+'”.');
+  }catch{notify('Could not delete this project. Please try again.');}
+  finally{
+    if(projectDeleteDialog.open)projectDeleteDialog.close();
+    projectSwitchBusy=false;renderProjects();
+    if(deleted)document.querySelector('[data-project="'+activeProject+'"]')?.focus({preventScroll:true});
+    else if(dialogShown)document.querySelector('[data-delete-project="'+id+'"]')?.focus({preventScroll:true});
+  }
+}
 function exportProjects(doc){
   const projects=localProjects.map(project=>({...project,layout:project.id===activeProject?state:projectSessions.get(project.id)?.state||localProjectLayout(project.id)}));
   doc.querySelector('#initial-projects').textContent=JSON.stringify({version:1,active:activeProject,projects}).replace(/</g,'\\u003c');
@@ -894,6 +1034,7 @@ function initializeProjects(){
       });
       restoreProjectList(saved);
     }catch{}
+    if(!localProjects.length)localProjects.push(blankProject());
     for(const project of localProjects){
       if(project.id===activeProject)continue;
       const layout=await readProjectLayout(project.id);
@@ -901,9 +1042,15 @@ function initializeProjects(){
       try{localStorage.setItem(projectStorage(project.id),JSON.stringify(layout));}catch{}
       if(pictureDB)try{pictureDB.transaction('drafts','readwrite').objectStore('drafts').put(copy(layout),projectStorage(project.id));}catch{}
     }
-    const restoredActive=saved?.active||savedActiveProject;
-    if(restoredActive!==activeProject&&projectSessions.has(restoredActive)){
-      save();keepProjectSession();const session=projectSessions.get(restoredActive);openProject(restoredActive,session.state,session);
+    const restoredActive=[saved?.active,savedActiveProject,activeProject,localProjects[0].id].find(id=>localProjects.some(project=>project.id===id));
+    if(restoredActive!==activeProject){
+      if(localProjects.some(project=>project.id===activeProject)){save();keepProjectSession();}
+      const session=projectSessions.get(restoredActive);openProject(restoredActive,session?.state||await readProjectLayout(restoredActive),session);
+    }
+    for(const id of deletedProjects){
+      projectSessions.delete(id);
+      try{localStorage.removeItem(projectStorage(id));}catch{}
+      if(pictureDB)try{pictureDB.transaction('drafts','readwrite').objectStore('drafts').delete(projectStorage(id));}catch{}
     }
     saveProjectList();renderProjects();
   })();
@@ -997,7 +1144,7 @@ function renderNativeSelection() {
   if(items.length===1){
     overlay.dataset.id=items[0].id;
     if(isArrowShape(items[0]))renderArrowHandles(overlay,items[0]);
-    else if(isRectangleShape(items[0]))renderRectangleHandles(overlay,items[0]);
+    else if(hasSideResizeHandles(items[0]))renderRectangleHandles(overlay,items[0]);
     else {
     const handle=document.createElement('span');handle.className='resize-handle';handle.dataset.resize='true';handle.setAttribute('aria-label','Resize '+items[0].name);handle.title='Scale item and contents';overlay.append(handle);
     }
@@ -1812,18 +1959,22 @@ function isArrowShape(entry){return entry?.kind==='shape'&&entry.shape==='arrow'
 function isRectangleShape(entry){
   return ['shape','button','textbox'].includes(entry?.kind)&&!isArrowShape(entry);
 }
+function isTextBox(entry){return ['label','reading'].includes(entry?.kind);}
+function hasSideResizeHandles(entry){return isRectangleShape(entry)||isTextBox(entry)||entry?.kind==='icon';}
 function renderRectangleHandles(overlay,entry){
   overlay.classList.add('rectangle-selection');
   sizeRectangleHandles(overlay);
-  const names={n:'top',ne:'top right',e:'right',se:'bottom right',s:'bottom',sw:'bottom left',w:'left',nw:'top left'};
+  const names={n:'top',e:'right',s:'bottom',w:'left'};
   for(const side of ['n','e','s','w']){
     const edge=document.createElement('span');edge.className='rectangle-edge edge-'+side;edge.dataset.rectangleResize=side;
     edge.setAttribute('aria-hidden','true');overlay.append(edge);
   }
-  for(const side of ['nw','n','ne','e','se','s','sw','w']){
+  for(const side of ['n','e','s','w']){
     const handle=document.createElement('span');handle.className='rectangle-handle handle-'+side;handle.dataset.rectangleResize=side;
     handle.setAttribute('aria-label','Resize '+(entry?.name||'item')+' '+names[side]);handle.title='Drag to resize '+names[side];overlay.append(handle);
   }
+  const handle=document.createElement('span');handle.className='resize-handle';handle.dataset.resize='true';
+  handle.setAttribute('aria-label','Scale '+(entry?.name||'item'));handle.title='Scale item and contents';overlay.append(handle);
 }
 function sizeRectangleHandles(overlay=$('phone').querySelector('.rectangle-selection')){
   if(!overlay)return;
@@ -2185,8 +2336,10 @@ stage.addEventListener('pointerdown',event=>{
   const entry=state.items.find(item=>item.id===id),items=selectedItems().filter(item=>!isPagePicture(item));
   const common={pointer:event.pointerId,start:point,latest:point,selectionBefore:[...selected],regionBefore:regionSelection,before:JSON.stringify(state),changed:false,moved:false};
   const rectangleHandle=event.target.closest('[data-rectangle-resize]');
-  if(items.length===1&&isRectangleShape(items[0])&&rectangleHandle){
+  if(items.length===1&&hasSideResizeHandles(items[0])&&rectangleHandle){
     regionSelection=null;canvasGesture={...common,type:'rectangle-resize',side:rectangleHandle.dataset.rectangleResize,items,starts:items.map(copy)};
+  }else if(!event.shiftKey&&items.length===1&&event.target.closest('.resize-handle')){
+    regionSelection=null;canvasGesture={...common,type:'resize',items,starts:items.map(copy)};
   }else if(!event.shiftKey&&isRectangleShape(entry)){
     regionSelection=null;const moving=selected.has(entry.id)?items:[entry];
     selected=new Set(moving.map(item=>item.id));refreshSelection();
@@ -2465,6 +2618,16 @@ for(const button of inspectorTabButtons){
 document.addEventListener('pointerdown',event=>{
   if(event.button===0&&stage.contains(event.target)&&event.target.closest('.item,.selection-overlay,.group-grip,.resize-handle'))showInspectorTab('edit');
 },true);
+$('copy-codex-prompt').onclick=async()=>{
+  const prompt=$('codex-prompt'),status=$('codex-prompt-status');
+  try{
+    await navigator.clipboard.writeText(prompt.value);
+    status.textContent='Prompt copied. Paste it into Codex with your request.';
+  }catch{
+    prompt.focus();prompt.select();
+    status.textContent='Press Ctrl+C or ⌘C to copy the selected prompt.';
+  }
+};
 syncInspectorTabs();
 // END INSPECTOR TABS
 syncToolLayout();render();

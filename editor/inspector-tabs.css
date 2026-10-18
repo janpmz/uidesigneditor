@@ -7,11 +7,23 @@
 .inspector-tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-4px}
 .inspector-pane>.inspector{flex:1;min-height:0;overflow:auto;border-left:0}
 .inspector-pane>[hidden]{display:none!important}
-.inspector-info{padding:28px 18px;overflow:auto}
+.inspector-info{flex:1;min-height:0;padding:28px 18px;overflow:auto}
 .inspector-info h2{font-size:19px;font-weight:600;letter-spacing:-.4px;margin-bottom:24px}
 .inspector-info ul{list-style:none;margin:0;padding:0;display:grid;gap:18px;color:#aaaab3;font-size:13px;line-height:1.5}
 .inspector-info a{color:var(--accent);text-underline-offset:3px}
 .inspector-info a:hover{color:#eeeef0}
 .inspector-info a:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:2px}
+.inspector-credit{flex:none;padding:16px 12px;color:var(--muted-foreground,#aaaab3);font-size:11px;line-height:1.5;text-align:center}
+.inspector-credit a{color:inherit;text-underline-offset:3px}
+.inspector-credit a:hover{color:var(--foreground,#eeeef0)}
+.inspector-credit a:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:2px}
+.codex-prompt{display:grid;gap:12px;margin-top:24px;padding-top:24px;border-top:1px solid var(--line)}
+.codex-prompt-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.codex-prompt h3{margin:0;font-size:14px;font-weight:600;letter-spacing:-.2px}
+.codex-prompt p{margin:0;color:var(--muted-foreground,#aaaab3);font-size:12px;line-height:1.6}
+.codex-prompt textarea{box-sizing:border-box;width:100%;min-width:0;padding:10px;border:1px solid var(--input,#45404d);border-radius:6px;background:var(--panel);color:inherit;font-family:inherit;font-size:12px;line-height:1.6;resize:vertical}
+.codex-prompt textarea:focus-visible,.codex-prompt button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.codex-prompt button{flex:none;min-height:34px}
+.codex-prompt .codex-prompt-status:empty{display:none}
 .compact-tools .inspector-pane{height:100%;border:0}
 .compact-tools .inspector-pane>.inspector{overflow:auto}

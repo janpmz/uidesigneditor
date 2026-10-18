@@ -11,6 +11,7 @@ const controller = readFileSync(join(__dirname, 'canvas-selection.js'), 'utf8');
 const imageEditor = readFileSync(join(__dirname, 'image-edit.js'), 'utf8');
 const draft = readFileSync(join(__dirname, '../drafts/dark-player-layout/index.html'), 'utf8');
 const geometry = draft.split('// BEGIN SELECTION GEOMETRY')[1].split('// END SELECTION GEOMETRY')[0];
+const scaling = draft.split('// BEGIN ITEM SCALE')[1].split('// END ITEM SCALE')[0];
 const defaults = 'const round=v=>Math.round(v*10)/10,clamp=(v,a,b)=>Math.max(a,Math.min(b,v));';
 const context = vm.createContext({});
 vm.runInContext(defaults + helpers + geometry, context);
@@ -83,7 +84,7 @@ function harness(picturePage = false) {
   sandbox.remember=before=>undo.push(before);
   sandbox.change=fn=>{undo.push(JSON.stringify(sandbox.state));fn();};
   sandbox.deleteSelected=()=>sandbox.change(()=>{sandbox.state.items.forEach(item=>{if(sandbox.selected.has(item.id))item.hidden=true;});sandbox.selected.clear();});
-  vm.runInContext(defaults + geometry + shapes + helpers + fitContent + controller, sandbox);
+  vm.runInContext(defaults + geometry + scaling + shapes + helpers + fitContent + controller, sandbox);
   const read=code=>JSON.parse(JSON.stringify(vm.runInContext(code,sandbox)));
   const event=(x,y,options={})=>({button:0,pointerId:1,clientX:x,clientY:y,target:{closest:()=>null},preventDefault(){this.prevented=true;},stopImmediatePropagation(){this.stopped=true;},...options});
   return {sandbox,start,undo,read,event,get,send:(type,event)=>stageListeners.get(type)(event),list:(type,event)=>layerListeners.get(type)(event),key:event=>documentListeners.get('keydown')(event)};
@@ -141,8 +142,8 @@ test('a rectangle can be picked up while another item covers the same area',asyn
   assert.deepEqual([...h.sandbox.selected],[entry.id]);assert.deepEqual([entry.x,entry.y],[120,130]);
   assert.deepEqual([h.sandbox.state.items[1].x,h.sandbox.state.items[1].y],[100,100]);
 });
-test('every box, button and text box grip resizes freely, keeps the contents at the same size and supports Undo and Escape',async()=>{
-  for(const kind of ['shape','button','textbox'])for(const side of ['nw','n','ne','e','se','s','sw','w']){
+test('box, text and icon grips resize freely, keep the contents at the same size and support Undo and Escape',async()=>{
+  for(const kind of ['shape','button','textbox','label','reading','icon'])for(const side of ['n','e','s','w']){
     const h=harness(),entry={id:'rectangle',kind,x:100,y:200,w:180,h:100,borderWidth:3,radius:12,fontSize:18,iconSize:22,text:'Keep this text',contentScale:1};
     h.sandbox.state.items.push(entry);h.sandbox.selected.add(entry.id);
     const before=structuredClone(h.sandbox.state),handle={dataset:{rectangleResize:side}},overlay={dataset:{id:entry.id}};
@@ -151,10 +152,26 @@ test('every box, button and text box grip resizes freely, keeps the contents at 
     h.send('pointermove',h.event(120,230));h.send('pointermove',h.event(140,250));await h.send('pointerup',h.event(140,250));
     assert.equal(entry.borderWidth,3);assert.equal(h.undo.length,1);assert.deepEqual(JSON.parse(h.undo[0]),before);
     assert.deepEqual([entry.radius,entry.fontSize,entry.iconSize,entry.text,entry.contentScale],[12,18,22,'Keep this text',1]);
+    assert.deepEqual([entry.x,entry.y,entry.w,entry.h],[side.includes('w')?140:100,side.includes('n')?250:200,side.includes('w')?140:side.includes('e')?220:180,side.includes('n')?50:side.includes('s')?150:100]);
     if(['e','w'].includes(side))assert.equal(entry.h,100);
     if(['n','s'].includes(side))assert.equal(entry.w,180);
     const saved=structuredClone(h.sandbox.state);
     h.send('pointerdown',h.event(140,250,{target}));h.send('pointermove',h.event(180,280));h.key(h.event(0,0,{key:'Escape'}));
+    assert.deepEqual(h.read('state'),saved);assert.equal(h.undo.length,1);
+  }
+});
+test('the bottom-right corner scales text, icons, buttons and boxes in one Undo step',async()=>{
+  for(const kind of ['label','reading','shape','button','textbox','icon']){
+    const h=harness(),entry={id:'text',kind,x:100,y:200,w:180,h:100,fontSize:18,iconSize:20,borderWidth:2,radius:12,contentScale:1,icon:'play-outline',text:kind==='icon'?'':'A longer line of text'};
+    h.sandbox.state.items.push(entry);h.sandbox.selected.add(entry.id);
+    const before=structuredClone(h.sandbox.state),target={closest:selector=>selector==='.resize-handle'?{}:selector==='.item,.selection-overlay'?{dataset:{id:entry.id}}:null};
+    h.send('pointerdown',h.event(280,300,{target}));assert.equal(h.read('canvasGesture.type'),'resize');
+    h.send('pointermove',h.event(325,325));h.send('pointermove',h.event(370,350));await h.send('pointerup',h.event(370,350));
+    assert.deepEqual([entry.x,entry.y,entry.w,entry.h,entry.fontSize,entry.contentScale],[100,200,270,150,27,1.5]);
+    assert.deepEqual([entry.iconSize,entry.borderWidth,entry.radius],[30,3,18]);
+    assert.equal(h.undo.length,1);assert.deepEqual(JSON.parse(h.undo[0]),before);
+    const saved=structuredClone(h.sandbox.state);
+    h.send('pointerdown',h.event(370,350,{target}));h.send('pointermove',h.event(460,400));h.key(h.event(0,0,{key:'Escape'}));
     assert.deepEqual(h.read('state'),saved);assert.equal(h.undo.length,1);
   }
 });

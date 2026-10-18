@@ -41,6 +41,24 @@ test('filled boxes, buttons, text boxes and saved rectangles share the move and 
   for(const kind of ['shape','button','textbox'])assert.equal(run(`isRectangleShape({kind:${JSON.stringify(kind)},background:"#242424",borderWidth:0})`),true);
   for(const kind of ['image','icon','label','reading','tab'])assert.equal(run(`isRectangleShape({kind:${JSON.stringify(kind)}})`),false);
 });
+test('text, icons, buttons, boxes and rectangles have four side grips and only one corner grip for scaling',()=>{
+  const node=()=>({classList:{add(){}},style:{width:'180px',height:'100px',setProperty(){}},dataset:{},children:[],attributes:{},setAttribute(key,value){this.attributes[key]=value;},append(child){this.children.push(child);}});
+  const sandbox=vm.createContext({document:{createElement:node},scale:1});vm.runInContext(helpers,sandbox);
+  for(const entry of [{kind:'label'},{kind:'reading'},{kind:'icon'},{kind:'shape'},{kind:'shape',shape:'rectangle'},{kind:'button'},{kind:'textbox'}]){
+    sandbox.overlay=node();sandbox.entry={...entry,name:'Long text'};
+    assert.equal(vm.runInContext('hasSideResizeHandles(entry)',sandbox),true);
+    vm.runInContext('renderRectangleHandles(overlay,entry)',sandbox);
+    const children=sandbox.overlay.children,edges=children.filter(child=>child.className.startsWith('rectangle-edge')),grips=children.filter(child=>child.className.startsWith('rectangle-handle'));
+    assert.deepEqual(edges.map(child=>child.dataset.rectangleResize),['n','e','s','w']);
+    assert.deepEqual(grips.map(child=>child.dataset.rectangleResize),['n','e','s','w']);
+    assert.deepEqual(grips.map(child=>child.attributes['aria-label']),['Resize Long text top','Resize Long text right','Resize Long text bottom','Resize Long text left']);
+    assert.equal(children.length,9);assert.equal(children.at(-1).className,'resize-handle');assert.equal(children.at(-1).dataset.resize,'true');
+    assert.equal(children.at(-1).attributes['aria-label'],'Scale Long text');
+  }
+  for(const kind of ['label','reading'])assert.equal(vm.runInContext(`isTextBox({kind:${JSON.stringify(kind)}})`,sandbox),true);
+  for(const kind of ['image','icon','shape','tab','button','textbox'])assert.equal(vm.runInContext(`isTextBox({kind:${JSON.stringify(kind)}})`,sandbox),false);
+  for(const entry of [{kind:'image'},{kind:'tab'},{kind:'shape',shape:'arrow'}])assert.equal(vm.runInContext(`hasSideResizeHandles(${JSON.stringify(entry)})`,sandbox),false);
+});
 
 test('dragging either end keeps the other end in place in every direction',()=>{
   for(const end of ['start','end'])for(const point of [{x:-100,y:-200},{x:400,y:500},{x:112,y:500},{x:400,y:220}]){
@@ -104,6 +122,7 @@ for(const file of pages){
     assert.match(script,/styleArrowShape\(el,item\);/);assert.match(script,/renderArrowShape\(content,item\);/);
     assert.match(script,/renderArrowHandles\(overlay,items\[0\]\);/);assert.match(script,/renderArrowInspector\(pane,item\);/);
     assert.match(script,/renderRectangleHandles\(overlay,items\[0\]\);/);
+    assert.match(script,/else if\(hasSideResizeHandles\(items\[0\]\)\)renderRectangleHandles\(overlay,items\[0\]\);/);
     assert.match(script,/'iconOffsetX','strokeWidth'/);
   });
   test(file+': copied arrows keep their ends, color and line width',()=>{

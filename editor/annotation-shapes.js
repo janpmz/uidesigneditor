@@ -3,18 +3,22 @@ function isArrowShape(entry){return entry?.kind==='shape'&&entry.shape==='arrow'
 function isRectangleShape(entry){
   return ['shape','button','textbox'].includes(entry?.kind)&&!isArrowShape(entry);
 }
+function isTextBox(entry){return ['label','reading'].includes(entry?.kind);}
+function hasSideResizeHandles(entry){return isRectangleShape(entry)||isTextBox(entry)||entry?.kind==='icon';}
 function renderRectangleHandles(overlay,entry){
   overlay.classList.add('rectangle-selection');
   sizeRectangleHandles(overlay);
-  const names={n:'top',ne:'top right',e:'right',se:'bottom right',s:'bottom',sw:'bottom left',w:'left',nw:'top left'};
+  const names={n:'top',e:'right',s:'bottom',w:'left'};
   for(const side of ['n','e','s','w']){
     const edge=document.createElement('span');edge.className='rectangle-edge edge-'+side;edge.dataset.rectangleResize=side;
     edge.setAttribute('aria-hidden','true');overlay.append(edge);
   }
-  for(const side of ['nw','n','ne','e','se','s','sw','w']){
+  for(const side of ['n','e','s','w']){
     const handle=document.createElement('span');handle.className='rectangle-handle handle-'+side;handle.dataset.rectangleResize=side;
     handle.setAttribute('aria-label','Resize '+(entry?.name||'item')+' '+names[side]);handle.title='Drag to resize '+names[side];overlay.append(handle);
   }
+  const handle=document.createElement('span');handle.className='resize-handle';handle.dataset.resize='true';
+  handle.setAttribute('aria-label','Scale '+(entry?.name||'item'));handle.title='Scale item and contents';overlay.append(handle);
 }
 function sizeRectangleHandles(overlay=$('phone').querySelector('.rectangle-selection')){
   if(!overlay)return;
