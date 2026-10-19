@@ -12,7 +12,7 @@ Source: https://uidesigneditor.com/
 
 - [Open source on GitHub](https://github.com/janpmz/uidesigneditor)
 
-- [About](https://uidesigneditor.com/guide/)
+- [About](https://uidesigneditor.com/about/)
 
 - [Privacy policy](https://uidesigneditor.com/privacy-policy/)
 
