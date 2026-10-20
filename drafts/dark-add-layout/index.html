@@ -201,12 +201,14 @@ OTHER DEALINGS IN THE SOFTWARE.
 .inspector-tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-4px}
 .inspector-pane>.inspector{flex:1;min-height:0;overflow:auto;border-left:0}
 .inspector-pane>[hidden]{display:none!important}
-.inspector-info{flex:1;min-height:0;padding:28px 18px;overflow:auto}
-.inspector-info h2{font-size:19px;font-weight:600;letter-spacing:-.4px;margin-bottom:24px}
-.inspector-info ul{list-style:none;margin:0;padding:0;display:grid;gap:18px;color:#aaaab3;font-size:13px;line-height:1.5}
+.inspector-info{display:flex;flex-direction:column;flex:1;min-height:0;padding:28px 18px;overflow:auto}
+.inspector-info h2{flex:none;font-size:19px;font-weight:600;letter-spacing:-.4px;margin-bottom:24px}
+.inspector-info ul{flex:none;list-style:none;margin:0;padding:0;display:grid;gap:10px;color:#aaaab3;font-size:13px;line-height:1.5}
 .inspector-info a{color:var(--accent);text-underline-offset:3px}
 .inspector-info a:hover{color:#eeeef0}
 .inspector-info a:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:2px}
+.inspector-info .listbulb-badge{flex:none;align-self:flex-start;margin-top:auto;padding-top:24px}
+.listbulb-badge img{display:block;width:auto;height:32px;max-width:100%}
 .inspector-credit{display:flex;flex:none;align-items:center;justify-content:center;gap:8px;padding:10px 12px;color:var(--muted-foreground,#aaaab3);font-size:11px;line-height:1.5;text-align:center}
 .inspector-credit a{color:inherit;text-underline-offset:3px}
 .inspector-credit-icons{display:inline-flex;align-items:center;gap:6px;vertical-align:middle}
@@ -631,7 +633,7 @@ dialog.project-delete-dialog p { color: var(--muted-foreground); }
   .compact-tools .inspector-tabs { min-height: 34px; margin: 0 8px 8px; padding: 3px; }
   .compact-tools .inspector-info { padding: 10px 12px 14px; }
   .compact-tools .inspector-info h2 { margin-bottom: 10px; font-size: 14px; }
-  .compact-tools .inspector-info ul { gap: 7px; font-size: 12px; line-height: 1.4; }
+  .compact-tools .inspector-info ul { gap: 4px; font-size: 12px; line-height: 1.4; }
   .compact-tools .codex-prompt { margin-top: 0; padding: 10px 12px; gap: 8px; }
   .compact-tools .codex-prompt h3 { font-size: 12px; }
   .compact-tools .codex-prompt button { min-height: 28px; }
@@ -811,6 +813,9 @@ SOFTWARE.
       <li><a href="/about/">About</a></li>
       <li><a href="/privacy-policy/">Privacy policy</a></li>
     </ul>
+    <a class="listbulb-badge" href="https://www.listbulb.com/tools/ui-design-editor" target="_blank" rel="noopener">
+      <img src="https://www.listbulb.com/featured-on-listbulb-dark.svg" alt="Featured on ListBulb" height="32" />
+    </a>
   </section>
   <section class="codex-prompt" aria-labelledby="codex-prompt-title">
     <div class="codex-prompt-heading">

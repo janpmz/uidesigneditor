@@ -16,6 +16,8 @@ Source: https://uidesigneditor.com/
 
 - [Privacy policy](https://uidesigneditor.com/privacy-policy/)
 
+[Featured on ListBulb](https://www.listbulb.com/tools/ui-design-editor)
+
 ### Connect AI
 
 Copy prompt

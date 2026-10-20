@@ -355,7 +355,7 @@ dialog.project-delete-dialog p { color: var(--muted-foreground); }
   .compact-tools .inspector-tabs { min-height: 34px; margin: 0 8px 8px; padding: 3px; }
   .compact-tools .inspector-info { padding: 10px 12px 14px; }
   .compact-tools .inspector-info h2 { margin-bottom: 10px; font-size: 14px; }
-  .compact-tools .inspector-info ul { gap: 7px; font-size: 12px; line-height: 1.4; }
+  .compact-tools .inspector-info ul { gap: 4px; font-size: 12px; line-height: 1.4; }
   .compact-tools .codex-prompt { margin-top: 0; padding: 10px 12px; gap: 8px; }
   .compact-tools .codex-prompt h3 { font-size: 12px; }
   .compact-tools .codex-prompt button { min-height: 28px; }

@@ -70,6 +70,7 @@ ${body.trim()}
 function markdown(body) {
   return body.replace(/<figure\b[\s\S]*?<\/figure>/g, '')
     .replace(/<span\b[^>]*aria-hidden="true"[^>]*>[\s\S]*?<\/span>/g, '')
+    .replace(/<img\b[^>]*alt="([^"]*)"[^>]*>/g, '$1')
     .replace(/<h([1-3])\b[^>]*>([\s\S]*?)<\/h\1>/g, (_, level, text) => '\n\n' + '#'.repeat(Number(level)) + ' ' + text.replace(/<br\s*\/?>/g, ' ') + '\n\n')
     .replace(/<a\b[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g, (_, href, text) => `[${text.trim()}](${new URL(href, origin).href})`)
     .replace(/<strong>([\s\S]*?)<\/strong>/g, '**$1**')
