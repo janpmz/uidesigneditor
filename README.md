@@ -2,6 +2,8 @@
 
 Free UI design tool. Edit projects in your browser or share them through a Space. Use **Copy HTML** to keep a file.
 
+<img width="1383" height="1055" alt="Screenshot 2026-11-09 at 09 24 08" src="https://github.com/user-attachments/assets/f7dfff9f-09a2-4c1f-8a8b-e6e78dd4551c" />
+
 Needs Node.js 24 or later. Run `npm ci` once.
 
 Run `npm start`, then open [localhost:3000](http://localhost:3000/).
